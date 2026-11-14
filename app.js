@@ -425,6 +425,97 @@
     } catch (e) {}
   }
 
+  function playDiagnosticSpinupSound() {
+    if (masterVolume <= 0.01) return;
+    try {
+      initAudio();
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(110, now);
+      osc.frequency.exponentialRampToValueAtTime(330, now + 0.55);
+      gain.gain.setValueAtTime(0.045 * masterVolume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.65);
+      playQuindarTone();
+    } catch (e) {}
+  }
+
+  function playDiagnosticStepSound(stepIdx, passed) {
+    if (masterVolume <= 0.01) return;
+    try {
+      initAudio();
+      const now = audioCtx.currentTime;
+      if (passed) {
+        const scale = [523.25, 587.33, 659.25, 783.99, 880.0];
+        const baseFreq = scale[stepIdx % scale.length];
+        [baseFreq, baseFreq * 1.5].forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = idx === 0 ? 'sine' : 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+          gain.gain.setValueAtTime((idx === 0 ? 0.07 : 0.035) * masterVolume, now + idx * 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32 + idx * 0.05);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + idx * 0.05);
+          osc.stop(now + 0.38);
+        });
+      } else {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.setValueAtTime(220, now + 0.14);
+        gain.gain.setValueAtTime(0.07 * masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.34);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      }
+    } catch (e) {}
+  }
+
+  function playDiagnosticFinaleSound() {
+    if (masterVolume <= 0.01) return;
+    try {
+      initAudio();
+      const now = audioCtx.currentTime;
+      // Deep aerospace pad + ascending mission-ready arpeggio
+      const bass = audioCtx.createOscillator();
+      const bassGain = audioCtx.createGain();
+      bass.type = 'triangle';
+      bass.frequency.setValueAtTime(130.81, now);
+      bassGain.gain.setValueAtTime(0.07 * masterVolume, now);
+      bassGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+      bass.connect(bassGain);
+      bassGain.connect(audioCtx.destination);
+      bass.start(now);
+      bass.stop(now + 1.55);
+
+      const chord = [261.63, 329.63, 392.0, 493.88, 587.33];
+      chord.forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const start = now + idx * 0.11;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0.065 * masterVolume, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.85);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(start);
+        osc.stop(start + 0.9);
+      });
+      setTimeout(() => playQuindarTone(), 480);
+    } catch (e) {}
+  }
+
   // ========================================================================
   // 3. PERSISTENT & TEMPORARY STATE
   // ========================================================================
@@ -912,7 +1003,7 @@
           <span class="inst-name-badge">${activeData.name}</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-          <span style="font-size: 0.78rem; font-weight: 600; color: #fff;">${activeData.fullName}</span>
+          <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-main);">${activeData.fullName}</span>
           <div class="tier-toggle-group">
             <button class="tier-btn ${currentTier === 1 ? 'active' : ''}" data-tier="1">T1</button>
             <button class="tier-btn ${currentTier === 2 ? 'active' : ''}" data-tier="2" ${t2Locked ? 'title="Requires 35+ Reputation"' : ''}>
@@ -1591,8 +1682,9 @@
       DOM.invRemaining.textContent = `$${(state.budget - state.tempResources.totalCost).toLocaleString()}`;
     }
 
-    playBeep(900);
+    playDiagnosticSpinupSound();
     DOM.btnRunTests.disabled = true;
+    DOM.btnRunTests.textContent = '🛰️ RUNNING FULL DIAGNOSTIC SIMULATION...';
 
     const tests = [
       { id: 'test-launch', name: 'Launch Segment: Structural Integrity & Clearance', pass: state.tempResources.mass <= state.tempResources.maxMass, fix: 'Go back to Stage 4 and pick a heavier Launch Rocket or reduce Bus Sizing.' },
@@ -1602,24 +1694,44 @@
       { id: 'test-ground', name: 'Ground Link: Handshake Protocol', pass: true, fix: '' }
     ];
 
+    const initialDelayMs = 600;
+    const stepIntervalMs = 850;
+    const scanLeadMs = 380;
+
     tests.forEach((t, i) => {
+      const scanAt = initialDelayMs + i * stepIntervalMs;
+      const resolveAt = scanAt + scanLeadMs;
+
+      setTimeout(() => {
+        const el = document.getElementById(t.id);
+        if (el) {
+          el.textContent = `🔄 SCANNING — ${t.name}...`;
+        }
+        playBeep(1180 + i * 70, 0.05);
+      }, scanAt);
+
       setTimeout(() => {
         const el = document.getElementById(t.id);
         if (el) {
           el.className = t.pass ? 'passed' : 'failed';
           el.textContent = `${t.pass ? '✅' : '❌'} ${t.name}: ${t.pass ? 'PASSED VERIFICATION' : `FAILED — ${t.fix}`}`;
         }
-        playBeep(t.pass ? 880 : 350);
+        playDiagnosticStepSound(i, t.pass);
+
         if (i === tests.length - 1) {
-          testsRun = true;
-          // Grant +10% Reliability bonus and +5 Reputation!
-          state.tempResources.diagnosticsBonus = 10;
-          state.reputation = Math.min(100, state.reputation + 5);
-          updatePermanentHud();
-          calculateTempResources();
-          showInPageNotice('NASA DIAGNOSTICS COMPLETED!\nGranted +10% Reliability Bonus across all flight segments and +5 Permanent Reputation for flight readiness rigor.', 'DIAGNOSTICS COMPLETE');
+          setTimeout(() => {
+            testsRun = true;
+            // Grant +10% Reliability bonus and +5 Reputation!
+            state.tempResources.diagnosticsBonus = 10;
+            state.reputation = Math.min(100, state.reputation + 5);
+            DOM.btnRunTests.textContent = '✅ DIAGNOSTICS VERIFIED (+10% RELIABILITY)';
+            updatePermanentHud();
+            calculateTempResources();
+            playDiagnosticFinaleSound();
+            showInPageNotice('SYSTEM DIAGNOSTICS COMPLETED!\nGranted +10% Reliability Bonus across all flight segments and +5 Permanent Reputation for flight readiness rigor.', 'DIAGNOSTICS COMPLETE');
+          }, 750);
         }
-      }, (i + 1) * 300);
+      }, resolveAt);
     });
   }
 
@@ -2130,7 +2242,7 @@
       card.innerHTML = `
         ${decayBadge}
         <span class="data-level-badge">${item.level}</span>
-        <strong style="color: #fff; font-size: 0.85rem;">${item.name}</strong>
+        <strong style="color: var(--text-main); font-size: 0.85rem;">${item.name}</strong>
         <span style="font-size: 0.7rem; color: var(--text-muted);">${item.category}</span>
         ${trendBadge}
         <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--color-emerald); margin-top: 0.35rem;">
@@ -2375,7 +2487,7 @@
         row.innerHTML = `
           <div>
             <span class="data-level-badge">${it.level}</span>
-            <strong style="color: #fff; font-size: 0.8rem;">${it.name}</strong>
+            <strong style="color: var(--text-main); font-size: 0.8rem;">${it.name}</strong>
           </div>
           <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-emerald);">$${baseVal.toLocaleString()} (Base) ✕</span>
         `;
@@ -2404,7 +2516,7 @@
         row.innerHTML = `
           <div>
             <span class="data-level-badge">${it.level}</span>
-            <strong style="color: #fff; font-size: 0.8rem;">${it.name}</strong>
+            <strong style="color: var(--text-main); font-size: 0.8rem;">${it.name}</strong>
           </div>
           <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-cyan);">+$${baseVal.toLocaleString()}</span>
         `;
@@ -2557,7 +2669,7 @@
       card.innerHTML = `
         ${decayBadge}
         <span class="data-level-badge">${item.level}</span>
-        <strong style="color: #fff; font-size: 0.85rem;">${item.name}</strong>
+        <strong style="color: var(--text-main); font-size: 0.85rem;">${item.name}</strong>
         <span style="font-size: 0.72rem; color: var(--text-muted);">${item.category} (${item.domainName})</span>
         <span style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--color-emerald); margin-top: 0.4rem;">
           Base Value: $${item.estValue.toLocaleString()}

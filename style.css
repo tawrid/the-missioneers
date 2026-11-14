@@ -4,24 +4,25 @@
    ========================================================================== */
 
 :root {
-  --bg-space: #060913;
-  --bg-card: rgba(15, 23, 42, 0.9);
-  --bg-card-subtle: rgba(24, 34, 53, 0.75);
-  --border-hud: rgba(56, 189, 248, 0.25);
-  --border-hud-bright: #38bdf8;
+  --bg-space: #4c728f;
+  --bg-card: rgba(45, 72, 94, 0.94);
+  --bg-card-subtle: rgba(60, 92, 118, 0.85);
+  --border-hud: rgba(226, 232, 240, 0.25);
+  --border-hud-bright: #bae6fd;
   --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --color-cyan: #00f2fe;
+  --text-muted: #cbd5e1;
+  --color-cyan: #7dd3fc;
   --color-blue: #38bdf8;
-  --color-emerald: #10b981;
-  --color-amber: #f59e0b;
-  --color-crimson: #ef4444;
-  --color-purple: #a855f7;
-  --color-gold: #fbbf24;
-  --font-hud: 'Chakra Petch', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --hud-glow: 0 0 16px rgba(56, 189, 248, 0.2);
-  --hud-glow-cyan: 0 0 20px rgba(0, 242, 254, 0.35);
+  --color-emerald: #34d399;
+  --color-amber: #fbbf24;
+  --color-crimson: #f87171;
+  --color-purple: #d8b4fe;
+  --color-gold: #fde047;
+  --font-display: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-hud: 'Public Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --hud-glow: 0 4px 18px rgba(15, 23, 42, 0.22);
+  --hud-glow-cyan: 0 6px 24px rgba(125, 211, 252, 0.25);
 }
 
 * {
@@ -60,17 +61,16 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(ellipse at bottom, #111e38 0%, #030712 100%);
+  background: radial-gradient(ellipse at top, #577e9c 0%, #4c728f 65%, #3d5d76 100%);
   z-index: -1;
   pointer-events: none;
-  background-image: 
-    radial-gradient(1.5px 1.5px at 20px 30px, #ffffff, rgba(0,0,0,0)),
-    radial-gradient(1px 1px at 60px 80px, #38bdf8, rgba(0,0,0,0)),
-    radial-gradient(2px 2px at 150px 140px, #00f2fe, rgba(0,0,0,0)),
-    radial-gradient(1.5px 1.5px at 280px 190px, #f59e0b, rgba(0,0,0,0));
+  background-image:
+    radial-gradient(1.5px 1.5px at 20px 30px, rgba(255, 255, 255, 0.18), transparent),
+    radial-gradient(1px 1px at 60px 80px, rgba(186, 230, 253, 0.2), transparent),
+    radial-gradient(2px 2px at 150px 140px, rgba(255, 255, 255, 0.12), transparent);
   background-repeat: repeat;
   background-size: 320px 320px;
-  opacity: 0.65;
+  opacity: 0.9;
 }
 
 /* ==========================================================================
@@ -83,7 +83,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.96) 0%, rgba(3, 7, 18, 0.98) 100%);
+  background: radial-gradient(circle at center, rgba(76, 114, 143, 0.96) 0%, rgba(54, 84, 108, 0.98) 100%);
   backdrop-filter: blur(14px);
   z-index: 2000;
   display: none;
@@ -97,9 +97,9 @@ body {
 }
 
 .menu-card {
-  background: rgba(15, 23, 42, 0.92);
-  border: 1px solid var(--border-hud-bright);
-  box-shadow: 0 0 50px rgba(56, 189, 248, 0.35);
+  background: rgba(45, 72, 94, 0.96);
+  border: 1px solid rgba(186, 230, 253, 0.35);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.32);
   border-radius: 12px;
   width: 100%;
   max-width: 620px;
@@ -116,7 +116,7 @@ body {
   to { opacity: 1; transform: scale(1); }
 }
 
-.menu-nasa-logo-wrap {
+.menu-tm-logo-wrap {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -125,7 +125,7 @@ body {
   cursor: pointer;
 }
 
-.hud-nasa-logo-wrap {
+.hud-tm-logo-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -133,92 +133,36 @@ body {
   transition: transform 0.25s ease;
 }
 
-.hud-nasa-logo-wrap:hover {
-  transform: scale(1.1);
+.hud-tm-logo-wrap:hover {
+  transform: scale(1.08);
 }
 
-.nasa-meatball-svg {
+.tm-emblem-svg {
   display: block;
   overflow: visible;
-  filter: drop-shadow(0 0 16px rgba(11, 61, 145, 0.75)) drop-shadow(0 0 25px rgba(252, 61, 33, 0.35));
+  filter: drop-shadow(0 4px 12px rgba(15, 33, 50, 0.35));
   transition: filter 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.nasa-meatball-svg.menu-logo:hover {
-  transform: scale(1.08) rotate(-1.5deg);
-  filter: drop-shadow(0 0 28px rgba(0, 242, 254, 0.85)) drop-shadow(0 0 38px rgba(252, 61, 33, 0.65));
+.tm-emblem-svg.menu-logo:hover {
+  transform: scale(1.06);
+  filter: drop-shadow(0 0 18px rgba(0, 242, 254, 0.45));
 }
 
-.nasa-meatball-svg.hud-logo {
-  filter: drop-shadow(0 0 8px rgba(11, 61, 145, 0.6)) drop-shadow(0 0 12px rgba(252, 61, 33, 0.3));
+.tm-emblem-svg.hud-logo {
+  filter: drop-shadow(0 2px 6px rgba(15, 33, 50, 0.35));
 }
 
-.nasa-meatball-svg.hud-logo:hover {
-  filter: drop-shadow(0 0 16px rgba(0, 242, 254, 0.8)) drop-shadow(0 0 20px rgba(252, 61, 33, 0.5));
+.tm-emblem-svg.hud-logo:hover {
+  filter: drop-shadow(0 0 12px rgba(0, 242, 254, 0.55));
 }
 
-.nasa-sphere {
-  filter: drop-shadow(0 0 8px rgba(11, 61, 145, 0.5));
-}
-
-.nasa-stars {
-  transition: opacity 0.3s ease;
-}
-
-.nasa-orbit-path {
-  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.6));
-}
-
-.nasa-satellite-system {
+.tm-satellite-system {
   transform-origin: center;
 }
 
-.nasa-lettering {
-  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.4));
-}
-
-/* Twinkling star field animation */
-@keyframes nasaTwinkle {
-  0%, 100% {
-    opacity: 0.95;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.35;
-    transform: scale(0.75);
-  }
-}
-
-.nasa-stars-1 {
-  animation: nasaTwinkle 2.5s ease-in-out infinite;
-  transform-origin: center;
-}
-
-.nasa-stars-2 {
-  animation: nasaTwinkle 3.2s ease-in-out infinite 0.8s;
-  transform-origin: center;
-}
-
-.nasa-stars-3 {
-  animation: nasaTwinkle 2.1s ease-in-out infinite 1.4s;
-  transform-origin: center;
-}
-
-/* Supersonic Vector Shimmer */
-@keyframes chevronShimmer {
-  0% {
-    filter: drop-shadow(0 0 2px rgba(252, 61, 33, 0.5));
-  }
-  50% {
-    filter: drop-shadow(0 0 7px rgba(255, 87, 51, 0.95));
-  }
-  100% {
-    filter: drop-shadow(0 0 2px rgba(252, 61, 33, 0.5));
-  }
-}
-
-.nasa-chevron {
-  animation: chevronShimmer 3s ease-in-out infinite;
+.tm-lettering {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
 }
 
 /* Zero-G Floating Levitation */
@@ -227,7 +171,7 @@ body {
     transform: translateY(0px) rotate(0deg);
   }
   50% {
-    transform: translateY(-5px) rotate(1deg);
+    transform: translateY(-5px) rotate(0.8deg);
   }
   100% {
     transform: translateY(0px) rotate(0deg);
@@ -244,7 +188,7 @@ body {
   }
 }
 
-.nasa-orbit-ring {
+.tm-orbit-ring {
   animation: orbitPulse 2.8s ease-in-out infinite;
 }
 
@@ -2533,7 +2477,7 @@ input:checked + .slider:before {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+  background: radial-gradient(circle at center, #577e9c 0%, #4c728f 65%, #3d5d76 100%);
   display: none;
   flex-direction: column;
   align-items: center;
@@ -2551,13 +2495,13 @@ input:checked + .slider:before {
   left: 0;
   right: 0;
   height: 54px;
-  background: #000;
+  background: #36546c;
   z-index: 2;
   pointer-events: none;
 }
 
-.cutscene-letterbox.top { top: 0; border-bottom: 1px solid rgba(56, 189, 248, 0.2); }
-.cutscene-letterbox.bottom { bottom: 0; border-top: 1px solid rgba(56, 189, 248, 0.2); }
+.cutscene-letterbox.top { top: 0; border-bottom: 1px solid rgba(186, 230, 253, 0.25); }
+.cutscene-letterbox.bottom { bottom: 0; border-top: 1px solid rgba(186, 230, 253, 0.25); }
 
 .cutscene-top-controls {
   position: absolute;
@@ -2571,9 +2515,9 @@ input:checked + .slider:before {
 
 .cutscene-skip-btn,
 .cutscene-sound-btn {
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(56, 189, 248, 0.55);
-  color: #e2e8f0;
+  background: rgba(45, 72, 94, 0.94);
+  border: 1px solid rgba(186, 230, 253, 0.55);
+  color: #f8fafc;
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
@@ -2765,11 +2709,11 @@ input:checked + .slider:before {
   font-weight: 700;
   color: #f8fafc;
   text-align: center;
-  background: rgba(15, 23, 42, 0.92);
-  border: 1.5px solid rgba(56, 189, 248, 0.65);
+  background: rgba(45, 72, 94, 0.94);
+  border: 1.5px solid rgba(186, 230, 253, 0.65);
   padding: 0.65rem 1.5rem;
   border-radius: 14px;
-  box-shadow: 0 6px 26px rgba(0, 0, 0, 0.65);
+  box-shadow: 0 6px 26px rgba(15, 23, 42, 0.35);
 }
 
 /* ========================================================================== */
@@ -3028,4 +2972,288 @@ input:checked + .slider:before {
     flex-wrap: wrap;
     gap: 0.5rem;
   }
+}
+
+/* ========================================================================== */
+/* RETRO WEBPAGE & BORDERLESS STEEL-BLUE (#4C728F) THEME                      */
+/* ========================================================================== */
+h1,
+h2,
+h3,
+h4,
+.menu-title,
+.hud-title,
+.panel-header h2,
+.domain-card h3,
+.inst-title,
+.req-card h3,
+.hud-box-header h3,
+.verify-card h3,
+.inventory-box h3,
+.buyer-card h4,
+.bank-box h3,
+.modal-header h2,
+.rules-section h3 {
+  color: var(--text-main);
+  font-family: var(--font-display);
+}
+
+#starfield-bg {
+  background: #4c728f;
+  background-image: none;
+  opacity: 1;
+}
+
+.menu-overlay {
+  background: #4c728f;
+  backdrop-filter: none;
+}
+
+.cutscene-letterbox {
+  background: #3d5d76;
+  border: none !important;
+}
+
+.cutscene-caption {
+  background: #2f4b61 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: 4px 4px 0 rgba(15, 28, 40, 0.45) !important;
+}
+
+.menu-card,
+.hud-header,
+.stage-nav,
+.modal-card,
+.inst-tooltip,
+.custom-panel,
+.hud-box,
+.verify-card,
+.inventory-box,
+.processing-station,
+.buyer-card,
+.bank-box,
+.req-card,
+.domain-card,
+.instrument-card,
+.fuel-card,
+.bus-size-card,
+.opt-card,
+.data-card,
+.l4-item-row,
+.loan-opt,
+.flight-comms-col,
+.flight-gauges-row,
+.sim-hud-overlay,
+.stage-panel {
+  background: #3b5d78;
+  color: var(--text-main);
+  border: none !important;
+  outline: none !important;
+  border-radius: 0 !important;
+  backdrop-filter: none !important;
+  box-shadow: 4px 4px 0 rgba(15, 28, 40, 0.42);
+}
+
+.domain-card,
+.instrument-card,
+.fuel-card,
+.bus-size-card,
+.opt-card,
+.data-card,
+.l4-item-row,
+.loan-opt,
+.buyer-card,
+.bank-box,
+.req-card,
+.hud-box,
+.verify-card,
+.inventory-box,
+.processing-station {
+  background: #34546d;
+  box-shadow: none;
+}
+
+.domain-card:hover,
+.instrument-card:hover,
+.fuel-card:hover,
+.bus-size-card:hover,
+.opt-card:hover,
+.data-card:hover,
+.loan-opt:hover {
+  background: #2d4a61;
+}
+
+.domain-card.selected,
+.instrument-card.selected,
+.fuel-card.selected,
+.bus-size-card.selected,
+.opt-card.selected,
+.data-card.selected {
+  background: #235a82 !important;
+  box-shadow: inset 5px 0 0 #7dd3fc !important;
+}
+
+.stage-step {
+  border: none !important;
+  border-radius: 0 !important;
+  background: #34546d;
+}
+
+.stage-step.active {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+.stage-step.completed {
+  background: #2b5a55 !important;
+}
+
+.hud-btn,
+.menu-btn,
+.menu-btn.primary,
+.menu-btn.secondary,
+.menu-sub-btn,
+.action-btn,
+.action-btn.primary,
+.action-btn.secondary,
+.seg-tab,
+.tier-btn,
+.btn-select-target,
+.modal-close,
+.cutscene-skip-btn,
+.cutscene-sound-btn,
+.coach-close-x-btn {
+  background: #2d4c66;
+  color: var(--text-main);
+  border: none !important;
+  outline: none !important;
+  border-radius: 0 !important;
+  box-shadow: 3px 3px 0 rgba(15, 28, 40, 0.48);
+}
+
+.menu-btn.primary,
+.action-btn.primary {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.hud-btn:hover,
+.menu-btn:hover,
+.menu-sub-btn:hover,
+.action-btn:hover:not(:disabled),
+.seg-tab:hover,
+.tier-btn:hover,
+.cutscene-skip-btn:hover,
+.cutscene-sound-btn:hover {
+  background: #386080;
+  color: #ffffff;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 rgba(15, 28, 40, 0.52);
+}
+
+.menu-btn.primary:hover,
+.action-btn.primary:hover:not(:disabled) {
+  background: #0369a1;
+}
+
+.hud-btn:active,
+.menu-btn:active,
+.action-btn:active:not(:disabled),
+.seg-tab:active,
+.tier-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 rgba(15, 28, 40, 0.48);
+}
+
+.seg-tab.active,
+.tier-btn.active,
+.btn-select-target.active {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+.resource-box,
+.bandwidth-meter-box,
+.temp-card,
+.gauge-card,
+.segment-reliability-row,
+.trends-ticker,
+.form-input,
+.form-select,
+.badge,
+.hud-subtitle,
+.menu-subtitle {
+  background: #2d4a61;
+  color: var(--text-main);
+  border: none !important;
+  outline: none !important;
+  border-radius: 0 !important;
+}
+
+.hud-subtitle,
+.menu-subtitle {
+  background: transparent;
+}
+
+.event-terminal {
+  background: #213749;
+  color: #f1f5f9;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+.qmark-btn {
+  background: #2d4c66 !important;
+  color: #7dd3fc !important;
+  border: none !important;
+  outline: none !important;
+  border-radius: 0 !important;
+  box-shadow: 2px 2px 0 rgba(15, 28, 40, 0.45) !important;
+}
+
+.build-verify-issues {
+  background: #6b242a;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: inset 5px 0 0 #f87171;
+  color: #fecaca;
+}
+
+.build-verify-issues-title {
+  color: #fca5a5;
+}
+
+.notice-modal-message {
+  color: var(--text-main);
+}
+
+a {
+  color: #bae6fd;
+  text-decoration: underline;
+}
+
+.stage-panel {
+  padding: 1.75rem 2rem;
+}
+
+.panel-header {
+  margin: 0.25rem 0 1.5rem 0;
+}
+
+.panel-header h2 {
+  margin: 0.25rem 0 0.65rem 0;
+}
+
+.hud-box-header h3,
+.verify-card h3,
+.inventory-box h3,
+.req-card h3,
+.buyer-card h4,
+.bank-box h3,
+.domain-card h3,
+.rules-section h3,
+.modal-header h2 {
+  margin-top: 0.25rem;
+  margin-bottom: 0.65rem;
 }

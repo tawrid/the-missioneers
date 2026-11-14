@@ -36,7 +36,6 @@ ALLOWED_STATIC_FILES = {
     "/index.html": "index.html",
     "/app.js": "app.js",
     "/style.css": "style.css",
-    "/nasa_logo.svg": "nasa_logo.svg",
 }
 
 CSP_POLICY = (

@@ -107,7 +107,7 @@ class TestLMStudioClient(unittest.TestCase):
 
 class TestStaticAllowlistAndHeaders(unittest.TestCase):
     def test_allowed_static_files_return_200_with_security_headers(self):
-        for path in ["/", "/index.html", "/app.js", "/style.css", "/nasa_logo.svg"]:
+        for path in ["/", "/index.html", "/app.js", "/style.css"]:
             with self.subTest(path=path):
                 code, hdrs, body = _dispatch("GET", path)
                 self.assertEqual(code, 200)
