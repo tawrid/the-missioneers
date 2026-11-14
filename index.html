@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ASTRAEA // NASA Space Mission Design & Economy Simulator</title>
+  <title>The Missioneers // NASA Space Mission Design &amp; Economy Simulator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
@@ -12,28 +12,92 @@
 <body>
   <div id="starfield-bg"></div>
 
-  <div class="app-container">
+  <!-- ============================================== -->
+  <!-- MAIN MENU MODAL / OVERLAY                      -->
+  <!-- ============================================== -->
+  <div id="main-menu-overlay" class="menu-overlay active">
+    <div class="menu-card">
+      <div class="menu-nasa-logo">NASA</div>
+      <h1 class="menu-title">THE MISSIONEERS</h1>
+      <p class="menu-subtitle">SPACE MISSION DESIGN &amp; ECONOMY SIMULATOR // SPACE APPS CHALLENGE</p>
+
+      <div class="menu-buttons-group">
+        <button class="menu-btn primary" id="menu-btn-singleplayer">
+          <span class="btn-icon">🧑‍🚀</span>
+          <div class="btn-text">
+            <strong>SINGLEPLAYER</strong>
+            <small>Command all flight segments, engineering, and data sales solo</small>
+          </div>
+        </button>
+
+        <button class="menu-btn secondary" id="menu-btn-multiplayer">
+          <span class="btn-icon">👥</span>
+          <div class="btn-text">
+            <strong>MULTIPLAYER MODES</strong>
+            <small>Select Co-op Crew Stations or Saboteur Impostor mode</small>
+          </div>
+        </button>
+
+        <!-- Multiplayer Sub-Selection (Hidden by default) -->
+        <div class="mp-subgroup" id="mp-subgroup" style="display: none;">
+          <button class="menu-sub-btn" id="mp-btn-coop">
+            <span>🤝 CO-OP CREW MODE</span>
+            <small>4 Dedicated Stations: Launch, Space, Ground &amp; User</small>
+          </button>
+          <button class="menu-sub-btn" id="mp-btn-sabotage">
+            <span>🕵️ SABOTEUR IMPOSTOR MODE</span>
+            <small>One crew member secretly sabotages systems before bankruptcy</small>
+          </button>
+        </div>
+
+        <button class="menu-btn secondary" id="menu-btn-settings">
+          <span class="btn-icon">⚙️</span>
+          <div class="btn-text">
+            <strong>SETTINGS</strong>
+            <small>Audio volume, advanced engineering sliders &amp; AI backend</small>
+          </div>
+        </button>
+
+        <button class="menu-btn secondary" id="menu-btn-manual">
+          <span class="btn-icon">📖</span>
+          <div class="btn-text">
+            <strong>NASA MISSION MANUAL</strong>
+            <small>Systems engineering constraints, data levels L0–L4 &amp; rules</small>
+          </div>
+        </button>
+      </div>
+
+      <div class="menu-footer">
+        <span>NASA Earth Science, Planetary Science, Heliophysics, Astrophysics &amp; Life Sciences Data</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MAIN APPLICATION HUD                           -->
+  <!-- ============================================== -->
+  <div class="app-container" id="app-container" style="display: none;">
     
-    <!-- Top HUD: Permanent Resources, Segment Status, Role Switcher -->
+    <!-- Top HUD: Permanent Resources, Data Vault, Settings, Menu Return -->
     <header class="hud-header">
       <div class="hud-brand">
         <div class="nasa-worm">NASA</div>
         <div class="hud-title-wrap">
-          <h1 class="hud-title">ASTRAEA <span class="badge">MISSION DESIGN GAME</span></h1>
-          <p class="hud-subtitle">SPACE APPS CHALLENGE // 4-SEGMENT LIFECYCLE &amp; DATA REFINERY</p>
+          <h1 class="hud-title">THE MISSIONEERS <span class="badge" id="hud-mode-badge">SOLO</span></h1>
+          <p class="hud-subtitle">4-SEGMENT LIFECYCLE // L0–L4 DATA REFINERY // REAL NASA SENSORS</p>
         </div>
       </div>
 
       <!-- Permanent Resources: Budget & Reputation -->
       <div class="perm-resources">
-        <div class="resource-box budget" title="Permanent Budget for buying rockets, instruments & upgrades">
+        <div class="resource-box budget" title="Permanent Budget for buying rockets, instruments &amp; upgrades">
           <span class="res-icon">💰</span>
           <div class="res-meta">
             <span class="res-label">BUDGET</span>
             <span class="res-val" id="hud-budget">$1,200,000</span>
           </div>
         </div>
-        <div class="resource-box rep" title="Permanent Reputation: Higher rep unlocks Tier 2 sensors and higher sell multipliers">
+        <div class="resource-box rep" title="Permanent Reputation: Smooth price curve &amp; unlocks Tier 2 sensors">
           <span class="res-icon">⭐</span>
           <div class="res-meta">
             <span class="res-label">REPUTATION</span>
@@ -42,42 +106,44 @@
         </div>
       </div>
 
-      <!-- Role / Gamemode & AI Controls -->
+      <!-- Global Controls: Data Vault, Settings, Menu -->
       <div class="hud-controls">
-        <div class="gamemode-toggle" id="gamemode-badge" title="Click to toggle Saboteur Impostor Gamemode">
-          <span id="gamemode-icon">🛡️</span> <span id="gamemode-text">CO-OP MODE</span>
-        </div>
-
-        <div class="status-pill" id="ai-status-pill" title="Click to configure LM Studio AI Connection">
-          <span class="status-dot pulse" id="ai-status-dot"></span>
-          <span id="ai-status-text">LM Studio</span>
-        </div>
-
-        <button class="hud-btn" id="sfx-toggle" title="Toggle Sound Synthesizer">
-          <span id="sfx-icon">🔊</span> SFX: <span id="sfx-label">ON</span>
+        <button class="hud-btn vault-btn" id="btn-open-vault" title="View Stored Scientific Data &amp; Market Value">
+          <span>📦 DATA VAULT (<span id="vault-count-badge">0</span>)</span>
         </button>
 
-        <button class="hud-btn" id="rules-btn" title="View NASA Mission Architecture Manual">
-          <span>📖 MANUAL</span>
+        <button class="hud-btn" id="btn-open-settings" title="Open Settings (Audio, Sliders, AI)">
+          <span>⚙️ SETTINGS</span>
+        </button>
+
+        <button class="hud-btn" id="btn-return-menu" title="Return to Main Menu">
+          <span>🏠 MENU</span>
         </button>
       </div>
     </header>
 
-    <!-- Active Player Station Selector (Launch, Space, Ground, User) -->
-    <div class="roles-bar">
-      <span class="roles-bar-label">ACTIVE STATION:</span>
+    <!-- Active Station Bar (Shown ONLY in Multiplayer Modes) -->
+    <div class="roles-bar" id="roles-bar" style="display: none;">
+      <span class="roles-bar-label">CREW STATION:</span>
       <button class="role-tab active" data-role="launch" id="tab-role-launch">
-        🚀 LAUNCH SEGMENT (Rocket &amp; Mechanical)
+        🚀 LAUNCH STATION (Rocket &amp; Mechanical)
       </button>
       <button class="role-tab" data-role="space" id="tab-role-space">
-        🛰️ SPACE SEGMENT (Instruments &amp; Bus)
+        🛰️ SPACE STATION (Sensors &amp; Bus)
       </button>
       <button class="role-tab" data-role="ground" id="tab-role-ground">
-        📡 GROUND SEGMENT (Comms &amp; Receiver)
+        📡 GROUND STATION (Comms &amp; Tracking)
       </button>
       <button class="role-tab" data-role="user" id="tab-role-user">
-        💼 USER SEGMENT (Data Refinery &amp; Market)
+        💼 USER STATION (Refinery &amp; Market)
       </button>
+      <span class="saboteur-indicator" id="saboteur-status-pill" style="display: none;">🕵️ SABOTEUR ACTIVE</span>
+    </div>
+
+    <!-- Market Trends Ticker Bar -->
+    <div class="trends-ticker" id="trends-ticker">
+      <span class="ticker-label">🔥 GLOBAL DATA DEMAND TREND:</span>
+      <span class="ticker-text" id="ticker-text">Loading current NASA planetary &amp; Earth science market trends...</span>
     </div>
 
     <!-- NASA Mission Lifecycle Process Stepper -->
@@ -118,7 +184,7 @@
       </div>
     </nav>
 
-    <!-- Main Viewport -->
+    <!-- Main Viewport Stages -->
     <main class="viewport">
 
       <!-- ============================================== -->
@@ -126,8 +192,8 @@
       <!-- ============================================== -->
       <section class="stage-panel active" id="stage-1">
         <div class="panel-header">
-          <h2>STAGE 1: SET GOAL // SELECT MISSION DOMAIN</h2>
-          <p>Choose the core scientific focus of your mission according to NASA Mission Directorates. Each domain unlocks specific observable targets and scientific phenomena.</p>
+          <h2>STAGE 1: SET GOAL // NASA SCIENCE DIRECTORATE</h2>
+          <p>Choose your scientific mission discipline. Distance, duration, velocity (&Delta;v), and re-entry constraints vary by destination.</p>
         </div>
 
         <div class="domain-grid" id="domain-grid">
@@ -143,16 +209,16 @@
       </section>
 
       <!-- ============================================== -->
-      <!-- STAGE 2: DEFINE CONCEPT (CHOOSE DATA TYPES)    -->
+      <!-- STAGE 2: DEFINE CONCEPT (REAL NASA INSTRUMENTS)-->
       <!-- ============================================== -->
       <section class="stage-panel" id="stage-2">
         <div class="panel-header">
-          <h2 id="stage2-domain-title">STAGE 2: DEFINE CONCEPT // SPECIFIC DATA TARGETS</h2>
-          <p>Select which phenomena to investigate. Advanced Tier 2 methods cost more mass and power, but yield pre-calibrated <strong>L1 data</strong> immediately upon downlink.</p>
+          <h2 id="stage2-domain-title">STAGE 2: DEFINE CONCEPT // INSTRUMENT TARGETS</h2>
+          <p>Select real NASA instruments. <strong>Hover over any instrument</strong> to inspect its scientific detector mechanism, mass, power, and official NASA mission heritage.</p>
         </div>
 
         <div class="data-types-grid" id="data-types-container">
-          <!-- Dynamic data type selectors with Tier 1 vs Tier 2 toggles -->
+          <!-- Real NASA instruments with Tier 1 and Tier 2 hover cards -->
         </div>
 
         <div class="phase-action-bar">
@@ -169,51 +235,51 @@
       <section class="stage-panel" id="stage-3">
         <div class="panel-header">
           <h2>STAGE 3: DEFINE MISSION REQUIREMENTS</h2>
-          <p>The mission architecture establishes preliminary temporary resource boundaries. Your spacecraft and rocket designs must satisfy these criteria.</p>
+          <p>The mission profile establishes physics boundaries. Biological missions to the ISS require quick flight and atmospheric heat shielding for physical sample return!</p>
         </div>
 
         <div class="requirements-layout">
           <div class="req-card">
-            <h3>MISSION PROFILE &amp; CONSTRAINTS</h3>
+            <h3>MISSION PROFILE &amp; TRAJECTORY</h3>
             <div class="req-row">
-              <span>Primary Science Goal:</span>
+              <span>Primary Discipline:</span>
               <strong id="req-domain-name" class="text-cyan">Earth Science</strong>
             </div>
             <div class="req-row">
-              <span>Target Data Types:</span>
-              <strong id="req-data-targets">Thermal, Atmosphere</strong>
+              <span>Equipped Instruments:</span>
+              <strong id="req-data-targets">AIRS, CERES</strong>
             </div>
             <div class="req-row">
-              <span>Minimum Required Velocity (&Delta;v):</span>
+              <span>Required Trajectory Velocity (&Delta;v):</span>
               <strong id="req-deltav" class="text-amber">7.8 km/s</strong>
             </div>
             <div class="req-row">
-              <span>Required Mission Flight Duration:</span>
-              <strong id="req-duration">180 Days</strong>
+              <span>Flight Transit Duration:</span>
+              <strong id="req-duration">Short LEO Orbit</strong>
             </div>
             <div class="req-row">
-              <span>Minimum Ground Station Pass Rate:</span>
-              <strong id="req-ground-pass">2 passes/day (Ka-Band)</strong>
+              <span>Atmospheric Return Re-entry Shield:</span>
+              <strong id="req-return-shield" class="text-crimson">NOT REQUIRED</strong>
             </div>
           </div>
 
           <div class="req-card">
             <h3>TEMPORARY RESOURCE BOUNDARIES</h3>
             <div class="req-row">
-              <span>Maximum Allowable Spacecraft Mass:</span>
-              <strong id="req-max-mass">12,000 kg</strong>
+              <span>Estimated Spacecraft Mass:</span>
+              <strong id="req-max-mass">~850 kg</strong>
             </div>
             <div class="req-row">
-              <span>Power Generation Requirement:</span>
-              <strong id="req-min-power">1,400 W</strong>
+              <span>Minimum Electrical Bus Power:</span>
+              <strong id="req-min-power">≥ 420 W</strong>
             </div>
             <div class="req-row">
-              <span>Spacecraft Bus Volume Capacity:</span>
-              <strong id="req-max-vol">18 m³</strong>
+              <span>Spacecraft Bus Volume Needed:</span>
+              <strong id="req-max-vol">≥ 4.0 m³</strong>
             </div>
             <div class="req-row">
-              <span>Fuel / Propellant Reserve Margin:</span>
-              <strong id="req-fuel-margin">&ge; 25% Reserve</strong>
+              <span>Ground Downlink Bandwidth Requirement:</span>
+              <strong id="req-bandwidth">≥ 45 Mbps</strong>
             </div>
           </div>
         </div>
@@ -221,7 +287,7 @@
         <div class="phase-action-bar">
           <button class="action-btn secondary" id="btn-back-stage3">&larr; BACK TO CONCEPT</button>
           <button class="action-btn primary" id="btn-next-stage3">
-            COMMENCE DESIGN &amp; PROCUREMENT &rarr;
+            COMMENCE DESIGN &amp; BUDGET &rarr;
           </button>
         </div>
       </section>
@@ -234,14 +300,47 @@
           
           <!-- Left Configuration Columns -->
           <div class="config-col">
+            
+            <!-- Segment Sub-Tabs (Always defaults to Launch Segment on cycle reset!) -->
             <div class="segment-tabs">
-              <button class="seg-tab active" data-seg="launch">1. LAUNCH SEGMENT (Rocket)</button>
-              <button class="seg-tab" data-seg="space">2. SPACE SEGMENT (Bus &amp; Sensors)</button>
-              <button class="seg-tab" data-seg="ground">3. GROUND SEGMENT (Comms)</button>
+              <button class="seg-tab active" data-seg="launch" id="seg-tab-launch">1. LAUNCH SEGMENT (Rocket &amp; Fuel)</button>
+              <button class="seg-tab" data-seg="space" id="seg-tab-space">2. SPACE SEGMENT (Bus Sizing &amp; Shield)</button>
+              <button class="seg-tab" data-seg="ground" id="seg-tab-ground">3. GROUND SEGMENT (Tracking Network)</button>
+            </div>
+
+            <!-- Custom Fuel Chemistry Selector (Inside Launch Segment) -->
+            <div class="custom-panel" id="fuel-chemistry-panel">
+              <h4>🚀 PROPELLANT CHEMISTRY SELECTION</h4>
+              <p>Propellant chemistry dictates engine specific impulse ($I_{sp}$), density, tank volume, and launch cost.</p>
+              <div class="fuel-options-grid" id="fuel-options-grid">
+                <!-- RP-1 Kerosene, Methalox, Hydrolox, Hypergolic -->
+              </div>
+            </div>
+
+            <!-- Spacecraft Bus Expansion Sizing (Inside Space Segment) -->
+            <div class="custom-panel" id="bus-expansion-panel" style="display: none;">
+              <h4>🛰️ SPACECRAFT BUS SIZING &amp; VOLUME EXPANSION</h4>
+              <p>Enlarge the spacecraft bus chassis to accommodate more scientific instruments at the penalty of increased dry mass and fuel consumption.</p>
+              <div class="bus-sizing-grid" id="bus-sizing-grid">
+                <!-- Standard, Extended, Flagship Expansion -->
+              </div>
+            </div>
+
+            <!-- Thermal Re-entry Heat Shield Panel (For Return Missions) -->
+            <div class="custom-panel" id="reentry-shield-panel" style="display: none;">
+              <h4>🛡️ ATMOSPHERIC RE-ENTRY HEAT SHIELDING</h4>
+              <p>Mandatory for biological sample recovery and return missions to survive 1600°C atmospheric deceleration!</p>
+              <div class="shield-toggle-wrap">
+                <label class="switch">
+                  <input type="checkbox" id="chk-heat-shield">
+                  <span class="slider round"></span>
+                </label>
+                <span id="heat-shield-status-text">Heat Shield Not Installed (High Re-entry Destruction Risk)</span>
+              </div>
             </div>
 
             <div class="segment-options-container" id="segment-options-container">
-              <!-- Dynamically populated options for selected segment -->
+              <!-- 3 Distinct Options per category -->
             </div>
           </div>
 
@@ -250,59 +349,62 @@
             <div class="hud-box">
               <div class="hud-box-header">
                 <h3>MISSION TELEMETRY &amp; RESOURCES</h3>
-                <span class="pulse-indicator">ACTIVE DESIGN</span>
+                <span class="pulse-indicator">LIVE BUDGET</span>
               </div>
 
-              <!-- Permanent Budget Deductions -->
+              <!-- Cost Gauge -->
               <div class="gauge-card">
                 <div class="gauge-labels">
-                  <span class="g-name">TOTAL MISSION COST</span>
+                  <span class="g-name">MISSION EXPENDITURE</span>
                   <span class="g-val" id="val-cost">$0 / $1,200,000</span>
                 </div>
                 <div class="progress-bar-wrap">
                   <div class="progress-bar" id="bar-cost" style="width: 0%"></div>
                 </div>
-                <div class="gauge-hint" id="hint-cost">Permanent funds remaining after purchase</div>
+                <div class="gauge-hint" id="hint-cost">Remaining funds after purchase</div>
               </div>
 
-              <!-- Temporary Resources: Mass, Power, Fuel, Volume, Velocity -->
+              <!-- Temporary Resources: Mass, Power, Volume, Velocity -->
               <div class="temp-resources-grid">
-                
-                <!-- Mass -->
                 <div class="temp-card" id="temp-mass-card">
                   <span class="temp-label">TOTAL MASS</span>
                   <span class="temp-val" id="val-mass">0 / 0 kg</span>
                   <div class="mini-bar-wrap"><div class="mini-bar" id="bar-mass"></div></div>
-                  <small id="hint-mass">Rocket capacity</small>
+                  <small id="hint-mass">Rocket payload capacity</small>
                 </div>
 
-                <!-- Power -->
                 <div class="temp-card" id="temp-power-card">
                   <span class="temp-label">POWER CONSUMPTION</span>
                   <span class="temp-val" id="val-power">0 / 0 W</span>
                   <div class="mini-bar-wrap"><div class="mini-bar" id="bar-power"></div></div>
-                  <small id="hint-power">Needs fuel &amp; solar/RTG</small>
+                  <small id="hint-power">Solar / RTG balance</small>
                 </div>
 
-                <!-- Volume -->
                 <div class="temp-card" id="temp-vol-card">
                   <span class="temp-label">PAYLOAD VOLUME</span>
                   <span class="temp-val" id="val-vol">0 / 0 m³</span>
                   <div class="mini-bar-wrap"><div class="mini-bar" id="bar-vol"></div></div>
-                  <small id="hint-vol">Fairing / Bus volume</small>
+                  <small id="hint-vol">Bus fairing clearance</small>
                 </div>
 
-                <!-- Fuel & Velocity -->
                 <div class="temp-card" id="temp-vel-card">
                   <span class="temp-label">VELOCITY (&Delta;V)</span>
                   <span class="temp-val" id="val-vel">0 / 0 km/s</span>
                   <div class="mini-bar-wrap"><div class="mini-bar" id="bar-vel"></div></div>
-                  <small id="hint-vel">Thruster &amp; fuel mass</small>
+                  <small id="hint-vel">Rocket + Fuel specific impulse</small>
                 </div>
-
               </div>
 
-              <!-- Segment Reliability & Readiness -->
+              <!-- Downlink Bandwidth Telemetry -->
+              <div class="bandwidth-meter-box">
+                <div class="bw-labels">
+                  <span>DOWNLINK BANDWIDTH &amp; BUFFER:</span>
+                  <strong id="val-bandwidth" class="text-emerald">85 Mbps</strong>
+                </div>
+                <small id="hint-bandwidth">High-bandwidth dishes reduce downlink time and eliminate packet drop</small>
+              </div>
+
+              <!-- Reliability & Readiness -->
               <div class="segment-reliability-row">
                 <div class="seg-rel-item">
                   <span>LAUNCH RELIABILITY:</span>
@@ -332,38 +434,38 @@
       </section>
 
       <!-- ============================================== -->
-      <!-- STAGE 5: BUILD & VERIFY                        -->
+      <!-- STAGE 5: BUILD & VERIFY (MEANINGFUL DIAGNOSTICS)-->
       <!-- ============================================== -->
       <section class="stage-panel" id="stage-5">
         <div class="verify-layout">
           <div class="panel-header">
-            <h2>STAGE 5: BUILD &amp; VERIFY // INTEGRATION TESTING</h2>
-            <p>Procure parts, finalize payments, and run automated systems diagnostic stress tests across the Launch, Space, and Ground segments.</p>
+            <h2>STAGE 5: BUILD &amp; VERIFY // PRE-FLIGHT DIAGNOSTICS</h2>
+            <p>Running systems diagnostic simulations grants a <strong>+10% Reliability Bonus</strong> across all segments and +5 Reputation! Skipping diagnostics risks undiscovered mechanical and software defects in flight.</p>
           </div>
 
           <div class="verify-grid">
             <div class="verify-card">
               <h3>SYSTEMS CHECKOUT TEST BENCH</h3>
               <ul class="test-list" id="test-list">
-                <li id="test-launch">⏳ Launch Segment: Structural load &amp; fairing clearance...</li>
-                <li id="test-prop">⏳ Propulsion System: Specific impulse &amp; delta-v margin...</li>
-                <li id="test-power">⏳ Electrical Bus: Solar &amp; battery discharge test...</li>
+                <li id="test-launch">⏳ Launch Segment: Structural loads &amp; fairing volume check...</li>
+                <li id="test-prop">⏳ Propulsion System: Specific impulse &amp; delta-v burn check...</li>
+                <li id="test-power">⏳ Electrical Bus: Sensor load vs. generation check...</li>
                 <li id="test-sensors">⏳ Scientific Instruments: Sensor calibration &amp; optics...</li>
-                <li id="test-ground">⏳ Ground Receiver: Telemetry link &amp; packet synchronizer...</li>
+                <li id="test-ground">⏳ Ground Receiver: Telemetry link &amp; bandwidth check...</li>
               </ul>
-              <button class="action-btn secondary" id="btn-run-tests" style="margin-top: 1rem;">
-                RUN DIAGNOSTIC SIMULATION
+              <button class="action-btn primary" id="btn-run-tests" style="margin-top: 1rem;">
+                🔬 RUN FULL DIAGNOSTIC SIMULATION (+10% RELIABILITY)
               </button>
             </div>
 
             <div class="verify-card">
-              <h3>PURCHASE CONFIRMATION</h3>
+              <h3>PURCHASE INVOICE</h3>
               <div class="invoice-row">
                 <span>Current Budget:</span>
                 <strong id="inv-current-budget">$1,200,000</strong>
               </div>
               <div class="invoice-row">
-                <span>Total Hardware &amp; Launch Cost:</span>
+                <span>Total Mission Procurement Cost:</span>
                 <strong id="inv-cost" class="text-crimson">-$350,000</strong>
               </div>
               <div class="invoice-row total">
@@ -371,7 +473,7 @@
                 <strong id="inv-remaining" class="text-emerald">$850,000</strong>
               </div>
               <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.8rem;">
-                ⚠️ Note: If the Launch Segment fails during flight, you will suffer catastrophic budget loss. If Ground or Space fails, data will be lost.
+                ⚠️ Failure Warning: Unaddressed in-flight anomalies will rapidly drain cash and destroy the spacecraft.
               </p>
             </div>
           </div>
@@ -403,24 +505,24 @@
 
             <div class="flight-gauges-row">
               <div class="fg-item">
-                <span>ROCKET INTEGRITY (Launch):</span>
+                <span>ROCKET (Launch):</span>
                 <div class="mini-bar-wrap"><div class="mini-bar" id="fg-bar-launch" style="width: 100%;"></div></div>
                 <strong id="fg-val-launch">100%</strong>
               </div>
               <div class="fg-item">
-                <span>INSTRUMENT HEALTH (Space):</span>
+                <span>SENSORS (Space):</span>
                 <div class="mini-bar-wrap"><div class="mini-bar" id="fg-bar-space" style="width: 100%;"></div></div>
                 <strong id="fg-val-space">100%</strong>
               </div>
               <div class="fg-item">
-                <span>TELEMETRY LINK (Ground):</span>
+                <span>TELEMETRY (Ground):</span>
                 <div class="mini-bar-wrap"><div class="mini-bar" id="fg-bar-ground" style="width: 100%;"></div></div>
                 <strong id="fg-val-ground">100%</strong>
               </div>
             </div>
           </div>
 
-          <!-- Event Log & Station Dispatcher -->
+          <!-- Event Log & Timed Urgent Intervention -->
           <div class="flight-comms-col">
             <div class="comms-header">
               <div class="comms-title">
@@ -432,14 +534,20 @@
 
             <div class="event-terminal" id="flight-terminal">
               <div class="event-message">
-                <span class="timestamp">[T+000s INFO]</span> Countdown zero. Main engines ignite. Rocket has cleared the pad.
+                <span class="timestamp">[T+000s INFO]</span> Countdown zero. Main engines ignite. Vehicle has cleared the pad.
               </div>
             </div>
 
-            <!-- Minigame Alert Trigger Box -->
+            <!-- Timed Anomaly Alert Box -->
             <div class="anomaly-alert-box" id="anomaly-alert-box" style="display: none;">
-              <h4 id="anomaly-segment-badge">⚠️ LAUNCH SEGMENT ANOMALY!</h4>
-              <p id="anomaly-summary">Mechanical valve pressure spiking. Immediate player intervention required!</p>
+              <div class="anomaly-header">
+                <h4 id="anomaly-segment-badge">⚠️ ANOMALY DETECTED!</h4>
+                <span class="anomaly-countdown" id="anomaly-countdown-text">URGENT: 15s</span>
+              </div>
+              <div class="anomaly-timer-bar-wrap">
+                <div class="anomaly-timer-bar" id="anomaly-timer-bar" style="width: 100%;"></div>
+              </div>
+              <p id="anomaly-summary">Propellant valve oscillation. Failure to intervene promptly will result in vehicle destruction!</p>
               <button class="action-btn primary" id="btn-start-minigame">
                 INTERVENE &amp; SOLVE ISSUE &rarr;
               </button>
@@ -465,14 +573,17 @@
           <div class="refinery-col">
             <div class="panel-header compact">
               <h2>USER SEGMENT // DATA REFINERY (L0 &rarr; L4)</h2>
-              <p>Raw data (L0) has baseline market value. Refine and calibrate data through NASA scientific pipelines to significantly increase its market price before selling.</p>
+              <p>Refine instrument observations through NASA scientific algorithms. High-tier datasets yield massive payouts, but over-refining basic data can be unprofitable!</p>
             </div>
 
             <!-- Collected Inventory -->
             <div class="inventory-box">
-              <h3>MISSION DATA INVENTORY</h3>
+              <div class="inv-header-row">
+                <h3>MISSION DATA INVENTORY</h3>
+                <span class="inv-decay-hint">⚠️ Old data gradually decays in market value each cycle</span>
+              </div>
               <div class="data-inventory-list" id="data-inventory-list">
-                <!-- Data cards: L0, L1A, L1B, L1C, L2, L2A, L2B, L3, L3A, L4 -->
+                <!-- Data cards -->
               </div>
             </div>
 
@@ -494,7 +605,7 @@
           <div class="market-col">
             <div class="panel-header compact">
               <h2>DATA MARKET EXCHANGE</h2>
-              <p>Choose which sector to sell your processed data to. Every buyer affects your permanent Budget and Reputation differently.</p>
+              <p>Sell your processed scientific datasets. Reputation smoothly influences sell prices without sharp cliffs!</p>
             </div>
 
             <div class="buyers-grid">
@@ -505,7 +616,7 @@
                 <h4>National Science Foundation</h4>
                 <p class="buyer-desc">Peer-reviewed open science. Modest payout, but directly bolsters your academic standing and NASA reputation.</p>
                 <div class="buyer-perks">
-                  <span>💰 Sell Price: <strong>Standard (1.0x)</strong></span>
+                  <span>💰 Price: <strong>Standard (1.0x &plusmn; Rep)</strong></span>
                   <span class="text-emerald">⭐ Reputation: <strong>+8 REP</strong></span>
                 </div>
                 <button class="action-btn secondary btn-sell-action" data-buyer="institute">
@@ -516,10 +627,10 @@
               <!-- Buyer 2: Open Source -->
               <div class="buyer-card" id="buyer-opensource">
                 <div class="buyer-badge opensource">OPEN SOURCE SCIENCE</div>
-                <h4>Global Public Domain Access</h4>
+                <h4>Global Public Domain</h4>
                 <p class="buyer-desc">Publish datasets freely to humanity. You receive $0 profit, but earn massive global renown and peak reputation.</p>
                 <div class="buyer-perks">
-                  <span>💰 Sell Price: <strong>$0 (Free)</strong></span>
+                  <span>💰 Price: <strong>$0 (Free)</strong></span>
                   <span class="text-cyan">⭐ Reputation: <strong>+20 REP</strong></span>
                 </div>
                 <button class="action-btn secondary btn-sell-action" data-buyer="opensource">
@@ -527,13 +638,13 @@
                 </button>
               </div>
 
-              <!-- Buyer 3: Shady Government / Private Military -->
+              <!-- Buyer 3: Shady Government -->
               <div class="buyer-card" id="buyer-shady">
                 <div class="buyer-badge shady">SHADY CLASSIFIED AGENCY</div>
                 <h4>Black-Budget Defense Contractor</h4>
-                <p class="buyer-desc">Classified defense buyout. Pays massive amounts of money for raw and refined telemetry, but damages your reputation.</p>
+                <p class="buyer-desc">Classified defense buyout. Pays massive cash for raw and refined telemetry, but damages your reputation.</p>
                 <div class="buyer-perks">
-                  <span class="text-emerald">💰 Sell Price: <strong>Extravagant (2.5x)</strong></span>
+                  <span class="text-emerald">💰 Price: <strong>Extravagant (2.5x)</strong></span>
                   <span class="text-crimson">⭐ Reputation: <strong>-15 REP</strong></span>
                 </div>
                 <button class="action-btn secondary btn-sell-action" data-buyer="shady">
@@ -543,15 +654,29 @@
 
             </div>
 
-            <!-- Bank Loans & Emergency Upgrades (User Player Feature) -->
+            <!-- Loan Center (With Payback Options) -->
             <div class="bank-box">
-              <h3>FINANCIAL LOANS &amp; REPUTATION</h3>
-              <p>Need immediate capital to buy high-tier rockets? Take out an emergency NASA bond, or leverage high reputation for higher sales.</p>
-              <div class="bank-actions">
-                <button class="action-btn secondary" id="btn-take-loan">
-                  💵 TAKE $200,000 LOAN (-5 Rep)
-                </button>
-                <button class="action-btn primary" id="btn-next-mission-loop">
+              <h3>FINANCIAL DEBT &amp; LOAN CENTER</h3>
+              <p>Active Outstanding Debt: <strong id="debt-amount-text" class="text-crimson">$0</strong></p>
+              <div class="loan-cards-grid">
+                <div class="loan-opt">
+                  <span>NASA Emergency Grant</span>
+                  <small>+$150,000 (Costs -8 Reputation)</small>
+                  <button class="action-btn secondary mini-btn" id="btn-loan-grant">CLAIM GRANT</button>
+                </div>
+                <div class="loan-opt">
+                  <span>Commercial Bank Loan</span>
+                  <small>+$250,000 (Repay $275,000)</small>
+                  <button class="action-btn secondary mini-btn" id="btn-loan-bank">BORROW $250K</button>
+                </div>
+                <div class="loan-opt">
+                  <span>Pay Outstanding Debt</span>
+                  <small>Deduct from permanent budget</small>
+                  <button class="action-btn primary mini-btn" id="btn-pay-debt">REPAY DEBT</button>
+                </div>
+              </div>
+              <div style="margin-top: 1rem;">
+                <button class="action-btn primary full-width" id="btn-next-mission-loop">
                   🔄 COMMENCE NEXT MISSION CYCLE
                 </button>
               </div>
@@ -566,23 +691,95 @@
   </div>
 
   <!-- ============================================== -->
-  <!-- INTERACTIVE EVENT MINIGAME MODAL              -->
+  <!-- MODALS                                         -->
   <!-- ============================================== -->
+
+  <!-- DATA VAULT MODAL -->
+  <div class="modal-overlay" id="vault-modal">
+    <div class="modal-card wide">
+      <div class="modal-header">
+        <h3>📦 NASA SCIENTIFIC DATA VAULT</h3>
+        <button class="modal-close" id="vault-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>All stored datasets downlinked across all missions. Datasets decay by 15% each mission cycle they remain unsold.</p>
+        <div class="vault-list-container" id="vault-list-container">
+          <!-- Populated by app.js -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn primary" id="vault-modal-done">CLOSE VAULT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>SIMULATOR SETTINGS &amp; CONFIGURATION</h3>
+        <button class="modal-close" id="settings-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- SFX Volume -->
+        <div class="setting-item">
+          <label for="slider-volume">Audio Synthesizer Volume (<span id="volume-val">80%</span>):</label>
+          <input type="range" id="slider-volume" min="0" max="100" value="80">
+        </div>
+
+        <!-- Advanced Engineering Sliders Toggle -->
+        <div class="setting-item">
+          <div class="setting-toggle-row">
+            <div>
+              <strong>Advanced Engineering Sliders</strong>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Enables fine-tuning sliders for structural mass margin, tank volume, and power bus scaling.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="chk-adv-sliders">
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Advanced Sliders (shown when checked) -->
+        <div id="adv-sliders-wrap" style="display: none; background: rgba(3,7,18,0.5); padding: 0.75rem; border-radius: 6px; margin-top: 0.5rem;">
+          <div class="setting-item">
+            <label for="slider-mass-margin">Structural Mass Margin (<span id="val-mass-margin">+0%</span>):</label>
+            <input type="range" id="slider-mass-margin" min="-20" max="50" value="0">
+          </div>
+          <div class="setting-item">
+            <label for="slider-fuel-cap">Fuel Tank Capacity Scaling (<span id="val-fuel-scaling">1.0x</span>):</label>
+            <input type="range" id="slider-fuel-cap" min="50" max="200" value="100">
+          </div>
+        </div>
+
+        <!-- LM Studio Config -->
+        <div class="setting-item" style="margin-top: 1rem;">
+          <label for="input-lm-url">LM Studio Local Server Endpoint:</label>
+          <input type="text" id="input-lm-url" value="http://localhost:1234/v1">
+          <button class="action-btn secondary mini-btn" id="btn-test-lm-settings" style="margin-top: 0.4rem;">TEST CONNECTION</button>
+          <div id="settings-lm-status" style="font-size: 0.72rem; font-family: var(--font-mono); margin-top: 0.3rem;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn primary" id="settings-modal-save">SAVE &amp; CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE EVENT MINIGAME MODAL -->
   <div class="modal-overlay" id="minigame-modal">
     <div class="modal-card">
       <div class="modal-header">
         <h3 id="minigame-title">EMERGENCY SYSTEM INTERVENTION</h3>
-        <span class="badge" id="minigame-role-tag">LAUNCH PLAYER ROLE</span>
+        <span class="badge" id="minigame-role-tag">LAUNCH STATION</span>
       </div>
       <div class="modal-body">
-        <p id="minigame-instruction">Align the fluctuating frequency or stabilize pressure before failure occurs!</p>
+        <p id="minigame-instruction">Stabilize the pressure or align frequency before the timer runs out!</p>
         
-        <!-- Interactive Minigame Canvas / Interactive Widget -->
         <div class="minigame-container">
-          <canvas id="minigame-canvas" width="480" height="200"></canvas>
-          <div class="minigame-controls" id="minigame-controls">
-            <!-- Dynamic buttons / sliders injected here -->
-          </div>
+          <canvas id="minigame-canvas" width="480" height="180"></canvas>
+          <div class="minigame-controls" id="minigame-controls"></div>
         </div>
 
         <div class="minigame-timer-bar">
@@ -595,43 +792,7 @@
     </div>
   </div>
 
-  <!-- LM STUDIO CONFIG MODAL -->
-  <div class="modal-overlay" id="ai-modal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>LM STUDIO AI INTEGRATION</h3>
-        <button class="modal-close" id="ai-modal-close">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p>Astraea connects directly to <strong>LM Studio</strong> (running <code>Qwen 2.5 7B</code>, <code>Llama 3.1 8B</code>, etc.) to power dynamic procedural mission events, buyer negotiations, and roleplay Flight Director debriefs.</p>
-        
-        <div class="config-field">
-          <label for="input-lm-url">LM Studio Local Server Endpoint:</label>
-          <input type="text" id="input-lm-url" value="http://localhost:1234/v1">
-        </div>
-
-        <div class="ai-status-detail" id="ai-modal-status-detail">
-          Checking server status...
-        </div>
-
-        <div class="tip-box">
-          <strong>💡 How to start LM Studio:</strong>
-          <ol>
-            <li>In LM Studio, load <strong>Qwen 2.5 7B Instruct</strong>.</li>
-            <li>Click the <strong>Local Server</strong> icon (<code>&lt;-&gt;</code>) and click <strong>Start Server</strong>.</li>
-            <li>Click <em>Test Connection</em> below.</li>
-          </ol>
-          <small><em>The game includes an intelligent built-in autonomous heuristic engine, so it runs seamlessly even if LM Studio is offline.</em></small>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="action-btn secondary" id="btn-test-ai">TEST CONNECTION</button>
-        <button class="action-btn primary" id="btn-save-ai">SAVE &amp; CLOSE</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- RULES / MANUAL MODAL -->
+  <!-- MANUAL / RULES MODAL -->
   <div class="modal-overlay" id="rules-modal">
     <div class="modal-card wide">
       <div class="modal-header">
@@ -641,25 +802,25 @@
       <div class="modal-body rules-content">
         <div class="rules-grid">
           <div class="rule-item">
-            <h4>1. The 4 Mission Segments &amp; Failures</h4>
+            <h4>1. The 4 Mission Segments &amp; Failure Modes</h4>
             <ul>
-              <li><strong>Launch Segment</strong>: Rocket failure = immediate explosion, huge budget loss.</li>
-              <li><strong>Space Segment</strong>: Sensor failure = zero data collected, complete waste.</li>
+              <li><strong>Launch Segment</strong>: Rocket failure = immediate structural breakup, massive budget penalty!</li>
+              <li><strong>Space Segment</strong>: Sensor failure = zero data collected (complete waste).</li>
               <li><strong>Ground Segment</strong>: Comms failure = zero data received on Earth.</li>
               <li><strong>User Segment</strong>: Data corrupted = zero market profit.</li>
             </ul>
           </div>
           <div class="rule-item">
             <h4>2. NASA Data Processing Levels</h4>
-            <p><strong>L0</strong> (Raw) &rarr; <strong>L1A</strong> (Annotated) &rarr; <strong>L1B</strong> (Calibrated) &rarr; <strong>L1C</strong> (Inferred) &rarr; <strong>L2</strong> (Simulated) &rarr; <strong>L2A/B</strong> &rarr; <strong>L3</strong> (Stitched Maps) &rarr; <strong>L3A</strong> (Temporal Stack) &rarr; <strong>L4</strong> (Multi-sensor synthesis = $$$ endgame!).</p>
+            <p><strong>L0</strong> (Raw) &rarr; <strong>L1A</strong> (Annotated) &rarr; <strong>L1B</strong> (Calibrated) &rarr; <strong>L1C</strong> (Inferred) &rarr; <strong>L2</strong> (Simulated) &rarr; <strong>L2A/B</strong> &rarr; <strong>L3</strong> (Stitched Map) &rarr; <strong>L3A</strong> (Temporal Stack) &rarr; <strong>L4</strong> (Multi-sensor synthesis = $$$ endgame!).</p>
           </div>
           <div class="rule-item">
-            <h4>3. Market Buyers</h4>
-            <p><strong>Scientific Institute</strong>: Standard price, +Rep.<br><strong>Open Source</strong>: Free ($0), massive ++Rep.<br><strong>Shady Government</strong>: Huge cash ($$$), but --Reputation!</p>
+            <h4>3. Market Buyers &amp; Reputation</h4>
+            <p><strong>Scientific Institute</strong>: Standard price, +8 Rep.<br><strong>Open Source</strong>: Free ($0), +20 Rep.<br><strong>Shady Government</strong>: Extravagant (2.5x), -15 Rep.<br>Reputation smoothly scales market prices without cliff edges.</p>
           </div>
           <div class="rule-item">
-            <h4>4. The 4 Crew Roles</h4>
-            <p><strong>Launch Player</strong>: Rocket design &amp; mechanical repairs.<br><strong>Space Player</strong>: Instruments &amp; sensor calibration.<br><strong>Ground Player</strong>: Computer &amp; comms tracking.<br><strong>User Player</strong>: Data refinery, finances &amp; market deals.</p>
+            <h4>4. Atmospheric Re-entry Heat Shield</h4>
+            <p>Biological science missions (to ISS) take very short flight time, but mandatory sample return requires a heat shield to survive atmospheric re-entry!</p>
           </div>
         </div>
       </div>
