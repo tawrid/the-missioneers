@@ -667,7 +667,9 @@
     if (stageNum === 6) startStage6Flight();
     if (stageNum === 7) renderStage7RefineryAndMarket();
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof window.scrollTo === 'function') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   // ========================================================================
@@ -1464,6 +1466,7 @@
     DOM.minigameTitle.textContent = anomaly.title;
     DOM.minigameRoleTag.textContent = `${anomaly.seg.toUpperCase()} STATION`;
     DOM.minigameModal.classList.add('active');
+    DOM.minigameModal.style.display = 'flex';
 
     minigameTimeLeft = 100;
     DOM.minigameTimerFill.style.width = '100%';
@@ -1550,6 +1553,7 @@
   function evaluateMinigameOutcome(forceWin = false) {
     if (minigameTimer) clearInterval(minigameTimer);
     DOM.minigameModal.classList.remove('active');
+    DOM.minigameModal.style.display = 'none';
 
     const diff = Math.abs(minigameCurrentVal - minigameTargetVal);
     const success = forceWin || (diff < 20);
@@ -1775,6 +1779,7 @@
   function openDataVault() {
     playBeep(750);
     DOM.vaultModal.classList.add('active');
+    DOM.vaultModal.style.display = 'flex';
     renderVaultList();
   }
 
@@ -1859,6 +1864,7 @@
       playBeep(880);
       state.gameMode = 'singleplayer';
       DOM.mainMenuOverlay.classList.remove('active');
+      DOM.mainMenuOverlay.style.display = 'none';
       DOM.appContainer.style.display = 'flex';
       DOM.hudModeBadge.textContent = 'SINGLEPLAYER';
       DOM.rolesBar.style.display = 'none'; // HIDE in singleplayer!
@@ -1875,6 +1881,7 @@
       playBeep(880);
       state.gameMode = 'coop';
       DOM.mainMenuOverlay.classList.remove('active');
+      DOM.mainMenuOverlay.style.display = 'none';
       DOM.appContainer.style.display = 'flex';
       DOM.hudModeBadge.textContent = 'MULTIPLAYER CO-OP';
       DOM.rolesBar.style.display = 'flex';
@@ -1886,6 +1893,7 @@
       playBeep(880);
       state.gameMode = 'sabotage';
       DOM.mainMenuOverlay.classList.remove('active');
+      DOM.mainMenuOverlay.style.display = 'none';
       DOM.appContainer.style.display = 'flex';
       DOM.hudModeBadge.textContent = 'SABOTEUR MODE';
       DOM.rolesBar.style.display = 'flex';
@@ -1899,28 +1907,99 @@
     DOM.menuBtnSettings.addEventListener('click', () => {
       playBeep(650);
       DOM.settingsModal.classList.add('active');
+      DOM.settingsModal.style.display = 'flex';
     });
 
     DOM.menuBtnManual.addEventListener('click', () => {
       playBeep(650);
       DOM.rulesModal.classList.add('active');
+      DOM.rulesModal.style.display = 'flex';
     });
 
     DOM.btnReturnMenu.addEventListener('click', () => {
       playBeep(600);
       DOM.mainMenuOverlay.classList.add('active');
+      DOM.mainMenuOverlay.style.display = 'flex';
       DOM.appContainer.style.display = 'none';
     });
 
+    // Station Role Tabs (Multiplayer Co-op & Saboteur)
+    if (DOM.roleTabs) {
+      Object.keys(DOM.roleTabs).forEach(roleKey => {
+        const tab = DOM.roleTabs[roleKey];
+        if (tab) {
+          tab.addEventListener('click', () => {
+            playBeep(700);
+            Object.values(DOM.roleTabs).forEach(t => t && t.classList.remove('active'));
+            tab.classList.add('active');
+            state.userRole = roleKey;
+            if (state.stage === 4) {
+              if (roleKey === 'launch') {
+                activeDesignSegment = 'launch';
+                renderStage4Design();
+              } else if (roleKey === 'space') {
+                activeDesignSegment = 'space';
+                renderStage4Design();
+              } else if (roleKey === 'ground') {
+                activeDesignSegment = 'ground';
+                renderStage4Design();
+              }
+            }
+          });
+        }
+      });
+    }
+
     // Vault Button
     DOM.btnOpenVault.addEventListener('click', openDataVault);
-    DOM.vaultModalClose.addEventListener('click', () => DOM.vaultModal.classList.remove('active'));
-    DOM.vaultModalDone.addEventListener('click', () => DOM.vaultModal.classList.remove('active'));
+    DOM.vaultModalClose.addEventListener('click', () => {
+      DOM.vaultModal.classList.remove('active');
+      DOM.vaultModal.style.display = 'none';
+    });
+    DOM.vaultModalDone.addEventListener('click', () => {
+      DOM.vaultModal.classList.remove('active');
+      DOM.vaultModal.style.display = 'none';
+    });
 
     // Settings Button & Volume
-    DOM.btnOpenSettings.addEventListener('click', () => DOM.settingsModal.classList.add('active'));
-    DOM.settingsModalClose.addEventListener('click', () => DOM.settingsModal.classList.remove('active'));
-    DOM.settingsModalSave.addEventListener('click', () => DOM.settingsModal.classList.remove('active'));
+    DOM.btnOpenSettings.addEventListener('click', () => {
+      DOM.settingsModal.classList.add('active');
+      DOM.settingsModal.style.display = 'flex';
+    });
+    DOM.settingsModalClose.addEventListener('click', () => {
+      DOM.settingsModal.classList.remove('active');
+      DOM.settingsModal.style.display = 'none';
+    });
+    DOM.settingsModalSave.addEventListener('click', () => {
+      DOM.settingsModal.classList.remove('active');
+      DOM.settingsModal.style.display = 'none';
+    });
+
+    // LM Studio Test Connection
+    if (DOM.btnTestLmSettings) {
+      DOM.btnTestLmSettings.addEventListener('click', async () => {
+        playBeep(750);
+        DOM.settingsLmStatus.textContent = 'Testing connection to LM Studio...';
+        DOM.settingsLmStatus.className = 'text-amber';
+        const lmUrl = document.getElementById('setting-lm-url')?.value || 'http://localhost:1234/v1';
+        try {
+          const resp = await fetch(`${lmUrl}/models`, { method: 'GET', signal: AbortSignal.timeout(3000) });
+          if (resp.ok) {
+            const data = await resp.json();
+            const modelCount = data.data ? data.data.length : 1;
+            DOM.settingsLmStatus.textContent = `✅ Connected! Found ${modelCount} active model(s).`;
+            DOM.settingsLmStatus.className = 'text-emerald';
+            playBeep(1200);
+          } else {
+            DOM.settingsLmStatus.textContent = `⚠️ Connected, but models endpoint returned ${resp.status}. Built-in fallback ready.`;
+            DOM.settingsLmStatus.className = 'text-amber';
+          }
+        } catch (err) {
+          DOM.settingsLmStatus.textContent = 'ℹ️ LM Studio offline or CORS blocked. Built-in procedural AI fallback will handle all events.';
+          DOM.settingsLmStatus.className = 'text-muted';
+        }
+      });
+    }
 
     DOM.sliderVolume.addEventListener('input', (e) => {
       masterVolume = parseInt(e.target.value) / 100;
@@ -2040,8 +2119,14 @@
     DOM.btnNextMissionLoop.addEventListener('click', commenceNextMissionCycle);
 
     // Rules Modal
-    DOM.rulesModalClose.addEventListener('click', () => DOM.rulesModal.classList.remove('active'));
-    DOM.btnCloseRules.addEventListener('click', () => DOM.rulesModal.classList.remove('active'));
+    DOM.rulesModalClose.addEventListener('click', () => {
+      DOM.rulesModal.classList.remove('active');
+      DOM.rulesModal.style.display = 'none';
+    });
+    DOM.btnCloseRules.addEventListener('click', () => {
+      DOM.rulesModal.classList.remove('active');
+      DOM.rulesModal.style.display = 'none';
+    });
   }
 
   function init() {
