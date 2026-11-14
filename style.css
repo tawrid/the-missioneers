@@ -116,17 +116,136 @@ body {
   to { opacity: 1; transform: scale(1); }
 }
 
-.menu-nasa-logo {
-  font-family: var(--font-hud);
-  font-weight: 700;
-  font-size: 2rem;
-  letter-spacing: 6px;
-  color: #ef4444;
-  border: 3px solid #ef4444;
-  padding: 0.2rem 0.8rem;
-  border-radius: 6px;
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+.menu-nasa-logo-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   margin-bottom: 1.25rem;
+  animation: zeroGFloat 5s ease-in-out infinite;
+  cursor: pointer;
+}
+
+.hud-nasa-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.25s ease;
+}
+
+.hud-nasa-logo-wrap:hover {
+  transform: scale(1.1);
+}
+
+.nasa-meatball-svg {
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 0 16px rgba(11, 61, 145, 0.75)) drop-shadow(0 0 25px rgba(252, 61, 33, 0.35));
+  transition: filter 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.nasa-meatball-svg.menu-logo:hover {
+  transform: scale(1.08) rotate(-1.5deg);
+  filter: drop-shadow(0 0 28px rgba(0, 242, 254, 0.85)) drop-shadow(0 0 38px rgba(252, 61, 33, 0.65));
+}
+
+.nasa-meatball-svg.hud-logo {
+  filter: drop-shadow(0 0 8px rgba(11, 61, 145, 0.6)) drop-shadow(0 0 12px rgba(252, 61, 33, 0.3));
+}
+
+.nasa-meatball-svg.hud-logo:hover {
+  filter: drop-shadow(0 0 16px rgba(0, 242, 254, 0.8)) drop-shadow(0 0 20px rgba(252, 61, 33, 0.5));
+}
+
+.nasa-sphere {
+  filter: drop-shadow(0 0 8px rgba(11, 61, 145, 0.5));
+}
+
+.nasa-stars {
+  transition: opacity 0.3s ease;
+}
+
+.nasa-orbit-path {
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.6));
+}
+
+.nasa-satellite-system {
+  transform-origin: center;
+}
+
+.nasa-lettering {
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.4));
+}
+
+/* Twinkling star field animation */
+@keyframes nasaTwinkle {
+  0%, 100% {
+    opacity: 0.95;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.75);
+  }
+}
+
+.nasa-stars-1 {
+  animation: nasaTwinkle 2.5s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.nasa-stars-2 {
+  animation: nasaTwinkle 3.2s ease-in-out infinite 0.8s;
+  transform-origin: center;
+}
+
+.nasa-stars-3 {
+  animation: nasaTwinkle 2.1s ease-in-out infinite 1.4s;
+  transform-origin: center;
+}
+
+/* Supersonic Vector Shimmer */
+@keyframes chevronShimmer {
+  0% {
+    filter: drop-shadow(0 0 2px rgba(252, 61, 33, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 7px rgba(255, 87, 51, 0.95));
+  }
+  100% {
+    filter: drop-shadow(0 0 2px rgba(252, 61, 33, 0.5));
+  }
+}
+
+.nasa-chevron {
+  animation: chevronShimmer 3s ease-in-out infinite;
+}
+
+/* Zero-G Floating Levitation */
+@keyframes zeroGFloat {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(1deg);
+  }
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+}
+
+/* Orbital Dotted Ring Pulse */
+@keyframes orbitPulse {
+  0%, 100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.nasa-orbit-ring {
+  animation: orbitPulse 2.8s ease-in-out infinite;
 }
 
 .menu-title {
@@ -286,19 +405,7 @@ body {
 .hud-brand {
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-
-.nasa-worm {
-  font-family: var(--font-hud);
-  font-weight: 700;
-  font-size: 1.4rem;
-  letter-spacing: 4px;
-  color: #ef4444;
-  border: 2px solid #ef4444;
-  padding: 0.12rem 0.5rem;
-  border-radius: 4px;
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+  gap: 0.85rem;
 }
 
 .hud-title {
