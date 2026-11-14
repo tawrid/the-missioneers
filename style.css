@@ -583,19 +583,40 @@ body {
   margin-bottom: 0.65rem;
   font-family: var(--font-mono);
   font-size: 0.75rem;
+  overflow: hidden;
 }
 
 .ticker-label {
   color: var(--color-amber);
   font-weight: 700;
   white-space: nowrap;
+  flex-shrink: 0;
+  z-index: 2;
+  background: rgba(13, 19, 33, 0.9);
+  padding-right: 0.5rem;
+}
+
+.ticker-marquee-wrap {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
 }
 
 .ticker-text {
+  display: inline-block;
   color: #fef08a;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  padding-left: 100%;
+  animation: tickerScroll 26s linear infinite;
+}
+
+.trends-ticker:hover .ticker-text {
+  animation-play-state: paused;
+}
+
+@keyframes tickerScroll {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-100%); }
 }
 
 /* Phase Stepper */
@@ -2262,6 +2283,51 @@ input:checked + .slider:before {
   padding: 0.75rem 1rem;
   font-family: var(--font-mono);
   font-size: 0.82rem;
+}
+
+/* Trending Instrument Badge */
+.inst-trending-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.55);
+  color: #fde047;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Stage 7 Multi-Dataset Combining Controls */
+.combine-panel {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.combine-panel label {
+  font-size: 0.76rem;
+  color: var(--color-cyan);
+  font-weight: 700;
+}
+
+.combine-select {
+  width: 100%;
+  background: #0f172a;
+  color: #fff;
+  border: 1px solid var(--border-hud-bright);
+  border-radius: 4px;
+  padding: 0.45rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
 }
 
 /* Utilities */

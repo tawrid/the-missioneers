@@ -330,7 +330,9 @@
     <!-- Market Trends Ticker Bar -->
     <div class="trends-ticker" id="trends-ticker">
       <span class="ticker-label">🔥 GLOBAL DATA DEMAND TREND:</span>
-      <span class="ticker-text" id="ticker-text">Loading current NASA planetary &amp; Earth science market trends...</span>
+      <div class="ticker-marquee-wrap">
+        <span class="ticker-text" id="ticker-text">Loading current NASA planetary &amp; Earth science market trends...</span>
+      </div>
     </div>
 
     <!-- NASA Mission Lifecycle Process Stepper -->
@@ -641,7 +643,7 @@
                 <li id="test-ground">⏳ Ground Receiver: Telemetry link &amp; bandwidth check...</li>
               </ul>
               <button class="action-btn primary" id="btn-run-tests" style="margin-top: 1rem;">
-                🔬 RUN FULL DIAGNOSTIC SIMULATION (+10% RELIABILITY)
+                🔬 RUN FULL DIAGNOSTIC SIMULATION (-$35,000 | +10% RELIABILITY)
               </button>
             </div>
 
@@ -767,7 +769,7 @@
             <div class="inventory-box">
               <div class="inv-header-row">
                 <h3>MISSION DATA INVENTORY</h3>
-                <span class="inv-decay-hint">⚠️ Old data gradually decays in market value each cycle</span>
+                <span class="inv-decay-hint">✅ Stored datasets retain 100% of their scientific value across cycles</span>
               </div>
               <div class="data-inventory-list" id="data-inventory-list">
                 <!-- Data cards -->
@@ -784,6 +786,13 @@
                 <button class="action-btn primary" id="btn-refine-data">
                   REFINE DATA (SPEND LAB TIME)
                 </button>
+                <div class="combine-panel" id="combine-panel" style="display: none;">
+                  <label for="combine-partner-select">🔗 SELECT 2ND DATASET TO COMBINE (2 &rarr; 1 SYNTHESIS):</label>
+                  <select class="combine-select" id="combine-partner-select"></select>
+                  <button class="action-btn primary" id="btn-combine-data">
+                    COMBINE 2 DATASETS
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1035,6 +1044,38 @@
           <button class="action-btn secondary" id="init-btn-advanced" style="flex-direction: column; padding: 1.1rem; height: auto; text-align: center;">
             <strong style="font-size: 0.95rem;">ADVANCED CONTROLS</strong>
             <span style="font-size: 0.72rem; font-weight: 400; margin-top: 0.35rem; opacity: 0.9;">No presets — design your own rocket, spacecraft bus, and ground link using engineering sliders.</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INITIALIZATION DIFFICULTY & SANDBOX MODAL -->
+  <div class="modal-overlay" id="init-difficulty-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>MISSION DIFFICULTY // SELECT BUDGET &amp; RISK PROFILE</h3>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Select your operational difficulty or launch in Sandbox Mode with infinite funds to experiment freely.
+        </p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+          <button class="action-btn secondary" id="diff-btn-easy" style="flex-direction: column; padding: 0.95rem; height: auto; text-align: center;">
+            <strong style="font-size: 0.9rem; color: var(--color-emerald);">EASY (CADET)</strong>
+            <span style="font-size: 0.72rem; font-weight: 400; margin-top: 0.3rem; opacity: 0.9;">$2,000,000 Starting Budget &bull; Reduced Anomalies (45%)</span>
+          </button>
+          <button class="action-btn secondary" id="diff-btn-normal" style="flex-direction: column; padding: 0.95rem; height: auto; text-align: center;">
+            <strong style="font-size: 0.9rem; color: var(--color-cyan);">NORMAL (ENGINEER)</strong>
+            <span style="font-size: 0.72rem; font-weight: 400; margin-top: 0.3rem; opacity: 0.9;">$1,500,000 Starting Budget &bull; Moderate Anomalies (70%)</span>
+          </button>
+          <button class="action-btn primary" id="diff-btn-hard" style="flex-direction: column; padding: 0.95rem; height: auto; text-align: center;">
+            <strong style="font-size: 0.9rem;">HARD (FLIGHT DIRECTOR)</strong>
+            <span style="font-size: 0.72rem; font-weight: 400; margin-top: 0.3rem; opacity: 0.9;">$1,200,000 Starting Budget &bull; Frequent + Extra Anomalies</span>
+          </button>
+          <button class="action-btn secondary" id="diff-btn-sandbox" style="flex-direction: column; padding: 0.95rem; height: auto; text-align: center; border-color: var(--color-gold);">
+            <strong style="font-size: 0.9rem; color: var(--color-gold);">SANDBOX (&infin; FUNDS)</strong>
+            <span style="font-size: 0.72rem; font-weight: 400; margin-top: 0.3rem; opacity: 0.9;">Infinite Money &bull; Experiment with Any Ship &amp; Instruments</span>
           </button>
         </div>
       </div>

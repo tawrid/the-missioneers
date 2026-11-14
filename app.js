@@ -276,14 +276,85 @@
     'L4': { name: 'Level 4 (Integrated Multi-Sensor)', baseVal: 1950000, next: null, refineCost: 0, desc: 'Endgame comprehensive multi-sensor synthesis. Peak market value.' }
   };
 
-  // Dynamic Market Trends (rotates each cycle)
+  // Dynamic Market Trends (rotates each cycle, scrolls as news headline)
   const MARKET_TREND_POOLS = [
-    { text: 'Wildfire Season Alert: VIIRS, AIRS & Atmosphere data in peak demand (+70% Sell Value)', domain: 'earth', boost: 1.7 },
-    { text: 'Solar Maximum Approaching: Heliophysics Plasma & Cosmic Ray data surging (+80% Sell Value)', domain: 'helio', boost: 1.8 },
-    { text: 'Exoplanet Transit Breakthrough: Astrophysics NIRSpec, NEID & Light data surging (+75% Sell Value)', domain: 'astro', boost: 1.75 },
-    { text: 'Mars Sample Return Priority: CRISM, SAM & Mineralogy telemetry in high demand (+65% Sell Value)', domain: 'planetary', boost: 1.65 },
-    { text: 'ISS Commercial Biotech Boom: Space Life Sciences DNA & MinION data in peak demand (+85% Sell Value)', domain: 'life', boost: 1.85 }
+    {
+      text: '🔥 [EARTH SCIENCE] Wildfire & Climate Alert: Thermal Energy (CERES/AIRS), Atmosphere (MOPITT/TEMPO) & Biosphere (MODIS/VIIRS) in peak demand (+70% Sell Value)',
+      domain: 'earth',
+      domainName: 'Earth Science',
+      trendingInstIds: ['thermal_energy', 'atmosphere', 'biosphere'],
+      boost: 1.7
+    },
+    {
+      text: '🔥 [HELIOPHYSICS] Solar Maximum Approaching: Plasma (SWEPAM/WIND), Cosmic Rays (CRIS/EPAM) & Magnetic/Electric Fields surging (+80% Sell Value)',
+      domain: 'helio',
+      domainName: 'Heliophysics',
+      trendingInstIds: ['plasma', 'cosmic_rays', 'mag_elec_fields'],
+      boost: 1.8
+    },
+    {
+      text: '🔥 [ASTROPHYSICS] Exoplanet Transit Breakthrough: Light (JWST/NIRSpec), Chemical Composition & Time/Ray Bursts surging (+75% Sell Value)',
+      domain: 'astro',
+      domainName: 'Astrophysics',
+      trendingInstIds: ['light', 'chemical_comp', 'ray_bursts'],
+      boost: 1.75
+    },
+    {
+      text: '🔥 [PLANETARY SCIENCE] Mars Sample Return Priority: Minerals (CRISM/MRO), Atmosphere (SAM) & Topography telemetry in high demand (+65% Sell Value)',
+      domain: 'planetary',
+      domainName: 'Planetary Science',
+      trendingInstIds: ['minerals', 'atmosphere', 'topography'],
+      boost: 1.65
+    },
+    {
+      text: '🔥 [LIFE SCIENCES] ISS Commercial Biotech Boom: DNA (MinION), Microbiomes & Spaceflight Environment data in peak demand (+85% Sell Value)',
+      domain: 'life',
+      domainName: 'Life Sciences',
+      trendingInstIds: ['dna', 'microbiomes', 'spaceflight_env'],
+      boost: 1.85
+    }
   ];
+
+  const DIFFICULTY_MODES = {
+    easy: {
+      id: 'easy',
+      name: 'EASY',
+      startingBudget: 2000000,
+      anomalyChance: 0.45,
+      extraAnomalyChance: 0,
+      anomalyDrain: 5000,
+      infiniteBudget: false
+    },
+    normal: {
+      id: 'normal',
+      name: 'NORMAL',
+      startingBudget: 1500000,
+      anomalyChance: 0.70,
+      extraAnomalyChance: 0,
+      anomalyDrain: 8000,
+      infiniteBudget: false
+    },
+    hard: {
+      id: 'hard',
+      name: 'HARD',
+      startingBudget: 1200000,
+      anomalyChance: 1.0,
+      extraAnomalyChance: 0.5,
+      anomalyDrain: 12000,
+      infiniteBudget: false
+    },
+    sandbox: {
+      id: 'sandbox',
+      name: 'SANDBOX ∞',
+      startingBudget: 999999999,
+      anomalyChance: 0.35,
+      extraAnomalyChance: 0,
+      anomalyDrain: 0,
+      infiniteBudget: true
+    }
+  };
+
+  const DIAGNOSTIC_COST = 35000;
 
   // ========================================================================
   // 2. AUDIO SYNTHESIZER WITH MASTER VOLUME SLIDER
@@ -362,6 +433,7 @@
     // Mode
     gameMode: 'singleplayer', // 'singleplayer' | 'coop' | 'sabotage'
     saboteurRole: null, // 'launch' | 'space' | 'ground'
+    difficulty: 'hard', // 'easy' | 'normal' | 'hard' | 'sandbox'
 
     // Permanent Resources
     budget: 1200000,
@@ -369,7 +441,7 @@
     activeDebt: 0,
     missionCycle: 1,
     currentTrend: MARKET_TREND_POOLS[0],
-    dataInventory: [], // array of { id, name, domain, level, estValue, cyclesOld, rawCost }
+    dataInventory: [], // array of { id, name, domain, level, estValue }
 
     // Advanced Customization Sliders
     customSlidersEnabled: false,
@@ -391,6 +463,7 @@
     stage: 1,
     selectedDomain: null,
     selectedInstruments: [], // array of { instId, name, fullName, tier, mass, power, cost, link, desc }
+    instrumentTiers: {}, // { [instGroup.id]: 1 | 2 } — persists T1/T2 selection even before equipping
 
     // Design Selections (RESET to launch on cycle!)
     selections: {
@@ -589,6 +662,9 @@
     processingRecipe: document.getElementById('processing-recipe'),
     processingControls: document.getElementById('processing-controls'),
     btnRefineData: document.getElementById('btn-refine-data'),
+    combinePanel: document.getElementById('combine-panel'),
+    combinePartnerSelect: document.getElementById('combine-partner-select'),
+    btnCombineData: document.getElementById('btn-combine-data'),
     debtAmountText: document.getElementById('debt-amount-text'),
     btnLoanGrant: document.getElementById('btn-loan-grant'),
     btnLoanBank: document.getElementById('btn-loan-bank'),
@@ -630,23 +706,41 @@
 
     initModeModal: document.getElementById('init-mode-modal'),
     initBtnBasic: document.getElementById('init-btn-basic'),
-    initBtnAdvanced: document.getElementById('init-btn-advanced')
+    initBtnAdvanced: document.getElementById('init-btn-advanced'),
+
+    initDifficultyModal: document.getElementById('init-difficulty-modal'),
+    diffBtnEasy: document.getElementById('diff-btn-easy'),
+    diffBtnNormal: document.getElementById('diff-btn-normal'),
+    diffBtnHard: document.getElementById('diff-btn-hard'),
+    diffBtnSandbox: document.getElementById('diff-btn-sandbox')
   };
 
   // ========================================================================
   // 5. HUD UPDATES & CONTINUOUS REPUTATION CURVE
   // ========================================================================
 
+  function getDifficultyConfig() {
+    return DIFFICULTY_MODES[state.difficulty] || DIFFICULTY_MODES.hard;
+  }
+
+  function isInfiniteBudget() {
+    return getDifficultyConfig().infiniteBudget === true;
+  }
+
   function getReputationPriceMultiplier() {
     // Smooth continuous curve: 50 rep = 1.0x, 0 rep = 0.70x, 100 rep = 1.30x
-    return 1.0 + (state.reputation - 50) * 0.006;
+    // Plus +25% Flagship Partner multiplier at 100 Reputation!
+    const base = 1.0 + (state.reputation - 50) * 0.006;
+    return state.reputation >= 100 ? base * 1.25 : base;
   }
 
   function updatePermanentHud() {
-    DOM.hudBudget.textContent = `$${state.budget.toLocaleString()}`;
-    DOM.hudRep.textContent = `${state.reputation} / 100`;
+    DOM.hudBudget.textContent = isInfiniteBudget() ? '∞ SANDBOX' : `$${state.budget.toLocaleString()}`;
+    DOM.hudRep.textContent = state.reputation >= 100 ? '100 / 100 🏆 FLAGSHIP' : `${state.reputation} / 100`;
 
-    if (state.reputation < 35) {
+    if (state.reputation >= 100) {
+      DOM.hudRep.className = 'res-val text-gold';
+    } else if (state.reputation < 35) {
       DOM.hudRep.className = 'res-val text-amber';
     } else {
       DOM.hudRep.className = 'res-val text-emerald';
@@ -735,23 +829,32 @@
       // Check if selected
       const existing = state.selectedInstruments.find(i => i.instId === instGroup.id);
       const isSelected = !!existing;
-      const currentTier = existing ? existing.tier : 1;
+      const currentTier = existing ? existing.tier : (state.instrumentTiers[instGroup.id] || 1);
       const activeData = currentTier === 1 ? instGroup.t1 : instGroup.t2;
+
+      const isTrendingInst = !!(
+        state.currentTrend &&
+        state.currentTrend.domain === domain.id &&
+        Array.isArray(state.currentTrend.trendingInstIds) &&
+        state.currentTrend.trendingInstIds.includes(instGroup.id)
+      );
+      const trendingTagHtml = isTrendingInst ? `<span class="inst-trending-tag">🔥 TRENDING</span>` : '';
+      const t2Locked = state.reputation < 35 && !isInfiniteBudget();
 
       const card = document.createElement('div');
       card.className = `instrument-card ${isSelected ? 'selected' : ''}`;
 
       card.innerHTML = `
         <div class="inst-header">
-          <h4 class="inst-title">${instGroup.category}</h4>
+          <h4 class="inst-title">${instGroup.category} ${trendingTagHtml}</h4>
           <span class="inst-name-badge">${activeData.name}</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
           <span style="font-size: 0.78rem; font-weight: 600; color: #fff;">${activeData.fullName}</span>
           <div class="tier-toggle-group">
             <button class="tier-btn ${currentTier === 1 ? 'active' : ''}" data-tier="1">T1</button>
-            <button class="tier-btn ${currentTier === 2 ? 'active' : ''}" data-tier="2" ${state.reputation < 35 ? 'title="Requires 35+ Reputation"' : ''}>
-              T2 ${state.reputation < 35 ? '🔒' : ''}
+            <button class="tier-btn ${currentTier === 2 ? 'active' : ''}" data-tier="2" ${t2Locked ? 'title="Requires 35+ Reputation"' : ''}>
+              T2 ${t2Locked ? '🔒' : ''}
             </button>
           </div>
         </div>
@@ -786,6 +889,8 @@
 
       btnT1.addEventListener('click', (e) => {
         e.stopPropagation();
+        playBeep(650);
+        state.instrumentTiers[instGroup.id] = 1;
         if (existing) {
           existing.tier = 1;
           existing.name = instGroup.t1.name;
@@ -799,11 +904,13 @@
 
       btnT2.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (state.reputation < 35) {
+        if (state.reputation < 35 && !isInfiniteBudget()) {
           playAlarm();
           alert('Tier 2 advanced NRT sensors require at least 35 Reputation!');
           return;
         }
+        playBeep(820);
+        state.instrumentTiers[instGroup.id] = 2;
         if (existing) {
           existing.tier = 2;
           existing.name = instGroup.t2.name;
@@ -1226,11 +1333,15 @@
     };
 
     // Update HUD
-    DOM.valCost.textContent = `$${totalCost.toLocaleString()} / $${state.budget.toLocaleString()}`;
-    const costPct = state.budget > 0 ? Math.min(100, Math.round((totalCost / state.budget) * 100)) : 0;
+    const sandbox = isInfiniteBudget();
+    const overBudget = !sandbox && totalCost > state.budget;
+    DOM.valCost.textContent = sandbox ? `$${totalCost.toLocaleString()} / ∞` : `$${totalCost.toLocaleString()} / $${state.budget.toLocaleString()}`;
+    const costPct = sandbox ? 15 : (state.budget > 0 ? Math.min(100, Math.round((totalCost / state.budget) * 100)) : 0);
     DOM.barCost.style.width = `${costPct}%`;
-    DOM.barCost.className = `progress-bar ${totalCost > state.budget ? 'danger' : ''}`;
-    DOM.hintCost.textContent = totalCost > state.budget ? '⚠️ INSUFFICIENT PERMANENT FUNDS!' : `Balance remaining: $${(state.budget - totalCost).toLocaleString()}`;
+    DOM.barCost.className = `progress-bar ${overBudget ? 'danger' : ''}`;
+    DOM.hintCost.textContent = sandbox
+      ? '✅ SANDBOX MODE: Unlimited R&D Funding'
+      : (overBudget ? '⚠️ INSUFFICIENT PERMANENT FUNDS!' : `Balance remaining: $${(state.budget - totalCost).toLocaleString()}`);
 
     // Mass
     DOM.valMass.textContent = `${totalMass.toLocaleString()} / ${maxMass.toLocaleString()} kg`;
@@ -1272,7 +1383,7 @@
       powerConsumed <= powerGen &&
       volumeUsed <= maxVolume &&
       velocityDV >= state.tempResources.reqVelocity &&
-      totalCost <= state.budget &&
+      (sandbox || totalCost <= state.budget) &&
       instrumentsCountOk
     );
 
@@ -1288,10 +1399,17 @@
   function renderStage5Verification() {
     testsRun = false;
     DOM.btnNextStage5.disabled = false; // Player can choose to launch directly or run test
+    const sandbox = isInfiniteBudget();
+    const diagFee = sandbox ? 0 : DIAGNOSTIC_COST;
 
-    DOM.invCurrentBudget.textContent = `$${state.budget.toLocaleString()}`;
+    DOM.invCurrentBudget.textContent = sandbox ? '∞ SANDBOX' : `$${state.budget.toLocaleString()}`;
     DOM.invCost.textContent = `-$${state.tempResources.totalCost.toLocaleString()}`;
-    DOM.invRemaining.textContent = `$${(state.budget - state.tempResources.totalCost).toLocaleString()}`;
+    DOM.invRemaining.textContent = sandbox ? '∞ SANDBOX' : `$${(state.budget - state.tempResources.totalCost).toLocaleString()}`;
+
+    DOM.btnRunTests.textContent = sandbox
+      ? '🔬 RUN FULL DIAGNOSTIC SIMULATION (FREE IN SANDBOX | +10% RELIABILITY)'
+      : `🔬 RUN FULL DIAGNOSTIC SIMULATION (-$${DIAGNOSTIC_COST.toLocaleString()} | +10% RELIABILITY)`;
+    DOM.btnRunTests.disabled = !sandbox && state.budget < diagFee;
 
     DOM.testList.innerHTML = `
       <li id="test-launch">⏳ Launch Segment: Structural loads &amp; fairing volume check...</li>
@@ -1303,6 +1421,20 @@
   }
 
   function runSystemDiagnostics() {
+    const sandbox = isInfiniteBudget();
+    if (!sandbox && state.budget < DIAGNOSTIC_COST) {
+      playAlarm();
+      alert(`Insufficient funds for Pre-Flight Diagnostics ($${DIAGNOSTIC_COST.toLocaleString()} required).`);
+      return;
+    }
+
+    if (!sandbox) {
+      state.budget -= DIAGNOSTIC_COST;
+      updatePermanentHud();
+      DOM.invCurrentBudget.textContent = `$${state.budget.toLocaleString()}`;
+      DOM.invRemaining.textContent = `$${(state.budget - state.tempResources.totalCost).toLocaleString()}`;
+    }
+
     playBeep(900);
     DOM.btnRunTests.disabled = true;
 
@@ -1345,9 +1477,11 @@
   let flightDurationMs = 12000;
 
   function startStage6Flight() {
-    // Deduct procurement cost
-    state.budget -= state.tempResources.totalCost;
-    updatePermanentHud();
+    // Deduct procurement cost (unless Sandbox)
+    if (!isInfiniteBudget()) {
+      state.budget -= state.tempResources.totalCost;
+      updatePermanentHud();
+    }
 
     state.flight = {
       segment: 'launch',
@@ -1371,7 +1505,7 @@
     flightDurationMs = state.selectedDomain.transitDurationSec * 1000;
 
     logFlightMessage(`🚀 IGNITION: Spacecraft launching on ${state.selectedDomain.name} mission trajectory.`);
-    logFlightMessage(`⏱️ Mission transit profile: ${state.selectedDomain.transitDurationSec}s transit.`);
+    logFlightMessage(`⏱️ Mission transit profile: ${state.selectedDomain.transitDurationSec}s transit (${getDifficultyConfig().name}).`);
 
     const canvas = DOM.flightCanvas;
     canvasFlightCtx = canvas.getContext('2d');
@@ -1392,7 +1526,9 @@
   }
 
   function scheduleFlightMilestones() {
+    const diff = getDifficultyConfig();
     const tLaunch = flightDurationMs * 0.25;
+    const tExtra = flightDurationMs * 0.42;
     const tSpace = flightDurationMs * 0.55;
     const tGround = flightDurationMs * 0.80;
     const tEnd = flightDurationMs * 1.05;
@@ -1406,6 +1542,17 @@
       logFlightMessage('🛰️ Main stage separation confirmed. Spacecraft bus deployed solar panels.');
       triggerTimedAnomaly('launch');
     }, tLaunch);
+
+    // Extra anomaly window on Hard difficulty
+    if (diff.extraAnomalyChance > 0) {
+      setTimeout(() => {
+        if (!state.flight.running || state.flight.anomalyActive) return;
+        if (Math.random() < diff.extraAnomalyChance) {
+          logFlightMessage('⚠️ Deep-space solar flare interference detected!', true);
+          triggerTimedAnomaly('space');
+        }
+      }, tExtra);
+    }
 
     // Space Segment milestone
     setTimeout(() => {
@@ -1461,8 +1608,13 @@
   function triggerTimedAnomaly(seg) {
     if (state.flight.anomalyActive) return;
 
+    const diff = getDifficultyConfig();
     // Saboteur mode logic
     const isSabotaged = (state.gameMode === 'sabotage') && (state.saboteurRole === seg);
+    if (!isSabotaged && Math.random() > diff.anomalyChance) {
+      logFlightMessage(`✅ ${seg.toUpperCase()} segment nominal — no anomaly triggered.`);
+      return;
+    }
 
     let anomaly = null;
     if (seg === 'launch') {
@@ -1507,11 +1659,11 @@
       DOM.anomalyTimerBar.style.width = `${Math.max(0, pct)}%`;
       DOM.anomalyCountdownText.textContent = `URGENT: ${state.flight.anomalyUrgentSeconds}s`;
 
-      // Passive financial drain while delayed
-      if (state.flight.anomalyUrgentSeconds % 3 === 0) {
-        state.budget = Math.max(0, state.budget - 10000);
+      // Passive financial drain while delayed (scaled by difficulty, 0 in Sandbox)
+      if (state.flight.anomalyUrgentSeconds % 3 === 0 && diff.anomalyDrain > 0 && !isInfiniteBudget()) {
+        state.budget = Math.max(0, state.budget - diff.anomalyDrain);
         updatePermanentHud();
-        logFlightMessage('⚠️ Telemetry anomaly leaking fuel & funds: -$10,000 lost to drift.', true);
+        logFlightMessage(`⚠️ Telemetry anomaly leaking fuel & funds: -$${diff.anomalyDrain.toLocaleString()} lost to drift.`, true);
       }
 
       if (state.flight.anomalyUrgentSeconds <= 0) {
@@ -1728,14 +1880,35 @@
   }
 
   // ========================================================================
-  // 13. STAGE 7: DATA REFINERY (L0 -> L4), DECAY & MULTI-INPUT RECIPES
+  // 13. STAGE 7: DATA REFINERY (L0 -> L4) & 2-DATASET COMBINING
   // ========================================================================
 
+  const LEVEL_ORDER = ['L0', 'L1A', 'L1B', 'L1C', 'L2', 'L2A', 'L2B', 'L3', 'L3A', 'L4'];
+
+  function isLevelAtLeast(level, minLevel) {
+    return LEVEL_ORDER.indexOf(level) >= LEVEL_ORDER.indexOf(minLevel);
+  }
+
+  function getCombineConfig(level) {
+    if (level === 'L1C') {
+      return { target: 'L2', minPartnerLevel: 'L1C', cost: 20000, required: false, label: 'Combine 2× L1C+ datasets into L2 (Alternate Recipe)' };
+    }
+    if (level === 'L2B') {
+      return { target: 'L3', minPartnerLevel: 'L2B', cost: 95000, required: true, label: 'Stitch 2× L2B+ datasets into 1 L3 Spatial Map' };
+    }
+    if (level === 'L3') {
+      return { target: 'L3A', minPartnerLevel: 'L2B', cost: 130000, required: true, label: 'Stack L3 + L2B+ dataset into 1 L3A Temporal Interval' };
+    }
+    if (level === 'L3A') {
+      return { target: 'L4', minPartnerLevel: 'L2', cost: 180000, required: true, label: 'Synthesize L3A + L2+ dataset into 1 L4 Endgame Master Dataset' };
+    }
+    return null;
+  }
+
   function renderStage7RefineryAndMarket() {
-    // FIX: Tier 2 instruments give L1B calibrated data directly!
+    // Tier 2 instruments give L1B calibrated data directly
     if (state.flight.dataAccumulatedMB > 0) {
       state.selectedInstruments.forEach(inst => {
-        // Tier 2 yields 'L1B' (calibrated NRT), Tier 1 yields 'L0' (raw)
         const initialLevel = inst.tier === 2 ? 'L1B' : 'L0';
         const baseVal = DATA_LEVELS[initialLevel].baseVal;
 
@@ -1746,8 +1919,7 @@
           domain: state.selectedDomain.id,
           domainName: state.selectedDomain.name,
           level: initialLevel,
-          estValue: baseVal,
-          cyclesOld: 0
+          estValue: baseVal
         });
       });
       state.flight.dataAccumulatedMB = 0;
@@ -1775,16 +1947,10 @@
       const isTrending = state.currentTrend && state.currentTrend.domain === item.domain;
       const trendBadge = isTrending ? `<span class="trend-badge">🔥 TRENDING (+${Math.round((state.currentTrend.boost - 1) * 100)}%)</span>` : '';
 
-      // Decay badge
-      const decayBadge = item.cyclesOld > 0 ? `<span class="decay-badge">-${item.cyclesOld * 15}% DECAY</span>` : '';
-
-      // Value calculation with age decay
-      const decayMultiplier = Math.max(0.2, 1.0 - (item.cyclesOld * 0.15));
       const trendMultiplier = isTrending ? state.currentTrend.boost : 1.0;
-      const currentMarketVal = Math.round(item.estValue * decayMultiplier * trendMultiplier);
+      const currentMarketVal = Math.round(item.estValue * trendMultiplier);
 
       card.innerHTML = `
-        ${decayBadge}
         <span class="data-level-badge">${item.level}</span>
         <strong style="color: #fff; font-size: 0.85rem;">${item.name}</strong>
         <span style="font-size: 0.7rem; color: var(--text-muted);">${item.category}</span>
@@ -1821,28 +1987,23 @@
       return;
     }
 
+    const sandbox = isInfiniteBudget();
     const nextLevelKey = curLevelInfo.next;
     const nextLevelInfo = DATA_LEVELS[nextLevelKey];
+    const combineCfg = getCombineConfig(item.level);
 
-    // Check if refinement is unprofitable for this basic dataset!
+    // Check if single refinement is unprofitable
     const valueGain = nextLevelInfo.baseVal - curLevelInfo.baseVal;
     const isUnprofitable = curLevelInfo.refineCost > valueGain;
 
     let warningHtml = '';
     if (isUnprofitable) {
-      warningHtml = `<p style="color: var(--color-crimson); font-size: 0.72rem; margin-top: 0.3rem;">⚠️ UNPROFITABLE REFINEMENT: Lab cost ($${curLevelInfo.refineCost.toLocaleString()}) exceeds single-value gain ($${valueGain.toLocaleString()})! Profitable only when combined into L3/L4.</p>`;
+      warningHtml = `<p style="color: var(--color-crimson); font-size: 0.72rem; margin-top: 0.3rem;">⚠️ UNPROFITABLE SINGLE REFINEMENT: Lab cost ($${curLevelInfo.refineCost.toLocaleString()}) exceeds single-value gain ($${valueGain.toLocaleString()})! Profitable when combined into L3/L4.</p>`;
     }
 
-    // Special multi-recipe descriptions as specified in prompt
     let recipeSpecial = '';
-    if (nextLevelKey === 'L2') {
-      recipeSpecial = `<p style="font-size: 0.72rem; color: var(--color-cyan);">Recipe: Inferred L1C telemetry processed through orbital geophysical simulation algorithms.</p>`;
-    } else if (nextLevelKey === 'L3') {
-      recipeSpecial = `<p style="font-size: 0.72rem; color: var(--color-cyan);">Recipe: Stitched L2B spatial map across multiple orbital passes.</p>`;
-    } else if (nextLevelKey === 'L3A') {
-      recipeSpecial = `<p style="font-size: 0.72rem; color: var(--color-cyan);">Recipe: Multi-mission temporal interval stacking across mission cycles.</p>`;
-    } else if (nextLevelKey === 'L4') {
-      recipeSpecial = `<p style="font-size: 0.72rem; color: var(--color-gold);">Recipe: Endgame comprehensive synthesis. Chuck multiple L2+ datasets together to produce a detailed master dataset!</p>`;
+    if (combineCfg) {
+      recipeSpecial = `<p style="font-size: 0.72rem; color: var(--color-cyan);">🔗 ${combineCfg.label}</p>`;
     }
 
     DOM.processingRecipe.innerHTML = `
@@ -1851,13 +2012,54 @@
       <p><strong>Target:</strong> ${nextLevelInfo.name} ($${nextLevelInfo.baseVal.toLocaleString()})</p>
       <p style="font-size: 0.74rem; color: var(--color-blue); margin-top: 0.3rem;">${nextLevelInfo.desc}</p>
       ${recipeSpecial}
-      <p style="margin-top: 0.4rem;">Refinement Lab Fee: <strong class="text-amber">$${curLevelInfo.refineCost.toLocaleString()}</strong></p>
+      <p style="margin-top: 0.4rem;">Refinement Lab Fee: <strong class="text-amber">${sandbox ? '$0 (SANDBOX)' : '$' + curLevelInfo.refineCost.toLocaleString()}</strong></p>
       ${warningHtml}
     `;
 
     DOM.processingControls.style.display = 'block';
-    DOM.btnRefineData.textContent = `REFINE TO ${nextLevelKey} (-$${curLevelInfo.refineCost.toLocaleString()})`;
-    DOM.btnRefineData.disabled = state.budget < curLevelInfo.refineCost;
+
+    // Single-dataset refine button (hidden if level requires 2-dataset combine)
+    if (combineCfg && combineCfg.required) {
+      DOM.btnRefineData.style.display = 'none';
+    } else {
+      DOM.btnRefineData.style.display = 'inline-flex';
+      DOM.btnRefineData.textContent = sandbox
+        ? `REFINE TO ${nextLevelKey} (FREE)`
+        : `REFINE TO ${nextLevelKey} (-$${curLevelInfo.refineCost.toLocaleString()})`;
+      DOM.btnRefineData.disabled = !sandbox && state.budget < curLevelInfo.refineCost;
+    }
+
+    // 2-dataset combine UI
+    if (combineCfg && DOM.combinePanel) {
+      DOM.combinePanel.style.display = 'flex';
+      DOM.combinePartnerSelect.innerHTML = '';
+
+      const partners = state.dataInventory
+        .map((p, idx) => ({ p, idx }))
+        .filter(({ p, idx }) => idx !== state.selectedInventoryIdx && isLevelAtLeast(p.level, combineCfg.minPartnerLevel));
+
+      if (partners.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = `Need another ${combineCfg.minPartnerLevel}+ dataset in inventory`;
+        DOM.combinePartnerSelect.appendChild(opt);
+        DOM.btnCombineData.disabled = true;
+        DOM.btnCombineData.textContent = `COMBINE 2 DATASETS → ${combineCfg.target} (NO PARTNER)`;
+      } else {
+        partners.forEach(({ p, idx }) => {
+          const opt = document.createElement('option');
+          opt.value = String(idx);
+          opt.textContent = `[${p.level}] ${p.name} (${p.domainName})`;
+          DOM.combinePartnerSelect.appendChild(opt);
+        });
+        DOM.btnCombineData.disabled = !sandbox && state.budget < combineCfg.cost;
+        DOM.btnCombineData.textContent = sandbox
+          ? `COMBINE 2 DATASETS → ${combineCfg.target} (FREE)`
+          : `COMBINE 2 DATASETS → ${combineCfg.target} (-$${combineCfg.cost.toLocaleString()})`;
+      }
+    } else if (DOM.combinePanel) {
+      DOM.combinePanel.style.display = 'none';
+    }
   }
 
   function refineSelectedData() {
@@ -1865,14 +2067,22 @@
     const item = state.dataInventory[state.selectedInventoryIdx];
     if (!item) return;
 
+    const combineCfg = getCombineConfig(item.level);
+    if (combineCfg && combineCfg.required) {
+      playAlarm();
+      alert(`${item.level} → ${combineCfg.target} requires combining 2 datasets!`);
+      return;
+    }
+
     const curLevelInfo = DATA_LEVELS[item.level];
-    if (!curLevelInfo.next || state.budget < curLevelInfo.refineCost) {
+    const sandbox = isInfiniteBudget();
+    if (!curLevelInfo.next || (!sandbox && state.budget < curLevelInfo.refineCost)) {
       playAlarm();
       return;
     }
 
     playBeep(1100);
-    state.budget -= curLevelInfo.refineCost;
+    if (!sandbox) state.budget -= curLevelInfo.refineCost;
     const nextKey = curLevelInfo.next;
     item.level = nextKey;
     item.estValue = DATA_LEVELS[nextKey].baseVal;
@@ -1880,6 +2090,56 @@
     updatePermanentHud();
     renderInventoryList();
     renderRefineryWorkbench(item);
+  }
+
+  function combineSelectedData() {
+    if (state.selectedInventoryIdx === null) return;
+    const primaryIdx = state.selectedInventoryIdx;
+    const item = state.dataInventory[primaryIdx];
+    if (!item) return;
+
+    const combineCfg = getCombineConfig(item.level);
+    if (!combineCfg) return;
+
+    const partnerIdx = parseInt(DOM.combinePartnerSelect.value, 10);
+    if (isNaN(partnerIdx) || partnerIdx === primaryIdx || !state.dataInventory[partnerIdx]) {
+      playAlarm();
+      alert(`Select a valid second ${combineCfg.minPartnerLevel}+ dataset to combine!`);
+      return;
+    }
+
+    const partner = state.dataInventory[partnerIdx];
+    if (!isLevelAtLeast(partner.level, combineCfg.minPartnerLevel)) {
+      playAlarm();
+      alert(`Partner dataset must be at least ${combineCfg.minPartnerLevel}.`);
+      return;
+    }
+
+    const sandbox = isInfiniteBudget();
+    if (!sandbox && state.budget < combineCfg.cost) {
+      playAlarm();
+      alert(`Insufficient funds! Combining requires $${combineCfg.cost.toLocaleString()}.`);
+      return;
+    }
+
+    playBeep(1250);
+    if (!sandbox) state.budget -= combineCfg.cost;
+
+    item.level = combineCfg.target;
+    item.estValue = DATA_LEVELS[combineCfg.target].baseVal;
+    if (!item.name.includes(partner.name)) {
+      item.name = `${item.name} + ${partner.name}`;
+    }
+
+    // Consume the 2nd dataset (2 datasets -> 1 combined dataset)
+    state.dataInventory.splice(partnerIdx, 1);
+    state.selectedInventoryIdx = partnerIdx < primaryIdx ? primaryIdx - 1 : primaryIdx;
+
+    updatePermanentHud();
+    renderInventoryList();
+    if (state.dataInventory[state.selectedInventoryIdx]) {
+      renderRefineryWorkbench(state.dataInventory[state.selectedInventoryIdx]);
+    }
   }
 
   function sellDataToBuyer(buyerType) {
@@ -1892,11 +2152,8 @@
     const item = state.dataInventory[state.selectedInventoryIdx];
     if (!item) return;
 
-    // Apply smooth reputation curve
+    // Apply smooth reputation curve (+25% Flagship Partner multiplier at 100 Rep)
     const repMultiplier = getReputationPriceMultiplier();
-
-    // Apply age decay
-    const decayMultiplier = Math.max(0.2, 1.0 - (item.cyclesOld * 0.15));
 
     // Apply market trends
     const isTrending = state.currentTrend && state.currentTrend.domain === item.domain;
@@ -1916,12 +2173,15 @@
       repDelta = -15;
     }
 
-    const payout = Math.round(item.estValue * baseBuyerMult * repMultiplier * decayMultiplier * trendMultiplier);
-    state.budget += payout;
+    const payout = Math.round(item.estValue * baseBuyerMult * repMultiplier * trendMultiplier);
+    if (!isInfiniteBudget()) {
+      state.budget += payout;
+    }
     state.reputation = Math.max(0, Math.min(100, state.reputation + repDelta));
 
     playBeep(payout > 0 ? 1200 : 800);
-    alert(`Data sold to ${buyerType.toUpperCase()}!\n💰 Cash Earned: $${payout.toLocaleString()}\n⭐ Reputation Change: ${repDelta >= 0 ? '+' : ''}${repDelta}`);
+    const flagshipNote = state.reputation >= 100 ? '\n🏆 100-Reputation Flagship Partner Bonus Active (+25% Payout & +$150k/Cycle)!' : '';
+    alert(`Data sold to ${buyerType.toUpperCase()}!\n💰 Cash Earned: $${payout.toLocaleString()}\n⭐ Reputation Change: ${repDelta >= 0 ? '+' : ''}${repDelta}${flagshipNote}`);
 
     state.dataInventory.splice(state.selectedInventoryIdx, 1);
     state.selectedInventoryIdx = null;
@@ -1952,44 +2212,43 @@
       const card = document.createElement('div');
       card.className = 'data-card';
 
-      const decayPct = item.cyclesOld * 15;
-      const decayText = item.cyclesOld > 0 ? `<span class="decay-badge">-${decayPct}% Value Decay</span>` : '';
-
       card.innerHTML = `
-        ${decayText}
         <span class="data-level-badge">${item.level}</span>
         <strong style="color: #fff; font-size: 0.85rem;">${item.name}</strong>
         <span style="font-size: 0.72rem; color: var(--text-muted);">${item.category} (${item.domainName})</span>
         <span style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--color-emerald); margin-top: 0.4rem;">
           Base Value: $${item.estValue.toLocaleString()}
         </span>
-        <span style="font-size: 0.65rem; color: var(--text-muted);">Age: ${item.cyclesOld} cycle(s) old</span>
       `;
       DOM.vaultListContainer.appendChild(card);
     });
   }
 
   // ========================================================================
-  // 15. COMMENCE NEXT MISSION CYCLE (AGE DECAY & TREND ROTATION)
+  // 15. COMMENCE NEXT MISSION CYCLE (FLAGSHIP BONUS & TREND ROTATION)
   // ========================================================================
 
   function commenceNextMissionCycle() {
     playQuindarTone();
     state.missionCycle++;
 
-    // Data decay: All unsold inventory items age by 1 cycle
-    state.dataInventory.forEach(item => {
-      item.cyclesOld++;
-    });
+    let cycleMessages = [`🚀 Mission Cycle ${state.missionCycle} Started!`];
+
+    // 100 Reputation Government Grant Bonus
+    if (state.reputation >= 100 && !isInfiniteBudget()) {
+      const grantBonus = 150000;
+      state.budget += grantBonus;
+      cycleMessages.push(`🏆 100-Reputation NASA Flagship Grant: +$${grantBonus.toLocaleString()} awarded!`);
+    }
 
     // Debt interest: 5% interest on unpaid debt
     if (state.activeDebt > 0) {
       const interest = Math.round(state.activeDebt * 0.05);
       state.activeDebt += interest;
-      alert(`⚠️ Mission Cycle ${state.missionCycle} Started.\nUnpaid debt accrued 5% interest (+$${interest.toLocaleString()}). Total debt: $${state.activeDebt.toLocaleString()}. Unsold data decayed by 15%.`);
-    } else {
-      alert(`🚀 Mission Cycle ${state.missionCycle} Started!\nAll stored data decayed by 15% due to telemetry age.`);
+      cycleMessages.push(`⚠️ Unpaid debt accrued 5% interest (+$${interest.toLocaleString()}). Total debt: $${state.activeDebt.toLocaleString()}.`);
     }
+
+    alert(cycleMessages.join('\n'));
 
     // Rotate market trends
     const newTrend = MARKET_TREND_POOLS[Math.floor(Math.random() * MARKET_TREND_POOLS.length)];
@@ -1999,6 +2258,7 @@
     // Reset design choices to Launch Segment
     activeDesignSegment = 'launch';
     state.selectedInstruments = [];
+    state.instrumentTiers = {};
     state.selections = {
       launchRocket: null,
       selectedFuel: 'kerosene',
@@ -2009,6 +2269,7 @@
     };
     state.tempResources.diagnosticsBonus = 0;
 
+    updatePermanentHud();
     goToStage(1);
   }
 
@@ -2165,7 +2426,7 @@
       playBeep(880);
     });
 
-    // Initialization Controls Mode Selection
+    // Initialization Controls Mode Selection -> chains to Difficulty Selection
     if (DOM.initBtnBasic) {
       DOM.initBtnBasic.addEventListener('click', () => {
         playBeep(700);
@@ -2173,6 +2434,7 @@
         DOM.chkAdvSliders.checked = false;
         DOM.advSlidersWrap.style.display = 'none';
         DOM.initModeModal.classList.remove('active');
+        if (DOM.initDifficultyModal) DOM.initDifficultyModal.classList.add('active');
         if (state.stage === 4) {
           renderStage4Design();
           calculateTempResources();
@@ -2187,12 +2449,30 @@
         DOM.chkAdvSliders.checked = true;
         DOM.advSlidersWrap.style.display = 'block';
         DOM.initModeModal.classList.remove('active');
+        if (DOM.initDifficultyModal) DOM.initDifficultyModal.classList.add('active');
         if (state.stage === 4) {
           renderStage4Design();
           calculateTempResources();
         }
       });
     }
+
+    // Initialization Difficulty & Sandbox Selection
+    const applyDifficulty = (diffId) => {
+      playBeep(diffId === 'sandbox' ? 1100 : 800);
+      state.difficulty = diffId;
+      const cfg = getDifficultyConfig();
+      state.budget = cfg.startingBudget;
+      if (DOM.initDifficultyModal) DOM.initDifficultyModal.classList.remove('active');
+      updatePermanentHud();
+      if (state.stage === 2) renderStage2Instruments();
+      if (state.stage === 4) calculateTempResources();
+      if (state.stage === 5) renderStage5Verification();
+    };
+    if (DOM.diffBtnEasy) DOM.diffBtnEasy.addEventListener('click', () => applyDifficulty('easy'));
+    if (DOM.diffBtnNormal) DOM.diffBtnNormal.addEventListener('click', () => applyDifficulty('normal'));
+    if (DOM.diffBtnHard) DOM.diffBtnHard.addEventListener('click', () => applyDifficulty('hard'));
+    if (DOM.diffBtnSandbox) DOM.diffBtnSandbox.addEventListener('click', () => applyDifficulty('sandbox'));
 
     // Advanced Sliders Toggle
     DOM.chkAdvSliders.addEventListener('change', (e) => {
@@ -2262,6 +2542,9 @@
 
     // Refinery & Market
     DOM.btnRefineData.addEventListener('click', refineSelectedData);
+    if (DOM.btnCombineData) {
+      DOM.btnCombineData.addEventListener('click', combineSelectedData);
+    }
     document.querySelectorAll('.btn-sell-action').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const buyer = e.currentTarget.getAttribute('data-buyer');
