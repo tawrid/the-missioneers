@@ -434,6 +434,7 @@
     gameMode: 'singleplayer', // 'singleplayer' | 'coop' | 'sabotage'
     saboteurRole: null, // 'launch' | 'space' | 'ground'
     difficulty: 'hard', // 'easy' | 'normal' | 'hard' | 'sandbox'
+    missionName: 'ARTEMIS-1',
 
     // Permanent Resources
     budget: 1200000,
@@ -441,12 +442,13 @@
     activeDebt: 0,
     missionCycle: 1,
     currentTrend: MARKET_TREND_POOLS[0],
-    dataInventory: [], // array of { id, name, domain, level, estValue }
+    trendLocked: false,
+    dataInventory: [], // array of { id, name, domain, level, estValue, cyclesOld }
+    inventoryViewMode: 'grid', // 'grid' | 'list'
+    l4ChamberIndices: [], // inventory indices placed in L4 Ancient Synthesis Forge
 
-    // Advanced Customization Sliders
+    // Advanced Customization Sliders (Stage 4 custom spacecraft sliders)
     customSlidersEnabled: false,
-    structuralMassMarginPct: 0,
-    fuelCapacityScaling: 1.0,
     customDesign: {
       launchPayloadMax: 3000,
       launchDeltaV: 8.5,
@@ -548,7 +550,10 @@
     saboteurStatusPill: document.getElementById('saboteur-status-pill'),
 
     // Ticker
+    trendsTicker: document.getElementById('trends-ticker'),
     tickerText: document.getElementById('ticker-text'),
+    tickerTextDup: document.getElementById('ticker-text-dup'),
+    tickerLockBadge: document.getElementById('ticker-lock-badge'),
 
     // Steppers
     steppers: [
@@ -571,6 +576,7 @@
     ],
 
     // Stage 1
+    inputMissionName: document.getElementById('input-mission-name'),
     domainGrid: document.getElementById('domain-grid'),
     btnNextStage1: document.getElementById('btn-next-stage1'),
 
@@ -658,7 +664,11 @@
     btnCompleteFlight: document.getElementById('btn-complete-flight'),
 
     // Stage 7
+    invDecayHint: document.getElementById('inv-decay-hint'),
+    btnInvGrid: document.getElementById('btn-inv-grid'),
+    btnInvList: document.getElementById('btn-inv-list'),
     dataInventoryList: document.getElementById('data-inventory-list'),
+    btnOpenL4Forge: document.getElementById('btn-open-l4-forge'),
     processingRecipe: document.getElementById('processing-recipe'),
     processingControls: document.getElementById('processing-controls'),
     btnRefineData: document.getElementById('btn-refine-data'),
@@ -683,11 +693,6 @@
     sliderVolume: document.getElementById('slider-volume'),
     volumeVal: document.getElementById('volume-val'),
     chkAdvSliders: document.getElementById('chk-adv-sliders'),
-    advSlidersWrap: document.getElementById('adv-sliders-wrap'),
-    sliderMassMargin: document.getElementById('slider-mass-margin'),
-    valMassMargin: document.getElementById('val-mass-margin'),
-    sliderFuelCap: document.getElementById('slider-fuel-cap'),
-    valFuelScaling: document.getElementById('val-fuel-scaling'),
     btnTestLmSettings: document.getElementById('btn-test-lm-settings'),
     settingsLmStatus: document.getElementById('settings-lm-status'),
 
@@ -712,7 +717,19 @@
     diffBtnEasy: document.getElementById('diff-btn-easy'),
     diffBtnNormal: document.getElementById('diff-btn-normal'),
     diffBtnHard: document.getElementById('diff-btn-hard'),
-    diffBtnSandbox: document.getElementById('diff-btn-sandbox')
+    diffBtnSandbox: document.getElementById('diff-btn-sandbox'),
+
+    l4ForgeModal: document.getElementById('l4-forge-modal'),
+    l4ForgeClose: document.getElementById('l4-forge-close'),
+    l4ChamberList: document.getElementById('l4-chamber-list'),
+    l4OfferingsList: document.getElementById('l4-offerings-list'),
+    l4ChamberCount: document.getElementById('l4-chamber-count'),
+    l4AvailableCount: document.getElementById('l4-available-count'),
+    l4ReqStatus: document.getElementById('l4-req-status'),
+    l4SynergyMult: document.getElementById('l4-synergy-mult'),
+    l4ProjectedVal: document.getElementById('l4-projected-val'),
+    l4ForgeFee: document.getElementById('l4-forge-fee'),
+    btnForgeL4: document.getElementById('btn-forge-l4')
   };
 
   // ========================================================================
@@ -725,6 +742,11 @@
 
   function isInfiniteBudget() {
     return getDifficultyConfig().infiniteBudget === true;
+  }
+
+  function setTickerText(text) {
+    if (DOM.tickerText) DOM.tickerText.textContent = text;
+    if (DOM.tickerTextDup) DOM.tickerTextDup.textContent = text;
   }
 
   function getReputationPriceMultiplier() {
@@ -927,12 +949,6 @@
         if (isSelected) {
           state.selectedInstruments = state.selectedInstruments.filter(i => i.instId !== instGroup.id);
         } else {
-          // Limit checked by bus size in Stage 4, default max 4 in concept
-          if (state.selectedInstruments.length >= 4) {
-            playAlarm();
-            alert('Maximum 4 instruments can be chosen in mission concept. Sizing chassis can expand this in Design.');
-            return;
-          }
           const chosen = currentTier === 1 ? instGroup.t1 : instGroup.t2;
           state.selectedInstruments.push({
             instId: instGroup.id,
@@ -1259,7 +1275,7 @@
 
       totalCost += launchCost + spaceCost + groundCost;
       dryMass += spaceDry;
-      fuelMass += cd.spaceFuelCap * state.fuelCapacityScaling;
+      fuelMass += cd.spaceFuelCap;
       maxMass = cd.launchPayloadMax;
       powerGen = cd.spacePowerGen;
       maxVolume = cd.spaceVolumeMax;
@@ -1283,12 +1299,13 @@
       if (bus) {
         totalCost += bus.cost + sizing.costAdd;
         dryMass += bus.dryMass + sizing.massAdd;
-        fuelMass += bus.fuelCapacity * state.fuelCapacityScaling;
+        fuelMass += bus.fuelCapacity;
       }
       if (ground) totalCost += ground.cost;
 
       segmentsReady = !!(rocket && bus && ground);
-      instrumentsCountOk = state.selectedInstruments.length <= sizing.maxInstruments;
+      // Instrument capacity is governed by volumeUsed <= maxVolume
+      instrumentsCountOk = true;
     }
 
     // Apply Diagnostic Simulation Bonus (+10% if tested!)
@@ -1309,9 +1326,6 @@
       powerConsumed += inst.power;
       volumeUsed += 1.1;
     });
-
-    // Advanced Sliders structural margin
-    dryMass += dryMass * (state.structuralMassMarginPct / 100);
 
     const totalMass = Math.round(dryMass + fuelMass);
 
@@ -1504,7 +1518,7 @@
     // Flight duration scales with mission distance!
     flightDurationMs = state.selectedDomain.transitDurationSec * 1000;
 
-    logFlightMessage(`🚀 IGNITION: Spacecraft launching on ${state.selectedDomain.name} mission trajectory.`);
+    logFlightMessage(`🚀 IGNITION [${state.missionName}]: Spacecraft launching on ${state.selectedDomain.name} mission trajectory.`);
     logFlightMessage(`⏱️ Mission transit profile: ${state.selectedDomain.transitDurationSec}s transit (${getDifficultyConfig().name}).`);
 
     const canvas = DOM.flightCanvas;
@@ -1889,6 +1903,11 @@
     return LEVEL_ORDER.indexOf(level) >= LEVEL_ORDER.indexOf(minLevel);
   }
 
+  function getItemDecayMultiplier(item) {
+    if (state.difficulty !== 'hard' || item.level === 'L4' || !item.cyclesOld) return 1.0;
+    return Math.max(0.2, 1.0 - item.cyclesOld * 0.15);
+  }
+
   function getCombineConfig(level) {
     if (level === 'L1C') {
       return { target: 'L2', minPartnerLevel: 'L1C', cost: 20000, required: false, label: 'Combine 2× L1C+ datasets into L2 (Alternate Recipe)' };
@@ -1898,9 +1917,6 @@
     }
     if (level === 'L3') {
       return { target: 'L3A', minPartnerLevel: 'L2B', cost: 130000, required: true, label: 'Stack L3 + L2B+ dataset into 1 L3A Temporal Interval' };
-    }
-    if (level === 'L3A') {
-      return { target: 'L4', minPartnerLevel: 'L2', cost: 180000, required: true, label: 'Synthesize L3A + L2+ dataset into 1 L4 Endgame Master Dataset' };
     }
     return null;
   }
@@ -1919,10 +1935,17 @@
           domain: state.selectedDomain.id,
           domainName: state.selectedDomain.name,
           level: initialLevel,
-          estValue: baseVal
+          estValue: baseVal,
+          cyclesOld: 0
         });
       });
       state.flight.dataAccumulatedMB = 0;
+    }
+
+    if (DOM.invDecayHint) {
+      DOM.invDecayHint.textContent = state.difficulty === 'hard'
+        ? '⚠️ HARD MODE: Unsold non-L4 datasets decay 15%/cycle (L4 & Forge components ignore decay)'
+        : '✅ Stored datasets retain 100% of their scientific value across cycles';
     }
 
     renderInventoryList();
@@ -1931,6 +1954,9 @@
 
   function renderInventoryList() {
     DOM.dataInventoryList.innerHTML = '';
+    DOM.dataInventoryList.classList.toggle('list-view', state.inventoryViewMode === 'list');
+    if (DOM.btnInvGrid) DOM.btnInvGrid.classList.toggle('active', state.inventoryViewMode === 'grid');
+    if (DOM.btnInvList) DOM.btnInvList.classList.toggle('active', state.inventoryViewMode === 'list');
 
     if (state.dataInventory.length === 0) {
       DOM.dataInventoryList.innerHTML = `<p style="grid-column: 1/-1; color: var(--text-muted); font-size: 0.8rem;">No datasets currently in inventory. Complete a flight to gather L0/L1B telemetry!</p>`;
@@ -1947,10 +1973,16 @@
       const isTrending = state.currentTrend && state.currentTrend.domain === item.domain;
       const trendBadge = isTrending ? `<span class="trend-badge">🔥 TRENDING (+${Math.round((state.currentTrend.boost - 1) * 100)}%)</span>` : '';
 
+      const decayMultiplier = getItemDecayMultiplier(item);
+      const decayBadge = (state.difficulty === 'hard' && item.level !== 'L4' && (item.cyclesOld || 0) > 0)
+        ? `<span class="decay-badge">-${item.cyclesOld * 15}% DECAY</span>`
+        : '';
+
       const trendMultiplier = isTrending ? state.currentTrend.boost : 1.0;
-      const currentMarketVal = Math.round(item.estValue * trendMultiplier);
+      const currentMarketVal = Math.round(item.estValue * decayMultiplier * trendMultiplier);
 
       card.innerHTML = `
+        ${decayBadge}
         <span class="data-level-badge">${item.level}</span>
         <strong style="color: #fff; font-size: 0.85rem;">${item.name}</strong>
         <span style="font-size: 0.7rem; color: var(--text-muted);">${item.category}</span>
@@ -1981,7 +2013,17 @@
       DOM.processingRecipe.innerHTML = `
         <h4>${item.level} // MAXIMUM REFINEMENT ATTAINED</h4>
         <p>${curLevelInfo.desc}</p>
-        <p class="text-emerald">This is an endgame multi-sensor scientific dataset. Ready for maximum market sale!</p>
+        <p class="text-emerald">This is an endgame multi-sensor scientific dataset (immune to cycle degradation). Ready for maximum market sale!</p>
+      `;
+      DOM.processingControls.style.display = 'none';
+      return;
+    }
+
+    if (item.level === 'L3A') {
+      DOM.processingRecipe.innerHTML = `
+        <h4>REFINEMENT PIPELINE: L3A &rarr; L4 (ANCIENT SYNTHESIS FORGE)</h4>
+        <p><strong>Current:</strong> ${curLevelInfo.name} ($${curLevelInfo.baseVal.toLocaleString()})</p>
+        <p style="font-size: 0.78rem; color: var(--color-gold); margin-top: 0.35rem;">🧬 Use the <strong>L4 ANCIENT SYNTHESIS FORGE</strong> button above to combine this L3A dataset with any number of loose L2+ datasets! More data stuffed in = exponentially higher L4 value.</p>
       `;
       DOM.processingControls.style.display = 'none';
       return;
@@ -2142,6 +2184,154 @@
     }
   }
 
+  // L4 ANCIENT SYNTHESIS FORGE (MC Dungeons Ancient Hunts Style)
+  function getL4ForgeProjected(chamberIndices) {
+    const items = chamberIndices.map(i => state.dataInventory[i]).filter(Boolean);
+    const hasL3A = items.some(it => it.level === 'L3A');
+    const enoughCount = items.length >= 2;
+    const valid = hasL3A && enoughCount;
+    // Components used in L4 ALWAYS use their base price, NOT their degraded price!
+    const sumBase = items.reduce((acc, it) => acc + (DATA_LEVELS[it.level] ? DATA_LEVELS[it.level].baseVal : it.estValue), 0);
+    const mult = 1.65 + Math.max(0, items.length - 2) * 0.25;
+    const projectedVal = items.length > 0 ? Math.max(DATA_LEVELS.L4.baseVal, Math.round(sumBase * mult)) : 0;
+    const fee = isInfiniteBudget() ? 0 : 180000;
+    return { items, hasL3A, enoughCount, valid, sumBase, mult, projectedVal, fee };
+  }
+
+  function openL4ForgeModal() {
+    playBeep(820);
+    state.l4ChamberIndices = [];
+    if (DOM.l4ForgeModal) {
+      DOM.l4ForgeModal.classList.add('active');
+      DOM.l4ForgeModal.style.display = 'flex';
+    }
+    renderL4Forge();
+  }
+
+  function renderL4Forge() {
+    if (!DOM.l4ChamberList || !DOM.l4OfferingsList) return;
+    // Filter out any stale indices
+    state.l4ChamberIndices = state.l4ChamberIndices.filter(idx => state.dataInventory[idx] && isLevelAtLeast(state.dataInventory[idx].level, 'L2') && state.dataInventory[idx].level !== 'L4');
+
+    const proj = getL4ForgeProjected(state.l4ChamberIndices);
+    DOM.l4ChamberCount.textContent = `${proj.items.length} ITEM(S)`;
+
+    // Render LEFT: Synthesis Chamber
+    DOM.l4ChamberList.innerHTML = '';
+    if (proj.items.length === 0) {
+      DOM.l4ChamberList.innerHTML = `<p style="color: var(--text-muted); font-size: 0.78rem; padding: 0.5rem;">Click L2+ datasets on the right to place them into the Synthesis Chamber.</p>`;
+    } else {
+      state.l4ChamberIndices.forEach(invIdx => {
+        const it = state.dataInventory[invIdx];
+        const baseVal = DATA_LEVELS[it.level] ? DATA_LEVELS[it.level].baseVal : it.estValue;
+        const row = document.createElement('div');
+        row.className = 'l4-item-row';
+        row.innerHTML = `
+          <div>
+            <span class="data-level-badge">${it.level}</span>
+            <strong style="color: #fff; font-size: 0.8rem;">${it.name}</strong>
+          </div>
+          <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-emerald);">$${baseVal.toLocaleString()} (Base) ✕</span>
+        `;
+        row.addEventListener('click', () => {
+          playBeep(550);
+          state.l4ChamberIndices = state.l4ChamberIndices.filter(i => i !== invIdx);
+          renderL4Forge();
+        });
+        DOM.l4ChamberList.appendChild(row);
+      });
+    }
+
+    // Render RIGHT: Available L2+ Offerings
+    DOM.l4OfferingsList.innerHTML = '';
+    const available = state.dataInventory
+      .map((it, idx) => ({ it, idx }))
+      .filter(({ it, idx }) => isLevelAtLeast(it.level, 'L2') && it.level !== 'L4' && !state.l4ChamberIndices.includes(idx));
+
+    DOM.l4AvailableCount.textContent = `${available.length} ELIGIBLE`;
+    if (available.length === 0) {
+      DOM.l4OfferingsList.innerHTML = `<p style="color: var(--text-muted); font-size: 0.78rem; padding: 0.5rem;">No remaining L2+ datasets in inventory.</p>`;
+    } else {
+      available.forEach(({ it, idx }) => {
+        const baseVal = DATA_LEVELS[it.level] ? DATA_LEVELS[it.level].baseVal : it.estValue;
+        const row = document.createElement('div');
+        row.className = 'l4-item-row';
+        row.innerHTML = `
+          <div>
+            <span class="data-level-badge">${it.level}</span>
+            <strong style="color: #fff; font-size: 0.8rem;">${it.name}</strong>
+          </div>
+          <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-cyan);">+$${baseVal.toLocaleString()}</span>
+        `;
+        row.addEventListener('click', () => {
+          playBeep(880);
+          state.l4ChamberIndices.push(idx);
+          renderL4Forge();
+        });
+        DOM.l4OfferingsList.appendChild(row);
+      });
+    }
+
+    // Update stats & button
+    if (proj.valid) {
+      DOM.l4ReqStatus.textContent = '✅ Ready to Forge L4 Master Dataset';
+      DOM.l4ReqStatus.className = 'text-emerald';
+    } else {
+      DOM.l4ReqStatus.textContent = !proj.hasL3A ? 'Need at least 1× L3A dataset' : 'Need at least 2 total L2+ datasets';
+      DOM.l4ReqStatus.className = 'text-crimson';
+    }
+    DOM.l4SynergyMult.textContent = `${proj.mult.toFixed(2)}x (${proj.items.length} offerings)`;
+    DOM.l4ProjectedVal.textContent = `$${proj.projectedVal.toLocaleString()}`;
+    DOM.l4ForgeFee.textContent = proj.fee === 0 ? '$0 (SANDBOX)' : `$${proj.fee.toLocaleString()}`;
+    DOM.btnForgeL4.disabled = !proj.valid || (!isInfiniteBudget() && state.budget < proj.fee);
+  }
+
+  function forgeL4Dataset() {
+    const proj = getL4ForgeProjected(state.l4ChamberIndices);
+    if (!proj.valid) {
+      playAlarm();
+      return;
+    }
+    if (!isInfiniteBudget() && state.budget < proj.fee) {
+      playAlarm();
+      alert(`Insufficient funds for L4 Synthesis ($${proj.fee.toLocaleString()} required).`);
+      return;
+    }
+
+    playBeep(1320);
+    if (!isInfiniteBudget()) state.budget -= proj.fee;
+
+    const firstItem = proj.items[0];
+    const newL4 = {
+      id: `data_l4_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      name: `L4 Master Synthesis (${proj.items.length} datasets)`,
+      category: 'Multi-Sensor Synthesis',
+      domain: firstItem.domain,
+      domainName: firstItem.domainName,
+      level: 'L4',
+      estValue: proj.projectedVal,
+      cyclesOld: 0
+    };
+
+    // Remove consumed indices in descending order so indices don't shift
+    const sortedDesc = [...state.l4ChamberIndices].sort((a, b) => b - a);
+    sortedDesc.forEach(idx => state.dataInventory.splice(idx, 1));
+    state.dataInventory.push(newL4);
+
+    state.l4ChamberIndices = [];
+    state.selectedInventoryIdx = state.dataInventory.length - 1;
+
+    if (DOM.l4ForgeModal) {
+      DOM.l4ForgeModal.classList.remove('active');
+      DOM.l4ForgeModal.style.display = 'none';
+    }
+
+    updatePermanentHud();
+    renderInventoryList();
+    renderRefineryWorkbench(newL4);
+    alert(`🧬 L4 MASTER DATASET FORGED!\nSynthesized ${proj.items.length} datasets into 1 L4 Master Dataset worth $${proj.projectedVal.toLocaleString()} (immune to cycle degradation)!`);
+  }
+
   function sellDataToBuyer(buyerType) {
     if (state.selectedInventoryIdx === null) {
       playAlarm();
@@ -2154,6 +2344,9 @@
 
     // Apply smooth reputation curve (+25% Flagship Partner multiplier at 100 Rep)
     const repMultiplier = getReputationPriceMultiplier();
+
+    // Apply Hard-difficulty cycle degradation (L4 is immune!)
+    const decayMultiplier = getItemDecayMultiplier(item);
 
     // Apply market trends
     const isTrending = state.currentTrend && state.currentTrend.domain === item.domain;
@@ -2173,7 +2366,7 @@
       repDelta = -15;
     }
 
-    const payout = Math.round(item.estValue * baseBuyerMult * repMultiplier * trendMultiplier);
+    const payout = Math.round(item.estValue * baseBuyerMult * repMultiplier * decayMultiplier * trendMultiplier);
     if (!isInfiniteBudget()) {
       state.budget += payout;
     }
@@ -2212,7 +2405,12 @@
       const card = document.createElement('div');
       card.className = 'data-card';
 
+      const decayBadge = (state.difficulty === 'hard' && item.level !== 'L4' && (item.cyclesOld || 0) > 0)
+        ? `<span class="decay-badge">-${item.cyclesOld * 15}% Value Decay</span>`
+        : '';
+
       card.innerHTML = `
+        ${decayBadge}
         <span class="data-level-badge">${item.level}</span>
         <strong style="color: #fff; font-size: 0.85rem;">${item.name}</strong>
         <span style="font-size: 0.72rem; color: var(--text-muted);">${item.category} (${item.domainName})</span>
@@ -2225,7 +2423,7 @@
   }
 
   // ========================================================================
-  // 15. COMMENCE NEXT MISSION CYCLE (FLAGSHIP BONUS & TREND ROTATION)
+  // 15. COMMENCE NEXT MISSION CYCLE (HARD DECAY, FLAGSHIP BONUS & TREND LOCK)
   // ========================================================================
 
   function commenceNextMissionCycle() {
@@ -2233,6 +2431,20 @@
     state.missionCycle++;
 
     let cycleMessages = [`🚀 Mission Cycle ${state.missionCycle} Started!`];
+
+    // Hard difficulty only: non-L4 datasets degrade by 15%/cycle (L4 never degrades!)
+    if (state.difficulty === 'hard') {
+      let decayedCount = 0;
+      state.dataInventory.forEach(item => {
+        if (item.level !== 'L4') {
+          item.cyclesOld = (item.cyclesOld || 0) + 1;
+          decayedCount++;
+        }
+      });
+      if (decayedCount > 0) {
+        cycleMessages.push(`⚠️ HARD MODE: ${decayedCount} non-L4 dataset(s) decayed by 15% (L4 datasets immune).`);
+      }
+    }
 
     // 100 Reputation Government Grant Bonus
     if (state.reputation >= 100 && !isInfiniteBudget()) {
@@ -2250,10 +2462,12 @@
 
     alert(cycleMessages.join('\n'));
 
-    // Rotate market trends
-    const newTrend = MARKET_TREND_POOLS[Math.floor(Math.random() * MARKET_TREND_POOLS.length)];
-    state.currentTrend = newTrend;
-    DOM.tickerText.textContent = newTrend.text;
+    // Rotate market trends unless locked by player
+    if (!state.trendLocked) {
+      const newTrend = MARKET_TREND_POOLS[Math.floor(Math.random() * MARKET_TREND_POOLS.length)];
+      state.currentTrend = newTrend;
+      setTickerText(newTrend.text);
+    }
 
     // Reset design choices to Launch Segment
     activeDesignSegment = 'launch';
@@ -2432,7 +2646,6 @@
         playBeep(700);
         state.customSlidersEnabled = false;
         DOM.chkAdvSliders.checked = false;
-        DOM.advSlidersWrap.style.display = 'none';
         DOM.initModeModal.classList.remove('active');
         if (DOM.initDifficultyModal) DOM.initDifficultyModal.classList.add('active');
         if (state.stage === 4) {
@@ -2447,7 +2660,6 @@
         playBeep(900);
         state.customSlidersEnabled = true;
         DOM.chkAdvSliders.checked = true;
-        DOM.advSlidersWrap.style.display = 'block';
         DOM.initModeModal.classList.remove('active');
         if (DOM.initDifficultyModal) DOM.initDifficultyModal.classList.add('active');
         if (state.stage === 4) {
@@ -2477,24 +2689,30 @@
     // Advanced Sliders Toggle
     DOM.chkAdvSliders.addEventListener('change', (e) => {
       state.customSlidersEnabled = e.target.checked;
-      DOM.advSlidersWrap.style.display = e.target.checked ? 'block' : 'none';
       if (state.stage === 4) {
         renderStage4Design();
         calculateTempResources();
       }
     });
 
-    DOM.sliderMassMargin.addEventListener('input', (e) => {
-      state.structuralMassMarginPct = parseInt(e.target.value);
-      DOM.valMassMargin.textContent = `${state.structuralMassMarginPct >= 0 ? '+' : ''}${state.structuralMassMarginPct}%`;
-      if (state.stage === 4) calculateTempResources();
-    });
+    // Demand Trend Ticker Lock Toggle
+    if (DOM.trendsTicker) {
+      DOM.trendsTicker.addEventListener('click', () => {
+        playBeep(state.trendLocked ? 650 : 950);
+        state.trendLocked = !state.trendLocked;
+        DOM.trendsTicker.classList.toggle('locked', state.trendLocked);
+        if (DOM.tickerLockBadge) {
+          DOM.tickerLockBadge.textContent = state.trendLocked ? '🔒 LOCKED' : '🔓 LIVE';
+        }
+      });
+    }
 
-    DOM.sliderFuelCap.addEventListener('input', (e) => {
-      state.fuelCapacityScaling = parseInt(e.target.value) / 100;
-      DOM.valFuelScaling.textContent = `${state.fuelCapacityScaling.toFixed(1)}x`;
-      if (state.stage === 4) calculateTempResources();
-    });
+    // Mission Name Customization
+    if (DOM.inputMissionName) {
+      DOM.inputMissionName.addEventListener('input', (e) => {
+        state.missionName = e.target.value.trim() || 'ARTEMIS-1';
+      });
+    }
 
     // Stage Transitions
     DOM.btnNextStage1.addEventListener('click', () => goToStage(2));
@@ -2544,6 +2762,32 @@
     DOM.btnRefineData.addEventListener('click', refineSelectedData);
     if (DOM.btnCombineData) {
       DOM.btnCombineData.addEventListener('click', combineSelectedData);
+    }
+    if (DOM.btnInvGrid) {
+      DOM.btnInvGrid.addEventListener('click', () => {
+        playBeep(650);
+        state.inventoryViewMode = 'grid';
+        renderInventoryList();
+      });
+    }
+    if (DOM.btnInvList) {
+      DOM.btnInvList.addEventListener('click', () => {
+        playBeep(650);
+        state.inventoryViewMode = 'list';
+        renderInventoryList();
+      });
+    }
+    if (DOM.btnOpenL4Forge) {
+      DOM.btnOpenL4Forge.addEventListener('click', openL4ForgeModal);
+    }
+    if (DOM.l4ForgeClose) {
+      DOM.l4ForgeClose.addEventListener('click', () => {
+        DOM.l4ForgeModal.classList.remove('active');
+        DOM.l4ForgeModal.style.display = 'none';
+      });
+    }
+    if (DOM.btnForgeL4) {
+      DOM.btnForgeL4.addEventListener('click', forgeL4Dataset);
     }
     document.querySelectorAll('.btn-sell-action').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -2605,7 +2849,7 @@
 
   function init() {
     state.currentTrend = MARKET_TREND_POOLS[0];
-    DOM.tickerText.textContent = state.currentTrend.text;
+    setTickerText(state.currentTrend.text);
     updatePermanentHud();
     renderStage1Domains();
     setupEventListeners();

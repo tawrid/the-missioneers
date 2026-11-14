@@ -327,12 +327,16 @@
       <span class="saboteur-indicator" id="saboteur-status-pill" style="display: none;">🕵️ SABOTEUR ACTIVE</span>
     </div>
 
-    <!-- Market Trends Ticker Bar -->
-    <div class="trends-ticker" id="trends-ticker">
+    <!-- Market Trends Ticker Bar (Seamless Recurring Headline, Click to Lock) -->
+    <div class="trends-ticker" id="trends-ticker" title="Click to lock/unlock current market trend">
       <span class="ticker-label">🔥 GLOBAL DATA DEMAND TREND:</span>
       <div class="ticker-marquee-wrap">
-        <span class="ticker-text" id="ticker-text">Loading current NASA planetary &amp; Earth science market trends...</span>
+        <div class="ticker-track" id="ticker-track">
+          <span class="ticker-text" id="ticker-text">Loading current NASA planetary &amp; Earth science market trends...</span>
+          <span class="ticker-text" id="ticker-text-dup" aria-hidden="true">Loading current NASA planetary &amp; Earth science market trends...</span>
+        </div>
       </div>
+      <span class="ticker-lock-badge" id="ticker-lock-badge">🔓 LIVE</span>
     </div>
 
     <!-- NASA Mission Lifecycle Process Stepper -->
@@ -383,6 +387,11 @@
         <div class="panel-header">
           <h2>STAGE 1: SET GOAL // NASA SCIENCE DIRECTORATE</h2>
           <p>Choose your scientific mission discipline. Distance, duration, velocity (&Delta;v), and re-entry constraints vary by destination.</p>
+        </div>
+
+        <div class="mission-name-bar">
+          <label for="input-mission-name">🚀 MISSION DESIGNATION:</label>
+          <input type="text" id="input-mission-name" value="ARTEMIS-1" maxlength="32" placeholder="Enter custom mission name...">
         </div>
 
         <div class="domain-grid" id="domain-grid">
@@ -769,7 +778,13 @@
             <div class="inventory-box">
               <div class="inv-header-row">
                 <h3>MISSION DATA INVENTORY</h3>
-                <span class="inv-decay-hint">✅ Stored datasets retain 100% of their scientific value across cycles</span>
+                <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
+                  <span class="inv-decay-hint" id="inv-decay-hint">✅ Stored datasets retain 100% of their scientific value across cycles</span>
+                  <div class="inv-view-toggle">
+                    <button class="view-toggle-btn active" id="btn-inv-grid" type="button">⊞ GRID</button>
+                    <button class="view-toggle-btn" id="btn-inv-list" type="button">☰ LIST</button>
+                  </div>
+                </div>
               </div>
               <div class="data-inventory-list" id="data-inventory-list">
                 <!-- Data cards -->
@@ -778,7 +793,12 @@
 
             <!-- Data Processing Action Station -->
             <div class="processing-station" id="processing-station">
-              <h3>NASA DATA PROCESSING WORKBENCH</h3>
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                <h3 style="margin: 0;">NASA DATA PROCESSING WORKBENCH</h3>
+                <button class="action-btn secondary mini-btn" id="btn-open-l4-forge" type="button" style="border-color: var(--color-gold); color: var(--color-gold);">
+                  🧬 L4 ANCIENT SYNTHESIS FORGE
+                </button>
+              </div>
               <div class="processing-recipe" id="processing-recipe">
                 <p>Select a data package from your inventory above to view available refinement recipes.</p>
               </div>
@@ -937,18 +957,6 @@
           </div>
         </div>
 
-        <!-- Advanced Sliders (shown when checked) -->
-        <div id="adv-sliders-wrap" style="display: none; background: rgba(3,7,18,0.5); padding: 0.75rem; border-radius: 6px; margin-top: 0.5rem;">
-          <div class="setting-item">
-            <label for="slider-mass-margin">Structural Mass Margin (<span id="val-mass-margin">+0%</span>):</label>
-            <input type="range" id="slider-mass-margin" min="-20" max="50" value="0">
-          </div>
-          <div class="setting-item">
-            <label for="slider-fuel-cap">Fuel Tank Capacity Scaling (<span id="val-fuel-scaling">1.0x</span>):</label>
-            <input type="range" id="slider-fuel-cap" min="50" max="200" value="100">
-          </div>
-        </div>
-
         <!-- LM Studio Config -->
         <div class="setting-item" style="margin-top: 1rem;">
           <label for="input-lm-url">LM Studio Local Server Endpoint:</label>
@@ -1077,6 +1085,53 @@
             <strong style="font-size: 0.9rem; color: var(--color-gold);">SANDBOX (&infin; FUNDS)</strong>
             <span style="font-size: 0.72rem; font-weight: 400; margin-top: 0.3rem; opacity: 0.9;">Infinite Money &bull; Experiment with Any Ship &amp; Instruments</span>
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- L4 ANCIENT SYNTHESIS FORGE MODAL (MC Dungeons Ancient Hunts Style) -->
+  <div class="modal-overlay" id="l4-forge-modal">
+    <div class="modal-card wide">
+      <div class="modal-header">
+        <h3>🧬 L4 ANCIENT SYNTHESIS FORGE // MULTI-SENSOR MASTER DATASET</h3>
+        <button class="modal-close" id="l4-forge-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.85rem;">
+          Stuff loose <strong>L2+</strong> datasets from the right into the Synthesis Chamber on the left (requires at least <strong>1&times; L3A</strong> and <strong>2+ total L2+</strong> datasets). More data stuffed in yields exponentially higher L4 value! Components always contribute their full <strong>base price</strong> (ignoring decay), and L4 outputs never degrade.
+        </p>
+        <div class="l4-forge-grid">
+          <!-- LEFT: Synthesis Chamber (Conversion Area) -->
+          <div class="l4-chamber-col">
+            <div class="l4-col-header">
+              <h4>⚗️ L4 SYNTHESIS CHAMBER (OFFERINGS)</h4>
+              <span class="hud-tag" id="l4-chamber-count">0 ITEMS</span>
+            </div>
+            <div class="l4-chamber-list" id="l4-chamber-list">
+              <!-- Selected offerings -->
+            </div>
+            <div class="l4-forge-stats" id="l4-forge-stats">
+              <div>Requirement: <span id="l4-req-status" class="text-crimson">Need at least 1× L3A &amp; 2+ L2+ datasets</span></div>
+              <div>Synergy Multiplier: <strong id="l4-synergy-mult" class="text-cyan">1.85x</strong></div>
+              <div>Projected L4 Value: <strong id="l4-projected-val" class="text-gold">$0</strong></div>
+              <div>Synthesis Fee: <strong id="l4-forge-fee" class="text-amber">$180,000</strong></div>
+            </div>
+            <button class="action-btn primary" id="btn-forge-l4" disabled style="width: 100%; margin-top: 0.65rem;">
+              🧬 FORGE L4 MASTER DATASET
+            </button>
+          </div>
+
+          <!-- RIGHT: Available L2+ Offerings -->
+          <div class="l4-offerings-col">
+            <div class="l4-col-header">
+              <h4>📦 AVAILABLE L2+ DATASETS (CLICK TO ADD)</h4>
+              <span class="hud-tag" id="l4-available-count">0 ELIGIBLE</span>
+            </div>
+            <div class="l4-offerings-list" id="l4-offerings-list">
+              <!-- Available L2+ items -->
+            </div>
+          </div>
         </div>
       </div>
     </div>

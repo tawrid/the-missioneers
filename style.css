@@ -584,6 +584,13 @@ body {
   font-family: var(--font-mono);
   font-size: 0.75rem;
   overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.trends-ticker.locked {
+  border-color: var(--color-gold);
+  background: rgba(245, 158, 11, 0.18);
 }
 
 .ticker-label {
@@ -602,21 +609,44 @@ body {
   position: relative;
 }
 
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: tickerScroll 26s linear infinite;
+}
+
+.trends-ticker:hover .ticker-track,
+.trends-ticker.locked .ticker-track {
+  animation-play-state: paused;
+}
+
 .ticker-text {
   display: inline-block;
   color: #fef08a;
   white-space: nowrap;
-  padding-left: 100%;
-  animation: tickerScroll 26s linear infinite;
+  padding-right: 3.5rem;
 }
 
-.trends-ticker:hover .ticker-text {
-  animation-play-state: paused;
+.ticker-lock-badge {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.12rem 0.45rem;
+  border-radius: 4px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: var(--color-amber);
+  white-space: nowrap;
+}
+
+.trends-ticker.locked .ticker-lock-badge {
+  background: var(--color-gold);
+  color: #000;
 }
 
 @keyframes tickerScroll {
   0% { transform: translateX(0%); }
-  100% { transform: translateX(-100%); }
+  100% { transform: translateX(-50%); }
 }
 
 /* Phase Stepper */
@@ -2328,6 +2358,164 @@ input:checked + .slider:before {
   padding: 0.45rem 0.6rem;
   font-family: var(--font-mono);
   font-size: 0.78rem;
+}
+
+/* Mission Name Bar (Stage 1) */
+.mission-name-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--border-hud);
+  border-radius: 6px;
+  padding: 0.55rem 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.mission-name-bar label {
+  font-family: var(--font-hud);
+  font-size: 0.78rem;
+  color: var(--color-cyan);
+  white-space: nowrap;
+}
+
+.mission-name-bar input {
+  flex: 1;
+  max-width: 320px;
+  background: rgba(3, 7, 18, 0.85);
+  border: 1px solid var(--border-hud-bright);
+  border-radius: 4px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 0.35rem 0.65rem;
+}
+
+/* Inventory View Toggle & List View */
+.inv-view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border-hud);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.view-toggle-btn {
+  background: rgba(15, 23, 42, 0.8);
+  color: var(--text-muted);
+  border: none;
+  padding: 0.2rem 0.55rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.view-toggle-btn.active {
+  background: var(--color-cyan);
+  color: #000;
+  font-weight: 700;
+}
+
+.data-inventory-list.list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.data-inventory-list.list-view .data-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.85rem;
+  text-align: left;
+}
+
+/* L4 Ancient Synthesis Forge (MC Dungeons Ancient Hunts Style) */
+.l4-forge-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.15rem;
+}
+
+@media (max-width: 720px) {
+  .l4-forge-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.l4-chamber-col,
+.l4-offerings-col {
+  background: rgba(3, 7, 18, 0.65);
+  border: 1px solid var(--border-hud);
+  border-radius: 8px;
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.l4-chamber-col {
+  border-color: rgba(251, 191, 36, 0.45);
+}
+
+.l4-col-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+  padding-bottom: 0.45rem;
+}
+
+.l4-col-header h4 {
+  margin: 0;
+  font-family: var(--font-hud);
+  font-size: 0.82rem;
+  color: var(--color-gold);
+}
+
+.l4-offerings-col .l4-col-header h4 {
+  color: var(--color-cyan);
+}
+
+.l4-chamber-list,
+.l4-offerings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 250px;
+  overflow-y: auto;
+  min-height: 120px;
+}
+
+.l4-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 5px;
+  padding: 0.5rem 0.7rem;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.l4-item-row:hover {
+  border-color: var(--color-gold);
+  transform: translateY(-1px);
+}
+
+.l4-forge-stats {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 6px;
+  padding: 0.65rem 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 /* Utilities */
