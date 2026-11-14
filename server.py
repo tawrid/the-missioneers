@@ -12,13 +12,45 @@ import sys
 import json
 import urllib.request
 import urllib.error
-from http.server import HTTPServer, SimpleHTTPRequestHandler
-import mimetypes
+import urllib.parse
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 
+HOST = os.environ.get("HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT", 8080))
-LM_STUDIO_URL = os.environ.get("LM_STUDIO_URL", "http://1234.0.0.1:1234/v1" if False else "http://localhost:1234/v1")
+if not (1 <= PORT <= 65535):
+    raise ValueError("PORT must be between 1 and 65535")
+
+LM_STUDIO_URL = os.environ.get("LM_STUDIO_URL", "http://localhost:1234/v1").rstrip("/")
+_parsed_lm_url = urllib.parse.urlparse(LM_STUDIO_URL)
+if _parsed_lm_url.scheme not in ("http", "https") or not _parsed_lm_url.netloc:
+    raise ValueError("LM_STUDIO_URL must be a valid http:// or https:// URL")
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PUBLIC_DIR = BASE_DIR if os.path.exists(os.path.join(BASE_DIR, "index.html")) else os.path.join(BASE_DIR, "public")
+
+MAX_BODY_BYTES = 262144  # 256 KB
+MAX_PROMPT_CHARS = 4000
+ALLOWED_PROMPT_TYPES = {"event", "debrief"}
+ALLOWED_STATIC_FILES = {
+    "/": "index.html",
+    "/index.html": "index.html",
+    "/app.js": "app.js",
+    "/style.css": "style.css",
+    "/nasa_logo.svg": "nasa_logo.svg",
+}
+
+CSP_POLICY = (
+    "default-src 'self'; "
+    "script-src 'self' https://cdnjs.cloudflare.com; "
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+    "font-src 'self' https://fonts.gstatic.com; "
+    "img-src 'self' data:; "
+    "connect-src 'self' http://localhost:1234 http://127.0.0.1:1234; "
+    "object-src 'none'; "
+    "base-uri 'self'; "
+    "frame-ancestors 'none'"
+)
+
 
 def check_lm_studio():
     """Check if LM Studio local server is online and list models."""
@@ -28,10 +60,12 @@ def check_lm_studio():
         with urllib.request.urlopen(req, timeout=2.0) as resp:
             if resp.status == 200:
                 data = json.loads(resp.read().decode("utf-8"))
-                models = [m.get("id", "unknown") for m in data.get("data", [])]
-                return {"online": True, "models": models, "url": LM_STUDIO_URL}
+                models = [m.get("id", "unknown") for m in data.get("data", []) if isinstance(m, dict)]
+                return {"online": True, "models": models}
     except Exception as e:
-        return {"online": False, "models": [], "error": str(e), "url": LM_STUDIO_URL}
+        print(f"[LM Studio check] offline or unreachable: {e}", file=sys.stderr)
+    return {"online": False, "models": []}
+
 
 def call_lm_studio(messages, temperature=0.7, max_tokens=600):
     """Proxy request to LM Studio /v1/chat/completions."""
@@ -54,7 +88,9 @@ def call_lm_studio(messages, temperature=0.7, max_tokens=600):
             content = res_data["choices"][0]["message"]["content"]
             return {"success": True, "source": "lm-studio", "content": content}
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        print(f"[LM Studio call] failed: {e}", file=sys.stderr)
+        return {"success": False}
+
 
 def fallback_ai_evaluator(mission_data, prompt_type="event"):
     """
@@ -63,10 +99,11 @@ def fallback_ai_evaluator(mission_data, prompt_type="event"):
     """
     import random
     mission = mission_data.get("mission", {})
-    subsystems = mission_data.get("subsystems", {})
+    if not isinstance(mission, dict):
+        mission = {}
     health = mission_data.get("health", 100)
-    target = mission.get("name", "Deep Space")
-    
+    target = str(mission.get("name", "Deep Space"))[:64]
+
     if prompt_type == "event":
         events_pool = [
             {
@@ -104,115 +141,163 @@ def fallback_ai_evaluator(mission_data, prompt_type="event"):
 
     elif prompt_type == "debrief":
         score = mission_data.get("score", 75)
+        if not isinstance(score, (int, float)):
+            score = 75
         grade = "A" if score >= 85 else ("B" if score >= 70 else ("C" if score >= 50 else "D"))
         return {
             "grade": grade,
             "overall_status": "Mission Accomplished - Primary Objectives Met" if score >= 60 else "Mission Terminated Early",
-            "executive_summary": f"Spacecraft '{mission.get('name')}' completed flight operations. The engineering trade-offs between mass, power, and scientific return demonstrated real-world NASA systems engineering principles. Total science score attained: {score}.",
+            "executive_summary": f"Spacecraft '{target}' completed flight operations. The engineering trade-offs between mass, power, and scientific return demonstrated real-world NASA systems engineering principles. Total science score attained: {score}.",
             "highlights": [
-                f"Trajectory trajectory efficiency: {random.randint(88, 98)}%",
+                f"Trajectory efficiency: {random.randint(88, 98)}%",
                 f"Subsystem thermal stability: {health}% integrity maintained",
-                f"Data return payload efficiency: nominal"
+                "Data return payload efficiency: nominal"
             ]
         }
+
+    return None
+
 
 class MissionGameHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=PUBLIC_DIR, **kwargs)
 
     def end_headers(self):
-        # Enable CORS for local development and testing
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("Cross-Origin-Resource-Policy", "same-origin")
+        self.send_header("Content-Security-Policy", CSP_POLICY)
+
+        origin = self.headers.get("Origin")
+        allowed_origins = {f"http://localhost:{PORT}", f"http://127.0.0.1:{PORT}"}
+        if origin in allowed_origins:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
         super().end_headers()
 
+    def send_json(self, status_code, payload):
+        body = json.dumps(payload).encode("utf-8")
+        self.send_response(status_code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_OPTIONS(self):
-        self.send_response(200)
+        self.send_response(204)
         self.end_headers()
 
     def do_GET(self):
-        if self.path == "/api/status":
+        parsed = urllib.parse.urlparse(self.path)
+        req_path = parsed.path
+
+        if req_path == "/api/status":
             status = check_lm_studio()
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps(status).encode("utf-8"))
+            self.send_json(200, status)
             return
 
-        super().do_GET()
+        if req_path in ALLOWED_STATIC_FILES:
+            self.path = "/" + ALLOWED_STATIC_FILES[req_path]
+            super().do_GET()
+            return
+
+        self.send_error(404, "Not Found")
 
     def do_POST(self):
-        content_length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(content_length).decode("utf-8")
-        try:
-            req_data = json.loads(body) if body else {}
-        except Exception:
-            req_data = {}
-
-        if self.path == "/api/chat":
-            prompt_type = req_data.get("type", "event")
-            mission_data = req_data.get("mission_data", {})
-            user_prompt = req_data.get("prompt", "")
-
-            # Try LM Studio first if available
-            lm_status = check_lm_studio()
-            if lm_status["online"] and lm_status["models"]:
-                system_instruction = (
-                    "You are the Flight Director for a NASA Space Mission Simulation Game. "
-                    "Analyze player decisions, resource constraints, and generate realistic space events or debriefs. "
-                    "Return ONLY valid JSON format."
-                )
-                messages = [
-                    {"role": "system", "content": system_instruction},
-                    {"role": "user", "content": user_prompt}
-                ]
-                lm_result = call_lm_studio(messages)
-                if lm_result["success"]:
-                    try:
-                        # Attempt to parse json from model
-                        raw = lm_result["content"].strip()
-                        if "```json" in raw:
-                            raw = raw.split("```json")[1].split("```")[0].strip()
-                        elif "```" in raw:
-                            raw = raw.split("```")[1].split("```")[0].strip()
-                        parsed = json.loads(raw)
-                        self.send_response(200)
-                        self.send_header("Content-Type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps({"source": "lm-studio", "data": parsed}).encode("utf-8"))
-                        return
-                    except Exception:
-                        # If model didn't return perfect JSON, wrap content
-                        self.send_response(200)
-                        self.send_header("Content-Type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps({"source": "lm-studio-raw", "data": lm_result["content"]}).encode("utf-8"))
-                        return
-
-            # Fallback to smart local simulation engine
-            fallback_res = fallback_ai_evaluator(mission_data, prompt_type)
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"source": "heuristic-engine", "data": fallback_res}).encode("utf-8"))
+        parsed = urllib.parse.urlparse(self.path)
+        if parsed.path != "/api/chat":
+            self.send_json(404, {"error": "Not Found"})
             return
 
-        self.send_response(404)
-        self.end_headers()
+        raw_length = self.headers.get("Content-Length", "0")
+        try:
+            content_length = int(raw_length)
+        except ValueError:
+            self.send_json(400, {"error": "Invalid Content-Length"})
+            return
+
+        if content_length < 0:
+            self.send_json(400, {"error": "Invalid Content-Length"})
+            return
+        if content_length > MAX_BODY_BYTES:
+            self.send_json(413, {"error": "Payload Too Large"})
+            return
+
+        body = self.rfile.read(content_length).decode("utf-8", errors="replace")
+        try:
+            req_data = json.loads(body) if body else {}
+        except json.JSONDecodeError:
+            self.send_json(400, {"error": "Invalid JSON"})
+            return
+
+        if not isinstance(req_data, dict):
+            self.send_json(400, {"error": "JSON body must be an object"})
+            return
+
+        prompt_type = req_data.get("type", "event")
+        if prompt_type not in ALLOWED_PROMPT_TYPES:
+            self.send_json(400, {"error": "Invalid prompt type"})
+            return
+
+        mission_data = req_data.get("mission_data", {})
+        if not isinstance(mission_data, dict):
+            self.send_json(400, {"error": "mission_data must be an object"})
+            return
+
+        user_prompt = req_data.get("prompt", "")
+        if not isinstance(user_prompt, str):
+            self.send_json(400, {"error": "prompt must be a string"})
+            return
+        user_prompt = user_prompt[:MAX_PROMPT_CHARS]
+
+        # Try LM Studio first if available
+        lm_status = check_lm_studio()
+        if lm_status["online"] and lm_status["models"]:
+            system_instruction = (
+                "You are the Flight Director for a NASA Space Mission Simulation Game. "
+                "Analyze player decisions, resource constraints, and generate realistic space events or debriefs. "
+                "Return ONLY valid JSON format."
+            )
+            messages = [
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": user_prompt}
+            ]
+            lm_result = call_lm_studio(messages)
+            if lm_result["success"]:
+                try:
+                    raw = lm_result["content"].strip()
+                    if "```json" in raw:
+                        raw = raw.split("```json")[1].split("```")[0].strip()
+                    elif "```" in raw:
+                        raw = raw.split("```")[1].split("```")[0].strip()
+                    parsed_json = json.loads(raw)
+                    self.send_json(200, {"source": "lm-studio", "data": parsed_json})
+                    return
+                except Exception:
+                    self.send_json(200, {"source": "lm-studio-raw", "data": lm_result["content"]})
+                    return
+
+        # Fallback to smart local simulation engine
+        fallback_res = fallback_ai_evaluator(mission_data, prompt_type)
+        self.send_json(200, {"source": "heuristic-engine", "data": fallback_res})
+
 
 def main():
-    server = HTTPServer(("0.0.0.0", PORT), MissionGameHandler)
-    print(f"================================================================")
-    print(f"🚀 NASA Space Mission Design Game Server Started!")
-    print(f"📡 Web Application: http://localhost:{PORT}")
+    server = ThreadingHTTPServer((HOST, PORT), MissionGameHandler)
+    print("================================================================")
+    print("🚀 NASA Space Mission Design Game Server Started!")
+    print(f"📡 Web Application: http://{HOST}:{PORT}")
     print(f"🤖 LM Studio Target: {LM_STUDIO_URL}")
-    print(f"================================================================")
+    print("================================================================")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print("\nStopping server.")
         server.server_close()
+
 
 if __name__ == "__main__":
     main()

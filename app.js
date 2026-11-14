@@ -632,6 +632,8 @@
     relSpace: document.getElementById('rel-space'),
     relGround: document.getElementById('rel-ground'),
     btnBackStage4: document.getElementById('btn-back-stage4'),
+    btnPrevSegment: document.getElementById('btn-prev-segment'),
+    btnNextSegment: document.getElementById('btn-next-segment'),
     btnNextStage4: document.getElementById('btn-next-stage4'),
 
     // Stage 5
@@ -724,13 +726,44 @@
     l4ChamberList: document.getElementById('l4-chamber-list'),
     l4OfferingsList: document.getElementById('l4-offerings-list'),
     l4ChamberCount: document.getElementById('l4-chamber-count'),
-    l4AvailableCount: document.getElementById('l4-available-count'),
     l4ReqStatus: document.getElementById('l4-req-status'),
     l4SynergyMult: document.getElementById('l4-synergy-mult'),
     l4ProjectedVal: document.getElementById('l4-projected-val'),
     l4ForgeFee: document.getElementById('l4-forge-fee'),
-    btnForgeL4: document.getElementById('btn-forge-l4')
+    btnForgeL4: document.getElementById('btn-forge-l4'),
+
+    btnOpenHelp: document.getElementById('btn-open-help'),
+    menuHelpIcon: document.getElementById('menu-help-icon'),
+    screenCoachOverlay: document.getElementById('screen-coach-overlay'),
+    coachMaskSvg: document.getElementById('coach-mask-svg'),
+    coachCalloutsLayer: document.getElementById('coach-callouts-layer'),
+    btnCloseCoach: document.getElementById('btn-close-coach'),
+    introCutscene: document.getElementById('intro-cutscene'),
+    btnSkipCutscene: document.getElementById('btn-skip-cutscene'),
+    btnCutsceneSound: document.getElementById('btn-cutscene-sound'),
+    cutsceneStage: document.getElementById('cutscene-stage'),
+    cutsceneCaption: document.getElementById('cutscene-caption'),
+    buildVerifyIssues: document.getElementById('build-verify-issues'),
+    gameNoticeModal: document.getElementById('game-notice-modal'),
+    gameNoticeTitle: document.getElementById('game-notice-title'),
+    gameNoticeMessage: document.getElementById('game-notice-message'),
+    gameNoticeClose: document.getElementById('game-notice-close'),
+    gameNoticeOk: document.getElementById('game-notice-ok')
   };
+
+  function closeInPageNotice() {
+    if (!DOM.gameNoticeModal) return;
+    DOM.gameNoticeModal.classList.remove('active');
+    DOM.gameNoticeModal.style.display = 'none';
+  }
+
+  function showInPageNotice(message, title = 'MISSION CONTROL NOTICE') {
+    if (!DOM.gameNoticeModal || !DOM.gameNoticeMessage) return;
+    if (DOM.gameNoticeTitle) DOM.gameNoticeTitle.textContent = title;
+    DOM.gameNoticeMessage.textContent = String(message || '');
+    DOM.gameNoticeModal.style.display = 'flex';
+    DOM.gameNoticeModal.classList.add('active');
+  }
 
   // ========================================================================
   // 5. HUD UPDATES & CONTINUOUS REPUTATION CURVE
@@ -750,6 +783,9 @@
   }
 
   function getReputationPriceMultiplier() {
+    if (isInfiniteBudget()) {
+      return 1.30 * 1.25;
+    }
     // Smooth continuous curve: 50 rep = 1.0x, 0 rep = 0.70x, 100 rep = 1.30x
     // Plus +25% Flagship Partner multiplier at 100 Reputation!
     const base = 1.0 + (state.reputation - 50) * 0.006;
@@ -757,10 +793,13 @@
   }
 
   function updatePermanentHud() {
-    DOM.hudBudget.textContent = isInfiniteBudget() ? '∞ SANDBOX' : `$${state.budget.toLocaleString()}`;
-    DOM.hudRep.textContent = state.reputation >= 100 ? '100 / 100 🏆 FLAGSHIP' : `${state.reputation} / 100`;
+    const sandbox = isInfiniteBudget();
+    DOM.hudBudget.textContent = sandbox ? '∞ SANDBOX' : `$${state.budget.toLocaleString()}`;
+    DOM.hudRep.textContent = sandbox
+      ? '∞ SANDBOX'
+      : (state.reputation >= 100 ? '100 / 100 🏆 FLAGSHIP' : `${state.reputation} / 100`);
 
-    if (state.reputation >= 100) {
+    if (sandbox || state.reputation >= 100) {
       DOM.hudRep.className = 'res-val text-gold';
     } else if (state.reputation < 35) {
       DOM.hudRep.className = 'res-val text-amber';
@@ -773,6 +812,7 @@
   }
 
   function goToStage(stageNum) {
+    closeScreenCoachOverlay();
     playQuindarTone();
     state.stage = stageNum;
 
@@ -820,7 +860,7 @@
         <div class="domain-meta-row">
           <span>&Delta;V: <strong class="text-amber">${dom.baseDeltaV} km/s</strong></span>
           <span>Transit: <strong>${dom.transitDurationSec}s</strong></span>
-          <span>Return Shield: <strong class="${dom.requiresHeatShield ? 'text-crimson' : 'text-emerald'}">${dom.requiresHeatShield ? 'REQUIRED' : 'NO'}</strong></span>
+          <span>Return Shield: <strong class="${dom.requiresHeatShield ? 'text-crimson' : 'text-emerald'}">${dom.requiresHeatShield ? 'YES' : 'NO'}</strong></span>
         </div>
       `;
 
@@ -881,10 +921,10 @@
           </div>
         </div>
 
-        <!-- Hover Explanation Trigger -->
+        <!-- Click Explanation Trigger -->
         <div class="inst-hover-wrap">
           <div class="inst-hover-trigger">
-            <span>ℹ️ Hover for Scientific Detector Mechanism &amp; NASA link</span>
+            <span>ℹ️ Click for Scientific Detector Mechanism &amp; NASA link</span>
           </div>
           <div class="inst-tooltip">
             <h5>${activeData.name} — ${activeData.fullName}</h5>
@@ -904,6 +944,21 @@
           ${isSelected ? `✅ ${activeData.name} EQUIPPED` : `+ EQUIP ${activeData.name}`}
         </button>
       `;
+
+      const hoverWrap = card.querySelector('.inst-hover-wrap');
+      const hoverTrigger = card.querySelector('.inst-hover-trigger');
+      const tooltipBox = card.querySelector('.inst-tooltip');
+      if (hoverTrigger && hoverWrap) {
+        hoverTrigger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const wasOpen = hoverWrap.classList.contains('open');
+          document.querySelectorAll('.inst-hover-wrap.open').forEach(w => w.classList.remove('open'));
+          if (!wasOpen) hoverWrap.classList.add('open');
+        });
+      }
+      if (tooltipBox) {
+        tooltipBox.addEventListener('click', (e) => e.stopPropagation());
+      }
 
       const btnT1 = card.querySelector('[data-tier="1"]');
       const btnT2 = card.querySelector('[data-tier="2"]');
@@ -928,7 +983,7 @@
         e.stopPropagation();
         if (state.reputation < 35 && !isInfiniteBudget()) {
           playAlarm();
-          alert('Tier 2 advanced NRT sensors require at least 35 Reputation!');
+          showInPageNotice('Tier 2 advanced NRT sensors require at least 35 Reputation!');
           return;
         }
         playBeep(820);
@@ -1017,6 +1072,7 @@
   let activeDesignSegment = 'launch';
 
   function updateDesignSubtabs() {
+    closeScreenCoachOverlay();
     DOM.segTabLaunch.classList.toggle('active', activeDesignSegment === 'launch');
     DOM.segTabSpace.classList.toggle('active', activeDesignSegment === 'space');
     DOM.segTabGround.classList.toggle('active', activeDesignSegment === 'ground');
@@ -1024,6 +1080,11 @@
     DOM.fuelChemistryPanel.style.display = activeDesignSegment === 'launch' ? 'block' : 'none';
     DOM.busExpansionPanel.style.display = (activeDesignSegment === 'space' && !state.customSlidersEnabled) ? 'block' : 'none';
     DOM.reentryShieldPanel.style.display = (activeDesignSegment === 'space' && state.selectedDomain.requiresHeatShield) ? 'block' : 'none';
+
+    if (DOM.btnBackStage4) DOM.btnBackStage4.style.display = activeDesignSegment === 'launch' ? 'inline-flex' : 'none';
+    if (DOM.btnPrevSegment) DOM.btnPrevSegment.style.display = activeDesignSegment !== 'launch' ? 'inline-flex' : 'none';
+    if (DOM.btnNextSegment) DOM.btnNextSegment.style.display = activeDesignSegment !== 'ground' ? 'inline-flex' : 'none';
+    if (DOM.btnNextStage4) DOM.btnNextStage4.style.display = activeDesignSegment === 'ground' ? 'inline-flex' : 'none';
   }
 
   function renderStage4Design() {
@@ -1390,16 +1451,77 @@
     DOM.relSpace.textContent = `${relSpace}%`;
     DOM.relGround.textContent = `${relGround}%`;
 
-    // Validation
-    const isValid = (
-      segmentsReady &&
-      totalMass <= maxMass &&
-      powerConsumed <= powerGen &&
-      volumeUsed <= maxVolume &&
-      velocityDV >= state.tempResources.reqVelocity &&
-      (sandbox || totalCost <= state.budget) &&
-      instrumentsCountOk
-    );
+    // Read-only Validation & Missing Items / Solutions (Standard vs Advanced Mode)
+    const buildIssues = [];
+    const isAdv = !!state.customSlidersEnabled;
+
+    if (!isAdv) {
+      if (!rocket) buildIssues.push('Missing Launch Rocket: Select a Launch Vehicle in 1. Launch Segment.');
+      if (!bus) buildIssues.push('Missing Space Bus: Select a Spacecraft Bus in 2. Space Segment.');
+      if (!ground) buildIssues.push('Missing Ground Station: Select a Ground Network in 3. Ground Segment.');
+    }
+
+    if ((isAdv || rocket) && totalMass > maxMass) {
+      buildIssues.push(
+        isAdv
+          ? `Mass Exceeded (${totalMass.toLocaleString()} / ${maxMass.toLocaleString()} kg): Increase the "Rocket Max Payload Mass" slider in 1. Launch Segment, or lower "Fuel Capacity" / sensors.`
+          : `Mass Exceeded (${totalMass.toLocaleString()} / ${maxMass.toLocaleString()} kg): Upgrade to a heavier Launch Rocket in 1. Launch Segment or reduce Bus Sizing / sensors.`
+      );
+    }
+    if ((isAdv || bus) && powerConsumed > powerGen) {
+      buildIssues.push(
+        isAdv
+          ? `Insufficient Power (${powerConsumed} / ${powerGen} W): Increase the "Bus Solar/RTG Power" slider in 2. Space Segment, or unequip high-power sensors.`
+          : `Insufficient Power (${powerConsumed} / ${powerGen} W): Select a higher-power Spacecraft Bus in 2. Space Segment or unequip high-power sensors.`
+      );
+    }
+    if ((isAdv || bus) && volumeUsed > maxVolume) {
+      buildIssues.push(
+        isAdv
+          ? `Bus Volume Full (${volumeUsed.toFixed(1)} / ${maxVolume.toFixed(1)} m³): Increase the "Spacecraft Bus Volume" slider in 2. Space Segment, or equip fewer sensors.`
+          : `Bus Volume Full (${volumeUsed.toFixed(1)} / ${maxVolume.toFixed(1)} m³): Increase Bus Sizing in 2. Space Segment or equip fewer sensors.`
+      );
+    }
+    if ((isAdv || rocket) && velocityDV < state.tempResources.reqVelocity) {
+      buildIssues.push(
+        isAdv
+          ? `Not enough Delta-V (${velocityDV.toFixed(1)} / ${state.tempResources.reqVelocity.toFixed(1)} km/s): Increase "Base Rocket Velocity (ΔV)" slider or change fuel (e.g. Hydrolox/Methalox) in 1. Launch Segment.`
+          : `Not enough Delta-V (${velocityDV.toFixed(1)} / ${state.tempResources.reqVelocity.toFixed(1)} km/s): Upgrade your Rocket or switch to Hydrolox/Methalox fuel in 1. Launch Segment.`
+      );
+    }
+    if (!sandbox && totalCost > state.budget) {
+      buildIssues.push(
+        isAdv
+          ? `Over Budget ($${totalCost.toLocaleString()} / $${state.budget.toLocaleString()}): Lower slider targets (Payload Mass, Delta-V, Power, or Reliability) or claim a grant/loan in Stage 7.`
+          : `Over Budget ($${totalCost.toLocaleString()} / $${state.budget.toLocaleString()}): Pick lower-cost hardware or claim a grant/loan in Stage 7.`
+      );
+    }
+    if (!instrumentsCountOk) {
+      buildIssues.push('No Science Sensors Equipped: Return to Stage 2 and equip at least one sensor.');
+    }
+
+    const isValid = segmentsReady && buildIssues.length === 0;
+
+    if (DOM.buildVerifyIssues) {
+      if (isValid) {
+        DOM.buildVerifyIssues.style.display = 'none';
+        DOM.buildVerifyIssues.innerHTML = '';
+      } else {
+        DOM.buildVerifyIssues.style.display = 'block';
+        DOM.buildVerifyIssues.innerHTML = '';
+        const titleEl = document.createElement('div');
+        titleEl.className = 'build-verify-issues-title';
+        titleEl.textContent = 'BUILD & VERIFY BLOCKED — FIX THESE ITEMS:';
+        const ul = document.createElement('ul');
+        buildIssues.forEach(msg => {
+          const li = document.createElement('li');
+          li.textContent = msg;
+          ul.appendChild(li);
+        });
+        DOM.buildVerifyIssues.appendChild(titleEl);
+        DOM.buildVerifyIssues.appendChild(ul);
+      }
+    }
 
     DOM.btnNextStage4.disabled = !isValid;
   }
@@ -1411,7 +1533,8 @@
   let testsRun = false;
 
   function renderStage5Verification() {
-    testsRun = false;
+    const alreadyDiagnosed = state.tempResources.diagnosticsBonus > 0;
+    testsRun = alreadyDiagnosed;
     DOM.btnNextStage5.disabled = false; // Player can choose to launch directly or run test
     const sandbox = isInfiniteBudget();
     const diagFee = sandbox ? 0 : DIAGNOSTIC_COST;
@@ -1419,6 +1542,22 @@
     DOM.invCurrentBudget.textContent = sandbox ? '∞ SANDBOX' : `$${state.budget.toLocaleString()}`;
     DOM.invCost.textContent = `-$${state.tempResources.totalCost.toLocaleString()}`;
     DOM.invRemaining.textContent = sandbox ? '∞ SANDBOX' : `$${(state.budget - state.tempResources.totalCost).toLocaleString()}`;
+
+    if (alreadyDiagnosed) {
+      DOM.btnRunTests.textContent = '✅ DIAGNOSTIC SIMULATION COMPLETED (+10% RELIABILITY ACTIVE)';
+      DOM.btnRunTests.disabled = true;
+      const tests = [
+        { id: 'test-launch', name: 'Launch Segment: Structural Integrity & Clearance', pass: state.tempResources.mass <= state.tempResources.maxMass, fix: 'Go back to Stage 4 and pick a heavier Launch Rocket or reduce Bus Sizing.' },
+        { id: 'test-prop', name: 'Propulsion: Velocity & Thrust Chamber Check', pass: state.tempResources.velocity >= state.tempResources.reqVelocity, fix: 'Go back to Stage 4 and upgrade your Rocket or switch to Hydrolox fuel.' },
+        { id: 'test-power', name: 'Power Bus: Solar/RTG Equilibrium Verified', pass: state.tempResources.power <= state.tempResources.maxPower, fix: 'Go back to Stage 4 and upgrade your Spacecraft Bus power.' },
+        { id: 'test-sensors', name: 'Scientific Sensors: Detectors Calibrated', pass: true, fix: '' },
+        { id: 'test-ground', name: 'Ground Link: Handshake Protocol', pass: true, fix: '' }
+      ];
+      DOM.testList.innerHTML = tests.map(t =>
+        `<li id="${t.id}" class="${t.pass ? 'passed' : 'failed'}">${t.pass ? '✅' : '❌'} ${t.name}: ${t.pass ? 'PASSED VERIFICATION' : `FAILED — ${t.fix}`}</li>`
+      ).join('');
+      return;
+    }
 
     DOM.btnRunTests.textContent = sandbox
       ? '🔬 RUN FULL DIAGNOSTIC SIMULATION (FREE IN SANDBOX | +10% RELIABILITY)'
@@ -1435,10 +1574,13 @@
   }
 
   function runSystemDiagnostics() {
+    if (state.tempResources.diagnosticsBonus > 0) {
+      return;
+    }
     const sandbox = isInfiniteBudget();
     if (!sandbox && state.budget < DIAGNOSTIC_COST) {
       playAlarm();
-      alert(`Insufficient funds for Pre-Flight Diagnostics ($${DIAGNOSTIC_COST.toLocaleString()} required).`);
+      showInPageNotice(`Insufficient funds for Pre-Flight Diagnostics ($${DIAGNOSTIC_COST.toLocaleString()} required).`, 'INSUFFICIENT FUNDS');
       return;
     }
 
@@ -1453,11 +1595,11 @@
     DOM.btnRunTests.disabled = true;
 
     const tests = [
-      { id: 'test-launch', name: 'Launch Segment: Structural Integrity & Clearance', pass: state.tempResources.mass <= state.tempResources.maxMass },
-      { id: 'test-prop', name: 'Propulsion: Velocity & Thrust Chamber Check', pass: state.tempResources.velocity >= state.tempResources.reqVelocity },
-      { id: 'test-power', name: 'Power Bus: Solar/RTG Equilibrium Verified', pass: state.tempResources.power <= state.tempResources.maxPower },
-      { id: 'test-sensors', name: 'Scientific Sensors: Detectors Calibrated', pass: true },
-      { id: 'test-ground', name: 'Ground Link: Handshake Protocol', pass: true }
+      { id: 'test-launch', name: 'Launch Segment: Structural Integrity & Clearance', pass: state.tempResources.mass <= state.tempResources.maxMass, fix: 'Go back to Stage 4 and pick a heavier Launch Rocket or reduce Bus Sizing.' },
+      { id: 'test-prop', name: 'Propulsion: Velocity & Thrust Chamber Check', pass: state.tempResources.velocity >= state.tempResources.reqVelocity, fix: 'Go back to Stage 4 and upgrade your Rocket or switch to Hydrolox fuel.' },
+      { id: 'test-power', name: 'Power Bus: Solar/RTG Equilibrium Verified', pass: state.tempResources.power <= state.tempResources.maxPower, fix: 'Go back to Stage 4 and upgrade your Spacecraft Bus power.' },
+      { id: 'test-sensors', name: 'Scientific Sensors: Detectors Calibrated', pass: true, fix: '' },
+      { id: 'test-ground', name: 'Ground Link: Handshake Protocol', pass: true, fix: '' }
     ];
 
     tests.forEach((t, i) => {
@@ -1465,7 +1607,7 @@
         const el = document.getElementById(t.id);
         if (el) {
           el.className = t.pass ? 'passed' : 'failed';
-          el.textContent = `${t.pass ? '✅' : '❌'} ${t.name}: PASSED VERIFICATION`;
+          el.textContent = `${t.pass ? '✅' : '❌'} ${t.name}: ${t.pass ? 'PASSED VERIFICATION' : `FAILED — ${t.fix}`}`;
         }
         playBeep(t.pass ? 880 : 350);
         if (i === tests.length - 1) {
@@ -1475,7 +1617,7 @@
           state.reputation = Math.min(100, state.reputation + 5);
           updatePermanentHud();
           calculateTempResources();
-          alert('✅ NASA DIAGNOSTICS COMPLETED!\nGranted +10% Reliability Bonus across all flight segments and +5 Permanent Reputation for flight readiness rigor.');
+          showInPageNotice('NASA DIAGNOSTICS COMPLETED!\nGranted +10% Reliability Bonus across all flight segments and +5 Permanent Reputation for flight readiness rigor.', 'DIAGNOSTICS COMPLETE');
         }
       }, (i + 1) * 300);
     });
@@ -1534,7 +1676,11 @@
   function logFlightMessage(msg, isAlert = false) {
     const el = document.createElement('div');
     el.className = 'event-message';
-    el.innerHTML = `<span class="timestamp">[T+${Math.round(flightProgress * state.selectedDomain.transitDurationSec)}s ${isAlert ? 'ALERT' : 'INFO'}]</span> ${msg}`;
+    const ts = document.createElement('span');
+    ts.className = 'timestamp';
+    ts.textContent = `[T+${Math.round(flightProgress * state.selectedDomain.transitDurationSec)}s ${isAlert ? 'ALERT' : 'INFO'}]`;
+    el.appendChild(ts);
+    el.appendChild(document.createTextNode(` ${msg}`));
     DOM.flightTerminal.appendChild(el);
     DOM.flightTerminal.scrollTop = DOM.flightTerminal.scrollHeight;
   }
@@ -1607,7 +1753,7 @@
         playAlarm();
         logFlightMessage('🚨 RE-ENTRY CATASTROPHE: No heat shield installed! Re-entry temperatures reached 1600°C and incinerated all biological samples.', true);
         state.flight.dataAccumulatedMB = 0;
-        alert('🚨 MISSION FAILURE: Atmospheric Re-entry burned up your biological samples because no Heat Shield was installed!');
+        showInPageNotice('🚨 MISSION FAILURE: Atmospheric Re-entry burned up your biological samples because no Heat Shield was installed!');
       } else if (state.selectedDomain.requiresHeatShield && state.selections.heatShieldInstalled) {
         logFlightMessage('🛡️ RE-ENTRY SUCCESS: PICA-X heat shield protected the biological sample return capsule during splashdown!');
       }
@@ -1699,16 +1845,16 @@
       const penalty = 300000;
       state.budget = Math.max(0, state.budget - penalty);
       updatePermanentHud();
-      alert(`🚨 UNADDRESSED LAUNCH FAILURE!\nPropellant valve rupture resulted in catastrophic vehicle explosion. You lost -$${penalty.toLocaleString()} in salvage fees and the mission immediately failed.`);
+      showInPageNotice(`🚨 UNADDRESSED LAUNCH FAILURE!\nPropellant valve rupture resulted in catastrophic vehicle explosion. You lost -$${penalty.toLocaleString()} in salvage fees and the mission immediately failed.`);
       goToStage(7);
     } else if (anomaly.seg === 'space') {
       state.flight.spaceIntegrity = 0;
       state.flight.dataAccumulatedMB = 0;
-      alert(`⚠️ UNADDRESSED SPACE FAILURE!\nSensors suffered electrical burnout. Zero data collected.`);
+      showInPageNotice(`⚠️ UNADDRESSED SPACE FAILURE!\nSensors suffered electrical burnout. Zero data collected.`);
     } else if (anomaly.seg === 'ground') {
       state.flight.groundIntegrity = 0;
       state.flight.dataAccumulatedMB = 0;
-      alert(`⚠️ UNADDRESSED GROUND FAILURE!\nTracking dish drifted completely out of line of sight. All data lost.`);
+      showInPageNotice(`⚠️ UNADDRESSED GROUND FAILURE!\nTracking dish drifted completely out of line of sight. All data lost.`);
     }
   }
 
@@ -1944,7 +2090,7 @@
 
     if (DOM.invDecayHint) {
       DOM.invDecayHint.textContent = state.difficulty === 'hard'
-        ? '⚠️ HARD MODE: Unsold non-L4 datasets decay 15%/cycle (L4 & Forge components ignore decay)'
+        ? '⚠️ HARD MODE: Unsold non-L4 datasets decay 15%/cycle (L4 & Splicer components ignore decay)'
         : '✅ Stored datasets retain 100% of their scientific value across cycles';
     }
 
@@ -2112,7 +2258,7 @@
     const combineCfg = getCombineConfig(item.level);
     if (combineCfg && combineCfg.required) {
       playAlarm();
-      alert(`${item.level} → ${combineCfg.target} requires combining 2 datasets!`);
+      showInPageNotice(`${item.level} → ${combineCfg.target} requires combining 2 datasets!`);
       return;
     }
 
@@ -2146,21 +2292,21 @@
     const partnerIdx = parseInt(DOM.combinePartnerSelect.value, 10);
     if (isNaN(partnerIdx) || partnerIdx === primaryIdx || !state.dataInventory[partnerIdx]) {
       playAlarm();
-      alert(`Select a valid second ${combineCfg.minPartnerLevel}+ dataset to combine!`);
+      showInPageNotice(`Select a valid second ${combineCfg.minPartnerLevel}+ dataset to combine!`);
       return;
     }
 
     const partner = state.dataInventory[partnerIdx];
     if (!isLevelAtLeast(partner.level, combineCfg.minPartnerLevel)) {
       playAlarm();
-      alert(`Partner dataset must be at least ${combineCfg.minPartnerLevel}.`);
+      showInPageNotice(`Partner dataset must be at least ${combineCfg.minPartnerLevel}.`);
       return;
     }
 
     const sandbox = isInfiniteBudget();
     if (!sandbox && state.budget < combineCfg.cost) {
       playAlarm();
-      alert(`Insufficient funds! Combining requires $${combineCfg.cost.toLocaleString()}.`);
+      showInPageNotice(`Insufficient funds! Combining requires $${combineCfg.cost.toLocaleString()}.`);
       return;
     }
 
@@ -2242,13 +2388,12 @@
       });
     }
 
-    // Render RIGHT: Available L2+ Offerings
+    // Render RIGHT: Available L2+ Datasets
     DOM.l4OfferingsList.innerHTML = '';
     const available = state.dataInventory
       .map((it, idx) => ({ it, idx }))
       .filter(({ it, idx }) => isLevelAtLeast(it.level, 'L2') && it.level !== 'L4' && !state.l4ChamberIndices.includes(idx));
 
-    DOM.l4AvailableCount.textContent = `${available.length} ELIGIBLE`;
     if (available.length === 0) {
       DOM.l4OfferingsList.innerHTML = `<p style="color: var(--text-muted); font-size: 0.78rem; padding: 0.5rem;">No remaining L2+ datasets in inventory.</p>`;
     } else {
@@ -2274,13 +2419,13 @@
 
     // Update stats & button
     if (proj.valid) {
-      DOM.l4ReqStatus.textContent = '✅ Ready to Forge L4 Master Dataset';
+      DOM.l4ReqStatus.textContent = '✅ Ready to Splice L4 Master Dataset';
       DOM.l4ReqStatus.className = 'text-emerald';
     } else {
       DOM.l4ReqStatus.textContent = !proj.hasL3A ? 'Need at least 1× L3A dataset' : 'Need at least 2 total L2+ datasets';
       DOM.l4ReqStatus.className = 'text-crimson';
     }
-    DOM.l4SynergyMult.textContent = `${proj.mult.toFixed(2)}x (${proj.items.length} offerings)`;
+    DOM.l4SynergyMult.textContent = `${proj.mult.toFixed(2)}x (${proj.items.length} datasets)`;
     DOM.l4ProjectedVal.textContent = `$${proj.projectedVal.toLocaleString()}`;
     DOM.l4ForgeFee.textContent = proj.fee === 0 ? '$0 (SANDBOX)' : `$${proj.fee.toLocaleString()}`;
     DOM.btnForgeL4.disabled = !proj.valid || (!isInfiniteBudget() && state.budget < proj.fee);
@@ -2294,7 +2439,7 @@
     }
     if (!isInfiniteBudget() && state.budget < proj.fee) {
       playAlarm();
-      alert(`Insufficient funds for L4 Synthesis ($${proj.fee.toLocaleString()} required).`);
+      showInPageNotice(`Insufficient funds for L4 Synthesis ($${proj.fee.toLocaleString()} required).`);
       return;
     }
 
@@ -2329,13 +2474,13 @@
     updatePermanentHud();
     renderInventoryList();
     renderRefineryWorkbench(newL4);
-    alert(`🧬 L4 MASTER DATASET FORGED!\nSynthesized ${proj.items.length} datasets into 1 L4 Master Dataset worth $${proj.projectedVal.toLocaleString()} (immune to cycle degradation)!`);
+    showInPageNotice(`🧬 L4 MASTER DATASET FORGED!\nSynthesized ${proj.items.length} datasets into 1 L4 Master Dataset worth $${proj.projectedVal.toLocaleString()} (immune to cycle degradation)!`);
   }
 
   function sellDataToBuyer(buyerType) {
     if (state.selectedInventoryIdx === null) {
       playAlarm();
-      alert('Select a dataset from your inventory to sell!');
+      showInPageNotice('Select a dataset from your inventory to sell!');
       return;
     }
 
@@ -2374,7 +2519,7 @@
 
     playBeep(payout > 0 ? 1200 : 800);
     const flagshipNote = state.reputation >= 100 ? '\n🏆 100-Reputation Flagship Partner Bonus Active (+25% Payout & +$150k/Cycle)!' : '';
-    alert(`Data sold to ${buyerType.toUpperCase()}!\n💰 Cash Earned: $${payout.toLocaleString()}\n⭐ Reputation Change: ${repDelta >= 0 ? '+' : ''}${repDelta}${flagshipNote}`);
+    showInPageNotice(`Data sold to ${buyerType.toUpperCase()}!\n💰 Cash Earned: $${payout.toLocaleString()}\n⭐ Reputation Change: ${repDelta >= 0 ? '+' : ''}${repDelta}${flagshipNote}`);
 
     state.dataInventory.splice(state.selectedInventoryIdx, 1);
     state.selectedInventoryIdx = null;
@@ -2460,7 +2605,7 @@
       cycleMessages.push(`⚠️ Unpaid debt accrued 5% interest (+$${interest.toLocaleString()}). Total debt: $${state.activeDebt.toLocaleString()}.`);
     }
 
-    alert(cycleMessages.join('\n'));
+    showInPageNotice(cycleMessages.join('\n'));
 
     // Rotate market trends unless locked by player
     if (!state.trendLocked) {
@@ -2533,7 +2678,7 @@
       DOM.saboteurStatusPill.style.display = 'inline-block';
       const roles = ['launch', 'space', 'ground'];
       state.saboteurRole = roles[Math.floor(Math.random() * roles.length)];
-      alert('🕵️ SABOTEUR IMPOSTOR MODE ENGAGED!\nOne station is an undercover saboteur introducing hidden malfunctions. Your crew must solve urgent minigames to prevent bankruptcy!');
+      showInPageNotice('🕵️ SABOTEUR IMPOSTOR MODE ENGAGED!\nOne station is an undercover saboteur introducing hidden malfunctions. Your crew must solve urgent minigames to prevent bankruptcy!');
       goToStage(1);
     });
 
@@ -2614,7 +2759,22 @@
         playBeep(750);
         DOM.settingsLmStatus.textContent = 'Testing connection to LM Studio...';
         DOM.settingsLmStatus.className = 'text-amber';
-        const lmUrl = document.getElementById('setting-lm-url')?.value || 'http://localhost:1234/v1';
+        const rawUrl = (document.getElementById('input-lm-url')?.value || 'http://localhost:1234/v1').trim();
+        let parsedUrl;
+        try {
+          parsedUrl = new URL(rawUrl);
+        } catch {
+          DOM.settingsLmStatus.textContent = '⚠️ Invalid LM Studio URL format.';
+          DOM.settingsLmStatus.className = 'text-amber';
+          return;
+        }
+        const allowedHosts = new Set(['localhost', '127.0.0.1', '[::1]']);
+        if (!['http:', 'https:'].includes(parsedUrl.protocol) || !allowedHosts.has(parsedUrl.hostname)) {
+          DOM.settingsLmStatus.textContent = '⚠️ Only local http(s)://localhost or 127.0.0.1 endpoints are permitted.';
+          DOM.settingsLmStatus.className = 'text-amber';
+          return;
+        }
+        const lmUrl = parsedUrl.toString().replace(/\/+$/, '');
         try {
           const resp = await fetch(`${lmUrl}/models`, { method: 'GET', signal: AbortSignal.timeout(3000) });
           if (resp.ok) {
@@ -2742,6 +2902,23 @@
       renderStage4Design();
     });
 
+    if (DOM.btnPrevSegment) {
+      DOM.btnPrevSegment.addEventListener('click', () => {
+        playBeep(600);
+        if (activeDesignSegment === 'ground') activeDesignSegment = 'space';
+        else if (activeDesignSegment === 'space') activeDesignSegment = 'launch';
+        renderStage4Design();
+      });
+    }
+    if (DOM.btnNextSegment) {
+      DOM.btnNextSegment.addEventListener('click', () => {
+        playBeep(700);
+        if (activeDesignSegment === 'launch') activeDesignSegment = 'space';
+        else if (activeDesignSegment === 'space') activeDesignSegment = 'ground';
+        renderStage4Design();
+      });
+    }
+
     // Heat Shield Checkbox
     DOM.chkHeatShield.addEventListener('change', (e) => {
       playBeep(700);
@@ -2799,10 +2976,14 @@
     // Loans
     DOM.btnLoanGrant.addEventListener('click', () => {
       playBeep(880);
-      state.budget += 150000;
-      state.reputation = Math.max(0, state.reputation - 8);
-      updatePermanentHud();
-      alert('NASA Emergency Grant approved: +$150,000 added to budget. (-8 Reputation)');
+      if (!isInfiniteBudget()) {
+        state.budget += 150000;
+        state.reputation = Math.max(0, state.reputation - 8);
+        updatePermanentHud();
+        showInPageNotice('NASA Emergency Grant approved: +$150,000 added to budget. (-8 Reputation)');
+      } else {
+        showInPageNotice('Sandbox Mode already has ∞ Budget & ∞ Reputation!');
+      }
     });
 
     DOM.btnLoanBank.addEventListener('click', () => {
@@ -2810,12 +2991,12 @@
       state.budget += 250000;
       state.activeDebt += 275000;
       updatePermanentHud();
-      alert('Commercial Bank Loan approved: +$250,000 received. $275,000 debt added.');
+      showInPageNotice('Commercial Bank Loan approved: +$250,000 received. $275,000 debt added.');
     });
 
     DOM.btnPayDebt.addEventListener('click', () => {
       if (state.activeDebt <= 0) {
-        alert('You have no active debt.');
+        showInPageNotice('You have no active debt.');
         return;
       }
       if (state.budget < state.activeDebt) {
@@ -2824,12 +3005,12 @@
         state.budget = 0;
         state.activeDebt -= pay;
         playBeep(900);
-        alert(`Partial debt payment of $${pay.toLocaleString()} processed. Remaining debt: $${state.activeDebt.toLocaleString()}.`);
+        showInPageNotice(`Partial debt payment of $${pay.toLocaleString()} processed. Remaining debt: $${state.activeDebt.toLocaleString()}.`);
       } else {
         state.budget -= state.activeDebt;
         state.activeDebt = 0;
         playBeep(1200);
-        alert('🎉 Debt fully paid off! Your credit standing is pristine.');
+        showInPageNotice('🎉 Debt fully paid off! Your credit standing is pristine.');
       }
       updatePermanentHud();
     });
@@ -2845,6 +3026,417 @@
       DOM.rulesModal.classList.remove('active');
       DOM.rulesModal.style.display = 'none';
     });
+
+    // ? Screen Coach Overlay (Available on Main Menu & Every Stage)
+    if (DOM.btnOpenHelp) DOM.btnOpenHelp.addEventListener('click', () => { playBeep(760); openScreenCoachOverlay(); });
+    if (DOM.menuHelpIcon) DOM.menuHelpIcon.addEventListener('click', () => { playBeep(760); openScreenCoachOverlay(); });
+    if (DOM.btnCloseCoach) DOM.btnCloseCoach.addEventListener('click', closeScreenCoachOverlay);
+    if (DOM.screenCoachOverlay) {
+      DOM.screenCoachOverlay.addEventListener('click', (e) => {
+        if (e.target === DOM.screenCoachOverlay || e.target === DOM.coachCalloutsLayer) {
+          closeScreenCoachOverlay();
+        }
+      });
+    }
+
+    if (DOM.gameNoticeClose) DOM.gameNoticeClose.addEventListener('click', closeInPageNotice);
+    if (DOM.gameNoticeOk) DOM.gameNoticeOk.addEventListener('click', closeInPageNotice);
+    if (DOM.gameNoticeModal) {
+      DOM.gameNoticeModal.addEventListener('click', (e) => {
+        if (e.target === DOM.gameNoticeModal) closeInPageNotice();
+      });
+    }
+
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.inst-hover-wrap.open').forEach(w => w.classList.remove('open'));
+    });
+  }
+
+  // Element-by-element explanations per screen (used by the ? gray overlay)
+  const SCREEN_ELEMENT_GUIDES = [
+    { selector: '#menu-btn-singleplayer', text: 'Start a solo game where you control every step.' },
+    { selector: '#menu-btn-multiplayer', text: 'Play Co-op (4 stations) or Saboteur Impostor mode.' },
+    { selector: '#menu-btn-settings', text: 'Adjust audio volume, advanced sliders, or local AI.' },
+    { selector: '#menu-btn-manual', text: 'Read the full NASA engineering rules & data levels.' },
+    { selector: '.resource-box.budget', text: 'Your total money to buy rockets, sensors & lab work.' },
+    { selector: '.resource-box.rep', text: 'Reputation unlocks Tier 2 sensors & boosts data prices.' },
+    { selector: '#btn-open-vault', text: 'View all science datasets you currently own.' },
+    { selector: '#btn-open-settings', text: 'Change sound, advanced sliders, or AI settings.' },
+    { selector: '#btn-return-menu', text: 'Go back to the Main Menu.' },
+    { selector: '#trends-ticker', text: 'Live Market Trend! Click to lock/unlock bonus payouts.' },
+    { selector: '#domain-grid', text: 'Pick where your mission goes (Earth, Planets, Sun, Deep Space, Life).' },
+    { selector: '#btn-next-stage1', text: 'Continue to choose your science sensors.' },
+    { selector: '#data-types-container', text: 'Pick what measurements & NASA sensors to fly.' },
+    { selector: '#btn-next-stage2', text: 'Continue to review mission requirements.' },
+    { selector: '#stage-3 .req-card:nth-of-type(1) .req-row:nth-of-type(1)', text: 'Primary Discipline: The science area you chose for this mission.' },
+    { selector: '#stage-3 .req-card:nth-of-type(1) .req-row:nth-of-type(2)', text: 'Equipped Instruments: The science sensors flying on your spacecraft.' },
+    { selector: '#stage-3 .req-card:nth-of-type(1) .req-row:nth-of-type(3)', text: 'Trajectory Velocity (Delta-V): Speed your rocket must reach to arrive.' },
+    { selector: '#stage-3 .req-card:nth-of-type(1) .req-row:nth-of-type(4)', text: 'Flight Transit Duration: How long the trip takes before data arrives.' },
+    { selector: '#stage-3 .req-card:nth-of-type(1) .req-row:nth-of-type(5)', text: 'Return Shield: Whether a heat shield is needed to survive landing.' },
+    { selector: '#stage-3 .req-card:nth-of-type(2) .req-row:nth-of-type(1)', text: 'Estimated Mass: Total weight your rocket needs to lift.' },
+    { selector: '#stage-3 .req-card:nth-of-type(2) .req-row:nth-of-type(2)', text: 'Minimum Bus Power: Electricity (Watts) needed to run all sensors.' },
+    { selector: '#stage-3 .req-card:nth-of-type(2) .req-row:nth-of-type(3)', text: 'Bus Volume Needed: Space inside the spacecraft body for your gear.' },
+    { selector: '#stage-3 .req-card:nth-of-type(2) .req-row:nth-of-type(4)', text: 'Downlink Bandwidth: Antenna speed needed to beam data back to Earth.' },
+    { selector: '#btn-next-stage3', text: 'Start building your Rocket, Spacecraft & Ground Dish.' },
+    { selector: '.segment-tabs', text: '3 Mission Parts: Launch Rocket, Space Bus, & Ground Dish.' },
+    { selector: '#fuel-chemistry-panel', text: 'Fuel Types: Pick RP-1, Methalox, Hydrolox, or Hypergolic. Each trades cost, weight & engine efficiency (Isp).' },
+    { selector: '#bus-expansion-panel', text: 'Bus Sizing: Enlarge the spacecraft body to fit more sensors (adds weight & fuel use).' },
+    { selector: '#reentry-shield-panel', text: 'Heat Shield: Mandatory protection for return missions surviving 1600 C re-entry.' },
+    { selector: '#segment-options-container', text: 'Pick hardware for the active segment.' },
+    { selector: '#stage-4 .gauge-card', text: 'Mission Expenditure: Total money spent vs. your remaining budget.' },
+    { selector: '#temp-mass-card', text: 'Total Mass: Combined weight of rocket, bus, sensors & fuel vs. lift limit.' },
+    { selector: '#temp-power-card', text: 'Power Consumption: Electricity used by sensors vs. bus power generated.' },
+    { selector: '#temp-vol-card', text: 'Payload Volume: Physical space used by sensors vs. bus capacity.' },
+    { selector: '#temp-vel-card', text: 'Velocity (Delta-V): Speed your rocket + fuel provides vs. mission target.' },
+    { selector: '.bandwidth-meter-box', text: 'Downlink Bandwidth: Data transfer speed from space to ground stations.' },
+    { selector: '.segment-reliability-row', text: 'Reliability: Chance each segment (Launch, Space, Ground) runs without failure.' },
+    { selector: '#btn-prev-segment', text: 'Go back to the previous segment.' },
+    { selector: '#btn-next-segment', text: 'Move to the next segment.' },
+    { selector: '#btn-next-stage4', text: 'Build complete! Proceed to pre-flight verification.' },
+    { selector: '#btn-run-tests', text: 'Optional ground test: +10% flight reliability & +5 Rep.' },
+    { selector: '#test-list', text: 'Live checklist of spacecraft safety checks.' },
+    { selector: '#btn-next-stage5', text: 'Launch your spacecraft into flight!' },
+    { selector: '#flight-canvas', text: 'Live mission trajectory & spacecraft flight view.' },
+    { selector: '.flight-gauges-row', text: 'Live health bars for Launch Rocket, Space Sensors, and Ground Telemetry.' },
+    { selector: '#flight-terminal', text: 'Live flight log — urgent errors & anomalies will pop up in this area! Click Intervene quickly when one appears.' },
+    { selector: '#btn-complete-flight', text: 'Flight complete! Head to the Data Refinery & Market.' },
+    { selector: '#data-inventory-list', text: 'Your collected datasets. Click one to refine or sell it.' },
+    { selector: '#processing-station', text: 'Refine L0->L3A data or combine datasets to raise value.' },
+    { selector: '#btn-open-l4-forge', text: 'Level 4 Splicer: splice L2+ datasets into an L4 Master Dataset.' },
+    { selector: '.buyers-grid', text: 'Data Market Exchange: Sell your processed dataset to a buyer for cash or Reputation.' },
+    { selector: '#buyer-institute', text: 'Scientific Institute: Standard cash payout + boosts Reputation (+8 Rep).' },
+    { selector: '#buyer-opensource', text: 'Open Source: $0 cash payout, but gives the biggest Reputation boost (+20 Rep).' },
+    { selector: '#buyer-shady', text: 'Classified Agency: Pays 2.5x cash, but hurts your Reputation (-15 Rep).' },
+    { selector: '.bank-box', text: 'Loan & Debt Center: Claim emergency grants, borrow cash, or pay off active debt.' },
+    { selector: '#btn-next-mission-loop', text: 'Start your next mission cycle!' }
+  ];
+
+  function closeScreenCoachOverlay() {
+    if (!DOM.screenCoachOverlay) return;
+    DOM.screenCoachOverlay.classList.remove('active');
+    if (DOM.coachCalloutsLayer) DOM.coachCalloutsLayer.innerHTML = '';
+    if (DOM.coachMaskSvg) DOM.coachMaskSvg.innerHTML = '';
+  }
+
+  function openScreenCoachOverlay() {
+    if (!DOM.screenCoachOverlay || !DOM.coachCalloutsLayer) return;
+    DOM.coachCalloutsLayer.innerHTML = '';
+    DOM.screenCoachOverlay.classList.add('active');
+
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    let delayIdx = 0;
+    const cutouts = [];
+
+    SCREEN_ELEMENT_GUIDES.forEach(item => {
+      const el = document.querySelector(item.selector);
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      // Only annotate elements that are actually visible on the current screen
+      if (rect.width < 8 || rect.height < 8 || rect.bottom < 0 || rect.top > vh) return;
+
+      const x = Math.max(4, rect.left - 4);
+      const y = Math.max(4, rect.top - 4);
+      const w = Math.min(vw - 8, rect.width + 8);
+      const h = rect.height + 8;
+      cutouts.push({ x, y, w, h });
+
+      const box = document.createElement('div');
+      box.className = 'coach-highlight-box';
+      box.style.left = `${x}px`;
+      box.style.top = `${y}px`;
+      box.style.width = `${w}px`;
+      box.style.height = `${h}px`;
+      box.style.animationDelay = `${delayIdx * 0.04}s`;
+
+      const tip = document.createElement('div');
+      tip.className = 'coach-tip-pill';
+      tip.textContent = item.text;
+      // Place tip below or above the highlighted element so it stays on screen
+      const placeAbove = rect.bottom + 64 > vh && rect.top > 75;
+      tip.style.left = `${Math.min(Math.max(8, rect.left), Math.max(8, vw - 275))}px`;
+      tip.style.top = placeAbove
+        ? `${Math.max(12, rect.top - 50)}px`
+        : `${Math.min(vh - 70, rect.bottom + 8)}px`;
+      tip.style.animationDelay = `${delayIdx * 0.04}s`;
+
+      const setHovered = (hovered) => {
+        box.classList.toggle('is-hovered', hovered);
+        tip.classList.toggle('is-hovered', hovered);
+      };
+      box.addEventListener('mouseenter', () => setHovered(true));
+      box.addEventListener('mouseleave', () => setHovered(false));
+      tip.addEventListener('mouseenter', () => setHovered(true));
+      tip.addEventListener('mouseleave', () => setHovered(false));
+
+      DOM.coachCalloutsLayer.appendChild(box);
+      DOM.coachCalloutsLayer.appendChild(tip);
+      delayIdx++;
+    });
+
+    // Gray overlay covers ONLY unexplained/unimportant areas via evenodd SVG cutout mask
+    if (DOM.coachMaskSvg) {
+      DOM.coachMaskSvg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
+      let pathD = `M0,0 H${vw} V${vh} H0 Z `;
+      cutouts.forEach(c => {
+        pathD += `M${c.x},${c.y} h${c.w} v${c.h} h${-c.w} Z `;
+      });
+      const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      pathEl.setAttribute('d', pathD);
+      pathEl.setAttribute('fill', 'rgba(51, 65, 85, 0.78)');
+      pathEl.setAttribute('fill-rule', 'evenodd');
+      DOM.coachMaskSvg.innerHTML = '';
+      DOM.coachMaskSvg.appendChild(pathEl);
+    }
+  }
+
+  let cutsceneSoundEnabled = true;
+
+  function playCutsceneCue(sceneIdx) {
+    if (!cutsceneSoundEnabled || masterVolume <= 0) return;
+    try {
+      initAudio();
+      if (!audioCtx || audioCtx.state !== 'running') return;
+      const now = audioCtx.currentTime;
+
+      const playTone = (freq, type, startOffset, dur, vol, endFreq = null) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now + startOffset);
+        if (endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, now + startOffset + dur);
+        gain.gain.setValueAtTime(0.001, now + startOffset);
+        gain.gain.linearRampToValueAtTime(vol * masterVolume, now + startOffset + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + startOffset + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + startOffset);
+        osc.stop(now + startOffset + dur + 0.02);
+      };
+
+      // Deep cinematic sub-pad on every scene transition
+      playTone(65, 'sine', 0, 1.4, 0.09, 55);
+
+      if (sceneIdx === 0) {
+        playTone(440, 'sine', 0.1, 0.35, 0.06, 880);
+        playTone(1320, 'triangle', 0.55, 0.25, 0.04);
+      } else if (sceneIdx === 1) {
+        playTone(523.25, 'sine', 0.1, 0.3, 0.05);
+        playTone(659.25, 'sine', 0.28, 0.4, 0.05);
+      } else if (sceneIdx === 2) {
+        playTone(196, 'triangle', 0.1, 0.25, 0.07);
+        playTone(293.66, 'triangle', 0.35, 0.25, 0.07);
+        playTone(392, 'sine', 0.6, 0.5, 0.06);
+      } else if (sceneIdx === 3) {
+        // Rocket ignition noise roar + ascending synth
+        const bufSize = Math.floor(audioCtx.sampleRate * 1.4);
+        const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buf;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(180, now);
+        filter.frequency.exponentialRampToValueAtTime(950, now + 1.2);
+        const nGain = audioCtx.createGain();
+        nGain.gain.setValueAtTime(0.01, now);
+        nGain.gain.linearRampToValueAtTime(0.12 * masterVolume, now + 0.25);
+        nGain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+        noise.connect(filter);
+        filter.connect(nGain);
+        nGain.connect(audioCtx.destination);
+        noise.start(now);
+        playTone(110, 'sawtooth', 0.05, 1.2, 0.04, 330);
+      } else if (sceneIdx === 4) {
+        playTone(740, 'square', 0.1, 0.12, 0.03);
+        playTone(587.33, 'sine', 0.35, 0.45, 0.06, 880);
+        playTone(2525, 'sine', 0.85, 0.18, 0.05);
+      } else if (sceneIdx === 5) {
+        [523.25, 659.25, 783.99, 987.77, 1174.66].forEach((f, idx) => {
+          playTone(f, 'sine', 0.12 + idx * 0.14, 0.65, 0.05);
+        });
+      }
+    } catch {
+      // Ignore if AudioContext is blocked
+    }
+  }
+
+  function startIntroCutscene() {
+    if (!DOM.introCutscene || !DOM.cutsceneStage) return;
+    const scenes = Array.from(DOM.cutsceneStage.querySelectorAll('.cutscene-scene'));
+    if (scenes.length === 0) return;
+
+    let masterTl = null;
+    let fallbackTimer = null;
+    let activeSceneIdx = 0;
+    let justUnlockedByPointer = false;
+
+    const updateSoundBtnLabel = () => {
+      if (!DOM.btnCutsceneSound) return;
+      DOM.btnCutsceneSound.textContent = cutsceneSoundEnabled ? 'AUDIO: ON' : 'AUDIO: OFF';
+    };
+
+    const unlockAudioOnGesture = () => {
+      try {
+        initAudio();
+        if (audioCtx && audioCtx.state === 'suspended') {
+          justUnlockedByPointer = true;
+          setTimeout(() => { justUnlockedByPointer = false; }, 450);
+          audioCtx.resume().then(() => {
+            if (cutsceneSoundEnabled) playCutsceneCue(activeSceneIdx);
+          }).catch(() => {});
+        }
+      } catch {}
+    };
+    unlockAudioOnGesture();
+    document.addEventListener('pointerdown', unlockAudioOnGesture, { once: true });
+    document.addEventListener('keydown', unlockAudioOnGesture, { once: true });
+
+    if (DOM.btnCutsceneSound) {
+      DOM.btnCutsceneSound.addEventListener('click', (e) => {
+        e.stopPropagation();
+        try { initAudio(); } catch {}
+        // If pointerdown just unlocked AudioContext on this click, keep AUDIO: ON instead of toggling OFF
+        if (justUnlockedByPointer || (audioCtx && audioCtx.state === 'suspended')) {
+          justUnlockedByPointer = false;
+          cutsceneSoundEnabled = true;
+          updateSoundBtnLabel();
+          if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().then(() => playCutsceneCue(activeSceneIdx)).catch(() => {});
+          } else {
+            playCutsceneCue(activeSceneIdx);
+          }
+          return;
+        }
+        cutsceneSoundEnabled = !cutsceneSoundEnabled;
+        if (cutsceneSoundEnabled) {
+          try { playCutsceneCue(activeSceneIdx); } catch {}
+        }
+        updateSoundBtnLabel();
+      });
+    }
+
+    const finishCutscene = () => {
+      if (masterTl) {
+        masterTl.kill();
+        masterTl = null;
+      }
+      if (fallbackTimer) {
+        clearInterval(fallbackTimer);
+        fallbackTimer = null;
+      }
+      if (window.gsap) {
+        window.gsap.to(DOM.introCutscene, {
+          opacity: 0,
+          duration: 0.45,
+          ease: 'power2.out',
+          onComplete: () => {
+            DOM.introCutscene.classList.remove('active');
+            DOM.introCutscene.style.display = 'none';
+          }
+        });
+      } else {
+        DOM.introCutscene.classList.remove('active');
+        DOM.introCutscene.style.display = 'none';
+      }
+    };
+
+    if (DOM.btnSkipCutscene) {
+      DOM.btnSkipCutscene.addEventListener('click', () => {
+        try { initAudio(); playBeep(700); } catch {}
+        finishCutscene();
+      });
+    }
+
+    const setSceneUI = (idx) => {
+      activeSceneIdx = idx;
+      if (DOM.cutsceneCaption && scenes[idx]) {
+        DOM.cutsceneCaption.textContent = scenes[idx].getAttribute('data-caption') || '';
+      }
+      updateSoundBtnLabel();
+    };
+
+    if (window.gsap) {
+      const g = window.gsap;
+      g.set(scenes, { autoAlpha: 0, scale: 0.96 });
+      masterTl = g.timeline({ onComplete: finishCutscene });
+
+      // Scene 0: Orbital Target Lock
+      masterTl
+        .call(() => { setSceneUI(0); playCutsceneCue(0); })
+        .to(scenes[0], { autoAlpha: 1, scale: 1, duration: 0.5, ease: 'power2.out' })
+        .fromTo(scenes[0].querySelector('.cs-reticle'), { rotation: -120, scale: 1.7, opacity: 0 }, { rotation: 0, scale: 1, opacity: 1, duration: 1.25, ease: 'expo.out' }, '<0.08')
+        .to(scenes[0].querySelector('.cs-earth-body'), { scale: 1.06, duration: 1.2, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<0.1')
+        .to(scenes[0].querySelector('.cs-planet-ringed'), { y: -14, x: -10, duration: 1.5, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<')
+        .to(scenes[0], { autoAlpha: 0, scale: 1.03, duration: 0.45, ease: 'power2.in' }, '+=0.35');
+
+      // Scene 1: Solar Wings Unfold, Sensors Dock & Sweep Scan
+      masterTl
+        .call(() => { setSceneUI(1); playCutsceneCue(1); })
+        .to(scenes[1], { autoAlpha: 1, scale: 1, duration: 0.45, ease: 'power2.out' })
+        .fromTo(scenes[1].querySelector('.cs-wing-l'), { scaleX: 0, transformOrigin: 'right center' }, { scaleX: 1, duration: 0.7, ease: 'power3.out' }, '<0.1')
+        .fromTo(scenes[1].querySelector('.cs-wing-r'), { scaleX: 0, transformOrigin: 'left center' }, { scaleX: 1, duration: 0.7, ease: 'power3.out' }, '<')
+        .fromTo(scenes[1].querySelector('.cs-sensor-left'), { x: -110, opacity: 0 }, { x: 0, opacity: 1, duration: 0.85, ease: 'power3.out' }, '<0.15')
+        .fromTo(scenes[1].querySelector('.cs-sensor-right'), { x: 110, opacity: 0 }, { x: 0, opacity: 1, duration: 0.85, ease: 'power3.out' }, '<')
+        .fromTo(scenes[1].querySelector('.cs-scan-cone'), { opacity: 0, scaleY: 0.1, transformOrigin: 'top center' }, { opacity: 1, scaleY: 1, duration: 0.8, ease: 'power2.out' }, '<0.35')
+        .to(scenes[1].querySelector('.cs-scan-cone'), { skewX: 8, duration: 0.9, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<0.4')
+        .to(scenes[1], { autoAlpha: 0, scale: 1.03, duration: 0.45, ease: 'power2.in' }, '+=0.8');
+
+      // Scene 2: 3-Segment Assembly & Telemetry Flow
+      masterTl
+        .call(() => { setSceneUI(2); playCutsceneCue(2); })
+        .to(scenes[2], { autoAlpha: 1, scale: 1, duration: 0.45, ease: 'power2.out' })
+        .fromTo([scenes[2].querySelector('.cs-seg-1'), scenes[2].querySelector('.cs-seg-2'), scenes[2].querySelector('.cs-seg-3')],
+          { y: 45, scale: 0.9, opacity: 0 }, { y: 0, scale: 1, opacity: 1, stagger: 0.25, duration: 0.7, ease: 'power3.out' }, '<0.1')
+        .fromTo([scenes[2].querySelector('.cs-link-1'), scenes[2].querySelector('.cs-link-2')],
+          { strokeDashoffset: 80, opacity: 0 }, { strokeDashoffset: 0, opacity: 1, duration: 1.1, ease: 'power1.inOut' }, '<0.3')
+        .to(scenes[2], { autoAlpha: 0, scale: 1.03, duration: 0.45, ease: 'power2.in' }, '+=1.4');
+
+      // Scene 3: Rocket Liftoff & Orbital Arc
+      masterTl
+        .call(() => { setSceneUI(3); playCutsceneCue(3); })
+        .to(scenes[3], { autoAlpha: 1, scale: 1, duration: 0.45, ease: 'power2.out' })
+        .fromTo(scenes[3].querySelector('.cs-traj-arc'), { strokeDashoffset: 160, opacity: 0.2 }, { strokeDashoffset: 0, opacity: 1, duration: 2.1, ease: 'power1.inOut' }, '<0.1')
+        .fromTo(scenes[3].querySelector('.cs-rocket-ship'), { y: 30, x: 0, rotation: 0 }, { y: -315, x: 520, rotation: 52, duration: 2.2, ease: 'power2.inOut' }, '<0.1')
+        .to(scenes[3].querySelector('.cs-plume'), { scaleY: 1.5, opacity: 0.85, duration: 0.14, repeat: 14, yoyo: true }, '<')
+        .to(scenes[3], { autoAlpha: 0, duration: 0.45, ease: 'power2.in' }, '+=0.9');
+
+      // Scene 4: Anomaly Shockwave, Shield & Downlink Stream
+      masterTl
+        .call(() => { setSceneUI(4); playCutsceneCue(4); })
+        .to(scenes[4], { autoAlpha: 1, scale: 1, duration: 0.45, ease: 'power2.out' })
+        .fromTo(scenes[4].querySelector('.cs-anomaly-ring'), { scale: 0.65, opacity: 0.9 }, { scale: 1.25, opacity: 0.15, duration: 0.9, repeat: 2, ease: 'power2.out' }, '<0.1')
+        .fromTo(scenes[4].querySelector('.cs-shield-wave'), { scale: 0.5, opacity: 0 }, { scale: 1.05, opacity: 1, duration: 0.8, ease: 'expo.out' }, '<0.35')
+        .fromTo(scenes[4].querySelector('.cs-downlink-wave'), { strokeDashoffset: 140 }, { strokeDashoffset: 0, duration: 1.4, ease: 'none' }, '<0.25')
+        .to(scenes[4], { autoAlpha: 0, duration: 0.45, ease: 'power2.in' }, '+=1.3');
+
+      // Scene 5: L4 Splicer Synthesis & Growth Curve
+      masterTl
+        .call(() => { setSceneUI(5); playCutsceneCue(5); })
+        .to(scenes[5], { autoAlpha: 1, scale: 1, duration: 0.45, ease: 'power2.out' })
+        .fromTo([scenes[5].querySelector('.cs-node-l0'), scenes[5].querySelector('.cs-node-l2')],
+          { x: -60, opacity: 0 }, { x: 0, opacity: 1, stagger: 0.2, duration: 0.65, ease: 'power2.out' }, '<0.1')
+        .fromTo(scenes[5].querySelector('.cs-node-l4'), { scale: 0.5, rotation: -45, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: 0.85, ease: 'back.out(1.4)' }, '<0.3')
+        .fromTo(scenes[5].querySelectorAll('.cs-value-bars rect'), { scaleY: 0, transformOrigin: 'bottom' }, { scaleY: 1, stagger: 0.18, duration: 0.65, ease: 'power3.out' }, '<0.25')
+        .to(scenes[5], { autoAlpha: 0, duration: 0.45 }, '+=1.6');
+    } else {
+      let current = 0;
+      scenes[0].classList.add('active');
+      setSceneUI(0);
+      playCutsceneCue(0);
+      fallbackTimer = setInterval(() => {
+        scenes[current].classList.remove('active');
+        current++;
+        if (current >= scenes.length) {
+          finishCutscene();
+        } else {
+          scenes[current].classList.add('active');
+          setSceneUI(current);
+          playCutsceneCue(current);
+        }
+      }, 3600);
+    }
   }
 
   function init() {
@@ -2853,6 +3445,7 @@
     updatePermanentHud();
     renderStage1Domains();
     setupEventListeners();
+    startIntroCutscene();
   }
 
   document.addEventListener('DOMContentLoaded', init);

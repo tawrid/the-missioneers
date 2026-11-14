@@ -13,10 +13,212 @@
   <div id="starfield-bg"></div>
 
   <!-- ============================================== -->
+  <!-- FULLSCREEN CINEMATIC SVG CUTSCENE (GSAP)       -->
+  <!-- ============================================== -->
+  <div id="intro-cutscene" class="cutscene-overlay active" aria-label="Mission Process Cinematic Intro">
+    <div class="cutscene-letterbox top"></div>
+    <div class="cutscene-letterbox bottom"></div>
+    <div class="cutscene-top-controls">
+      <button class="cutscene-sound-btn" id="btn-cutscene-sound" type="button">AUDIO: ON</button>
+      <button class="cutscene-skip-btn" id="btn-skip-cutscene" type="button">SKIP &gt;&gt;</button>
+    </div>
+    <div class="cutscene-top-caption-wrap">
+      <div class="cutscene-caption" id="cutscene-caption">STAGE 1 — Choose your science destination: Sun, Earth, Planets, or Deep Space.</div>
+    </div>
+
+    <div class="cutscene-stage" id="cutscene-stage">
+      <!-- Scene 0: Orbital Target Selection -->
+      <div class="cutscene-scene" data-scene="0" data-caption="STAGE 1 — Choose your science destination: Sun, Earth, Planets, or Deep Space.">
+        <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="csSunGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#fef08a"/>
+              <stop offset="45%" stop-color="#f59e0b" stop-opacity="0.7"/>
+              <stop offset="100%" stop-color="#b45309" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="csEarthGrad" cx="35%" cy="35%" r="65%">
+              <stop offset="0%" stop-color="#38bdf8"/>
+              <stop offset="65%" stop-color="#0284c7"/>
+              <stop offset="100%" stop-color="#0f172a"/>
+            </radialGradient>
+          </defs>
+          <g stroke="rgba(56,189,248,0.12)" stroke-width="1" fill="none">
+            <line x1="0" y1="337" x2="1200" y2="337"/>
+            <line x1="600" y1="0" x2="600" y2="675"/>
+          </g>
+          <ellipse cx="600" cy="337" rx="440" ry="190" fill="none" stroke="rgba(56,189,248,0.22)" stroke-width="1.5" stroke-dasharray="8 8"/>
+          <ellipse cx="600" cy="337" rx="260" ry="112" fill="none" stroke="rgba(251,191,36,0.25)" stroke-width="1.5"/>
+          <g transform="translate(220, 337)">
+            <circle cx="0" cy="0" r="115" fill="url(#csSunGlow)"/>
+            <circle cx="0" cy="0" r="42" fill="#fbbf24"/>
+          </g>
+          <g transform="translate(600, 337)">
+            <g class="cs-earth-body">
+              <circle cx="0" cy="0" r="56" fill="url(#csEarthGrad)" stroke="rgba(125,211,252,0.5)" stroke-width="2"/>
+            </g>
+            <g class="cs-reticle">
+              <circle cx="0" cy="0" r="88" fill="none" stroke="#00f2fe" stroke-width="2.5" stroke-dasharray="20 10"/>
+              <circle cx="0" cy="0" r="108" fill="none" stroke="rgba(0,242,254,0.35)" stroke-width="1"/>
+              <line x1="-124" y1="0" x2="-82" y2="0" stroke="#00f2fe" stroke-width="2.5"/>
+              <line x1="82" y1="0" x2="124" y2="0" stroke="#00f2fe" stroke-width="2.5"/>
+              <line x1="0" y1="-124" x2="0" y2="-82" stroke="#00f2fe" stroke-width="2.5"/>
+              <line x1="0" y1="82" x2="0" y2="124" stroke="#00f2fe" stroke-width="2.5"/>
+            </g>
+          </g>
+          <g transform="translate(970, 275)">
+            <g class="cs-planet-ringed">
+              <ellipse cx="0" cy="0" rx="74" ry="18" fill="none" stroke="#94a3b8" stroke-width="3.5" transform="rotate(-16)"/>
+              <circle cx="0" cy="0" r="32" fill="#cbd5e1"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Scene 1: Sensor Assembly & Surface Scan -->
+      <div class="cutscene-scene" data-scene="1" data-caption="STAGE 2 — Equip Tier 1 or Tier 2 NASA science sensors to collect data.">
+        <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <path d="M120,590 Q600,485 1080,590" fill="none" stroke="rgba(56,189,248,0.45)" stroke-width="3"/>
+          <g transform="translate(600, 255)">
+            <g class="cs-bus-core">
+              <rect class="cs-wing-l" x="-210" y="-18" width="130" height="36" rx="3" fill="rgba(2,132,199,0.45)" stroke="#38bdf8" stroke-width="2"/>
+              <rect class="cs-wing-r" x="80" y="-18" width="130" height="36" rx="3" fill="rgba(2,132,199,0.45)" stroke="#38bdf8" stroke-width="2"/>
+              <rect x="-64" y="-54" width="128" height="108" rx="12" fill="#0f172a" stroke="#10b981" stroke-width="3"/>
+              <circle cx="0" cy="-8" r="18" fill="#0ea5e9" stroke="#e0f2fe" stroke-width="2"/>
+              <line x1="-42" y1="28" x2="42" y2="28" stroke="#38bdf8" stroke-width="2.5"/>
+            </g>
+          </g>
+          <g transform="translate(390, 255)">
+            <g class="cs-sensor-left">
+              <rect x="-44" y="-28" width="88" height="56" rx="8" fill="#0f172a" stroke="#00f2fe" stroke-width="2.5"/>
+              <circle cx="0" cy="0" r="14" fill="#00f2fe"/>
+            </g>
+          </g>
+          <g transform="translate(810, 255)">
+            <g class="cs-sensor-right">
+              <polygon points="-40,-28 40,-16 40,16 -40,28" fill="#0f172a" stroke="#fbbf24" stroke-width="2.5"/>
+              <circle cx="-8" cy="0" r="10" fill="#fbbf24"/>
+            </g>
+          </g>
+          <g transform="translate(600, 315)">
+            <polygon class="cs-scan-cone" points="-24,0 24,0 210,235 -210,235" fill="rgba(0, 242, 254, 0.14)" stroke="rgba(0, 242, 254, 0.55)" stroke-width="1.5" stroke-dasharray="6 6"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Scene 2: 3-Segment Engineering Link -->
+      <div class="cutscene-scene" data-scene="2" data-caption="STAGE 3 &amp; 4 — Build Launch Rocket, Space Bus, and Ground Dish within limits.">
+        <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <g transform="translate(270, 337)">
+            <g class="cs-seg-1">
+              <circle cx="0" cy="0" r="98" fill="rgba(15,23,42,0.75)" stroke="#f59e0b" stroke-width="2.5"/>
+              <path d="M0,-64 L22,-14 L22,50 L-22,50 L-22,-14 Z" fill="#f8fafc" stroke="#f59e0b" stroke-width="2"/>
+              <polygon points="-22,26 -40,58 -22,50" fill="#f59e0b"/>
+              <polygon points="22,26 40,58 22,50" fill="#f59e0b"/>
+            </g>
+          </g>
+          <line class="cs-link-1" x1="378" y1="337" x2="492" y2="337" stroke="#00f2fe" stroke-width="3" stroke-dasharray="10 8"/>
+          <g transform="translate(600, 337)">
+            <g class="cs-seg-2">
+              <circle cx="0" cy="0" r="98" fill="rgba(15,23,42,0.75)" stroke="#00f2fe" stroke-width="2.5"/>
+              <rect x="-74" y="-14" width="38" height="28" fill="#0284c7" stroke="#7dd3fc" stroke-width="1.5"/>
+              <rect x="36" y="-14" width="38" height="28" fill="#0284c7" stroke="#7dd3fc" stroke-width="1.5"/>
+              <rect x="-32" y="-32" width="64" height="64" rx="8" fill="#1e293b" stroke="#00f2fe" stroke-width="2.5"/>
+            </g>
+          </g>
+          <line class="cs-link-2" x1="708" y1="337" x2="822" y2="337" stroke="#10b981" stroke-width="3" stroke-dasharray="10 8"/>
+          <g transform="translate(930, 337)">
+            <g class="cs-seg-3">
+              <circle cx="0" cy="0" r="98" fill="rgba(15,23,42,0.75)" stroke="#10b981" stroke-width="2.5"/>
+              <path d="M-48,-12 Q0,44 48,-12" fill="none" stroke="#10b981" stroke-width="4.5"/>
+              <line x1="0" y1="16" x2="0" y2="-36" stroke="#10b981" stroke-width="3"/>
+              <circle cx="0" cy="-42" r="7" fill="#34d399"/>
+              <rect x="-26" y="34" width="52" height="16" rx="4" fill="#334155"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Scene 3: Orbital Ascent & Insertion -->
+      <div class="cutscene-scene" data-scene="3" data-caption="STAGE 5 &amp; 6 — Run safety diagnostics and launch your spacecraft into orbit.">
+        <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <path d="M100,615 Q600,490 1100,615" fill="none" stroke="#0284c7" stroke-width="4" opacity="0.65"/>
+          <path class="cs-traj-arc" d="M360,520 Q580,220 960,155" fill="none" stroke="#00f2fe" stroke-width="3" stroke-dasharray="12 8"/>
+          <circle cx="960" cy="155" r="10" fill="#10b981" opacity="0.85"/>
+          <g transform="translate(360, 490)">
+            <g class="cs-rocket-ship">
+              <path d="M0,-68 L20,-16 L20,48 L-20,48 L-20,-16 Z" fill="#f8fafc" stroke="#38bdf8" stroke-width="2.5"/>
+              <polygon points="-20,26 -38,54 -20,48" fill="#ef4444"/>
+              <polygon points="20,26 38,54 20,48" fill="#ef4444"/>
+              <polygon class="cs-plume" points="-14,48 0,118 14,48" fill="#f59e0b"/>
+              <polygon class="cs-plume-inner" points="-6,48 0,88 6,48" fill="#fef08a"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Scene 4: Anomaly Stabilization & Telemetry Downlink -->
+      <div class="cutscene-scene" data-scene="4" data-caption="STAGE 6 — Solve flight anomalies quickly before they damage your mission!">
+        <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <g transform="translate(380, 235)">
+            <g class="cs-sat-anomaly">
+              <circle class="cs-anomaly-ring" cx="0" cy="0" r="115" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="10 8"/>
+              <circle class="cs-shield-wave" cx="0" cy="0" r="88" fill="none" stroke="#10b981" stroke-width="3.5"/>
+              <rect x="-86" y="-14" width="46" height="28" fill="#0284c7" stroke="#7dd3fc" stroke-width="1.5"/>
+              <rect x="40" y="-14" width="46" height="28" fill="#0284c7" stroke="#7dd3fc" stroke-width="1.5"/>
+              <rect x="-34" y="-34" width="68" height="68" rx="9" fill="#0f172a" stroke="#38bdf8" stroke-width="3"/>
+            </g>
+          </g>
+          <path class="cs-downlink-wave" d="M445,295 Q625,405 805,465" fill="none" stroke="#00f2fe" stroke-width="4" stroke-dasharray="14 10"/>
+          <g transform="translate(860, 490)">
+            <path d="M-56,-30 Q0,34 56,-30" fill="none" stroke="#10b981" stroke-width="5"/>
+            <line x1="0" y1="0" x2="0" y2="-48" stroke="#10b981" stroke-width="3.5"/>
+            <circle cx="0" cy="-54" r="7" fill="#34d399"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Scene 5: L4 Data Splicer & Agency Growth -->
+      <div class="cutscene-scene" data-scene="5" data-caption="STAGE 7 — Refine data (L0 to L4 Splicer) and sell to buyers to grow your agency.">
+        <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <path d="M270,225 Q410,255 540,337" fill="none" stroke="#38bdf8" stroke-width="3" stroke-dasharray="8 6"/>
+          <path d="M270,450 Q410,420 540,337" fill="none" stroke="#38bdf8" stroke-width="3" stroke-dasharray="8 6"/>
+          <g transform="translate(245, 220)">
+            <g class="cs-node-l0">
+              <circle cx="0" cy="0" r="42" fill="#0f172a" stroke="#94a3b8" stroke-width="3"/>
+              <text x="0" y="7" fill="#e2e8f0" font-size="20" font-family="monospace" text-anchor="middle" font-weight="bold">L0</text>
+            </g>
+          </g>
+          <g transform="translate(245, 455)">
+            <g class="cs-node-l2">
+              <circle cx="0" cy="0" r="42" fill="#0f172a" stroke="#38bdf8" stroke-width="3"/>
+              <text x="0" y="7" fill="#38bdf8" font-size="20" font-family="monospace" text-anchor="middle" font-weight="bold">L2</text>
+            </g>
+          </g>
+          <g transform="translate(600, 337)">
+            <g class="cs-node-l4">
+              <polygon points="0,-72 64,-32 64,32 0,72 -64,32 -64,-32" fill="#0f172a" stroke="#fbbf24" stroke-width="4"/>
+              <text x="0" y="9" fill="#fbbf24" font-size="28" font-family="monospace" text-anchor="middle" font-weight="bold">L4</text>
+            </g>
+          </g>
+          <line x1="675" y1="337" x2="815" y2="337" stroke="#10b981" stroke-width="4"/>
+          <g transform="translate(915, 365)">
+            <g class="cs-value-bars">
+              <rect x="-54" y="10" width="24" height="58" fill="#38bdf8" rx="4"/>
+              <rect x="-14" y="-22" width="24" height="90" fill="#10b981" rx="4"/>
+              <rect x="26" y="-64" width="24" height="132" fill="#fbbf24" rx="4"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
   <!-- MAIN MENU MODAL / OVERLAY                      -->
   <!-- ============================================== -->
   <div id="main-menu-overlay" class="menu-overlay active">
-    <div class="menu-card">
+    <div class="menu-card" style="position: relative;">
+      <button class="qmark-btn menu-qmark-btn" id="menu-help-icon" type="button" title="Explain elements on this screen">?</button>
       <div class="menu-nasa-logo-wrap" title="National Aeronautics and Space Administration">
         <svg class="nasa-meatball-svg menu-logo" viewBox="0 0 110 92" width="136" height="114" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -293,10 +495,14 @@
         </div>
       </div>
 
-      <!-- Global Controls: Data Vault, Settings, Menu -->
+      <!-- Global Controls: Data Vault, Help, Settings, Menu -->
       <div class="hud-controls">
         <button class="hud-btn vault-btn" id="btn-open-vault" title="View Stored Scientific Data &amp; Market Value">
           <span>📦 DATA VAULT (<span id="vault-count-badge">0</span>)</span>
+        </button>
+
+        <button class="hud-btn qmark-btn" id="btn-open-help" title="Explain elements on this screen">
+          <span>?</span>
         </button>
 
         <button class="hud-btn" id="btn-open-settings" title="Open Settings (Audio, Sliders, AI)">
@@ -432,7 +638,7 @@
       <!-- ============================================== -->
       <section class="stage-panel" id="stage-3">
         <div class="panel-header">
-          <h2>STAGE 3: DEFINE MISSION REQUIREMENTS</h2>
+          <h2>STAGE 3: MISSION REQUIREMENTS SUMMARY</h2>
           <p>The mission profile establishes physics boundaries. Biological missions to the ISS require quick flight and atmospheric heat shielding for physical sample return!</p>
         </div>
 
@@ -618,9 +824,13 @@
                 </div>
               </div>
 
+              <div class="build-verify-issues" id="build-verify-issues" style="display: none;"></div>
+
               <div class="phase2-actions">
                 <button class="action-btn secondary" id="btn-back-stage4">&larr; REQUIREMENTS</button>
-                <button class="action-btn primary" id="btn-next-stage4" disabled>
+                <button class="action-btn secondary" id="btn-prev-segment" style="display: none;">&larr; PREVIOUS SEGMENT</button>
+                <button class="action-btn primary" id="btn-next-segment">NEXT SEGMENT &rarr;</button>
+                <button class="action-btn primary" id="btn-next-stage4" style="display: none;" disabled>
                   BUILD &amp; VERIFY &rarr;
                 </button>
               </div>
@@ -796,7 +1006,7 @@
               <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
                 <h3 style="margin: 0;">NASA DATA PROCESSING WORKBENCH</h3>
                 <button class="action-btn secondary mini-btn" id="btn-open-l4-forge" type="button" style="border-color: var(--color-gold); color: var(--color-gold);">
-                  🧬 L4 ANCIENT SYNTHESIS FORGE
+                  🧬 LEVEL 4 SPLICER
                 </button>
               </div>
               <div class="processing-recipe" id="processing-recipe">
@@ -1090,43 +1300,42 @@
     </div>
   </div>
 
-  <!-- L4 ANCIENT SYNTHESIS FORGE MODAL (MC Dungeons Ancient Hunts Style) -->
+  <!-- LEVEL 4 SPLICER MODAL -->
   <div class="modal-overlay" id="l4-forge-modal">
     <div class="modal-card wide">
       <div class="modal-header">
-        <h3>🧬 L4 ANCIENT SYNTHESIS FORGE // MULTI-SENSOR MASTER DATASET</h3>
+        <h3>🧬 LEVEL 4 SPLICER // MULTI-SENSOR MASTER DATASET</h3>
         <button class="modal-close" id="l4-forge-close">&times;</button>
       </div>
       <div class="modal-body">
         <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.85rem;">
-          Stuff loose <strong>L2+</strong> datasets from the right into the Synthesis Chamber on the left (requires at least <strong>1&times; L3A</strong> and <strong>2+ total L2+</strong> datasets). More data stuffed in yields exponentially higher L4 value! Components always contribute their full <strong>base price</strong> (ignoring decay), and L4 outputs never degrade.
+          Combine loose <strong>L2+</strong> datasets from the right into the Splicer Chamber on the left (requires at least <strong>1&times; L3A</strong> and <strong>2+ total L2+</strong> datasets). More datasets spliced together yield exponentially higher L4 value! Components always contribute their full <strong>base price</strong> (ignoring decay), and L4 outputs never degrade.
         </p>
         <div class="l4-forge-grid">
-          <!-- LEFT: Synthesis Chamber (Conversion Area) -->
+          <!-- LEFT: Splicer Chamber -->
           <div class="l4-chamber-col">
             <div class="l4-col-header">
-              <h4>⚗️ L4 SYNTHESIS CHAMBER (OFFERINGS)</h4>
+              <h4>⚗️ L4 SPLICER CHAMBER</h4>
               <span class="hud-tag" id="l4-chamber-count">0 ITEMS</span>
             </div>
             <div class="l4-chamber-list" id="l4-chamber-list">
-              <!-- Selected offerings -->
+              <!-- Selected datasets -->
             </div>
             <div class="l4-forge-stats" id="l4-forge-stats">
               <div>Requirement: <span id="l4-req-status" class="text-crimson">Need at least 1× L3A &amp; 2+ L2+ datasets</span></div>
               <div>Synergy Multiplier: <strong id="l4-synergy-mult" class="text-cyan">1.85x</strong></div>
               <div>Projected L4 Value: <strong id="l4-projected-val" class="text-gold">$0</strong></div>
-              <div>Synthesis Fee: <strong id="l4-forge-fee" class="text-amber">$180,000</strong></div>
+              <div>Splicing Fee: <strong id="l4-forge-fee" class="text-amber">$180,000</strong></div>
             </div>
             <button class="action-btn primary" id="btn-forge-l4" disabled style="width: 100%; margin-top: 0.65rem;">
-              🧬 FORGE L4 MASTER DATASET
+              🧬 SPLICE L4 MASTER DATASET
             </button>
           </div>
 
-          <!-- RIGHT: Available L2+ Offerings -->
+          <!-- RIGHT: Available L2+ Datasets -->
           <div class="l4-offerings-col">
             <div class="l4-col-header">
               <h4>📦 AVAILABLE L2+ DATASETS (CLICK TO ADD)</h4>
-              <span class="hud-tag" id="l4-available-count">0 ELIGIBLE</span>
             </div>
             <div class="l4-offerings-list" id="l4-offerings-list">
               <!-- Available L2+ items -->
@@ -1137,6 +1346,30 @@
     </div>
   </div>
 
+  <!-- IN-PAGE MISSION CONTROL NOTICE MODAL -->
+  <div id="game-notice-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-card notice-modal-card">
+      <div class="modal-header">
+        <h2 id="game-notice-title">MISSION CONTROL NOTICE</h2>
+        <button class="modal-close" id="game-notice-close" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="game-notice-message" class="notice-modal-message"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn primary" id="game-notice-ok" type="button">ACKNOWLEDGE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRAY SCREEN ELEMENT EXPLAINER OVERLAY -->
+  <div id="screen-coach-overlay" class="coach-overlay" aria-label="Screen Element Guide">
+    <svg id="coach-mask-svg" class="coach-mask-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="coach-callouts-layer" class="coach-callouts-layer"></div>
+    <button class="coach-close-x-btn" id="btn-close-coach" type="button" aria-label="Close Screen Guide" title="Close Screen Guide">&times;</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
