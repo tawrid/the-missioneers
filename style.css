@@ -861,6 +861,12 @@ body {
 }
 
 /* Hover Explanation Tooltip Box */
+.inst-hover-wrap {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 0.4rem;
+}
+
 .inst-hover-trigger {
   font-size: 0.75rem;
   color: var(--color-blue);
@@ -868,10 +874,9 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  margin-bottom: 0.4rem;
 }
 
-.inst-hover-trigger:hover + .inst-tooltip,
+.inst-hover-wrap:hover .inst-tooltip,
 .inst-tooltip:hover {
   display: block;
 }
@@ -879,9 +884,10 @@ body {
 .inst-tooltip {
   display: none;
   position: absolute;
-  bottom: calc(100% + 8px);
-  left: 10px;
-  right: 10px;
+  bottom: 100%;
+  left: 0;
+  width: 310px;
+  max-width: min(340px, 85vw);
   background: #0f172a;
   border: 1px solid var(--color-cyan);
   border-radius: 8px;
@@ -891,6 +897,8 @@ body {
   font-size: 0.76rem;
   line-height: 1.45;
   color: var(--text-main);
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
   animation: fadeIn 0.2s;
 }
 
@@ -903,6 +911,10 @@ body {
 .inst-tooltip a {
   color: var(--color-gold);
   text-decoration: underline;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  display: inline-block;
+  max-width: 100%;
 }
 
 .btn-select-target {
@@ -1992,7 +2004,7 @@ input:checked + .slider:before {
   height: 100%;
   background: rgba(0, 0, 0, 0.82);
   backdrop-filter: blur(8px);
-  z-index: 1000;
+  z-index: 3000;
   display: none;
   align-items: center;
   justify-content: center;
@@ -2174,6 +2186,82 @@ input:checked + .slider:before {
   background: var(--color-crimson);
   width: 100%;
   transition: width 0.1s linear;
+}
+
+/* Stage 4 Advanced Custom Engineering Sliders */
+.custom-slider-panel {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid var(--border-hud-bright);
+  border-radius: 8px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.custom-slider-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+  padding-bottom: 0.65rem;
+}
+
+.custom-slider-panel-header h4 {
+  font-family: var(--font-hud);
+  color: var(--color-cyan);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.custom-slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: rgba(3, 7, 18, 0.55);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  border-radius: 6px;
+  padding: 0.75rem 0.9rem;
+}
+
+.custom-slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+}
+
+.custom-slider-header strong {
+  color: var(--text-main);
+}
+
+.custom-slider-header span {
+  font-family: var(--font-mono);
+  color: var(--color-cyan);
+  font-weight: 700;
+}
+
+.custom-slider-row input[type="range"] {
+  width: 100%;
+  accent-color: var(--color-cyan);
+  cursor: pointer;
+}
+
+.custom-slider-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.custom-slider-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
 }
 
 /* Utilities */

@@ -919,7 +919,7 @@
           <div class="setting-toggle-row">
             <div>
               <strong>Advanced Engineering Sliders</strong>
-              <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Enables fine-tuning sliders for structural mass margin, tank volume, and power bus scaling.</p>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Replaces preset spacecraft in Stage 4 with custom engineering sliders (mass, volume, power, &Delta;v, bandwidth, reliability) — no presets.</p>
             </div>
             <label class="switch">
               <input type="checkbox" id="chk-adv-sliders">
@@ -1013,6 +1013,30 @@
       </div>
       <div class="modal-footer">
         <button class="action-btn primary" id="btn-close-rules">ACKNOWLEDGE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INITIALIZATION CONTROLS MODE MODAL -->
+  <div class="modal-overlay active" id="init-mode-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>CONTROL CONFIGURATION // SELECT ENGINEERING MODE</h3>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Choose how you want to design spacecraft in Stage 4 (Design &amp; Budget). You can change this anytime in Settings.
+        </p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <button class="action-btn primary" id="init-btn-basic" style="flex-direction: column; padding: 1.1rem; height: auto; text-align: center;">
+            <strong style="font-size: 0.95rem;">BASIC CONTROLS</strong>
+            <span style="font-size: 0.72rem; font-weight: 400; margin-top: 0.35rem; opacity: 0.9;">Use curated NASA launch vehicles, spacecraft buses, and ground networks.</span>
+          </button>
+          <button class="action-btn secondary" id="init-btn-advanced" style="flex-direction: column; padding: 1.1rem; height: auto; text-align: center;">
+            <strong style="font-size: 0.95rem;">ADVANCED CONTROLS</strong>
+            <span style="font-size: 0.72rem; font-weight: 400; margin-top: 0.35rem; opacity: 0.9;">No presets — design your own rocket, spacecraft bus, and ground link using engineering sliders.</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

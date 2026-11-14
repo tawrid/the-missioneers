@@ -375,6 +375,17 @@
     customSlidersEnabled: false,
     structuralMassMarginPct: 0,
     fuelCapacityScaling: 1.0,
+    customDesign: {
+      launchPayloadMax: 3000,
+      launchDeltaV: 8.5,
+      launchReliability: 88,
+      spaceVolumeMax: 6.0,
+      spacePowerGen: 1000,
+      spaceFuelCap: 500,
+      spaceReliability: 88,
+      groundBandwidth: 100,
+      groundReliability: 88
+    },
 
     // Mission Process Lifecycle
     stage: 1,
@@ -615,7 +626,11 @@
 
     rulesModal: document.getElementById('rules-modal'),
     rulesModalClose: document.getElementById('rules-modal-close'),
-    btnCloseRules: document.getElementById('btn-close-rules')
+    btnCloseRules: document.getElementById('btn-close-rules'),
+
+    initModeModal: document.getElementById('init-mode-modal'),
+    initBtnBasic: document.getElementById('init-btn-basic'),
+    initBtnAdvanced: document.getElementById('init-btn-advanced')
   };
 
   // ========================================================================
@@ -742,14 +757,16 @@
         </div>
 
         <!-- Hover Explanation Trigger -->
-        <div class="inst-hover-trigger">
-          <span>ℹ️ Hover for Scientific Detector Mechanism &amp; NASA link</span>
-        </div>
-        <div class="inst-tooltip">
-          <h5>${activeData.name} — ${activeData.fullName}</h5>
-          <p>${activeData.desc}</p>
-          <p style="margin-top: 0.4rem;">Official NASA Link: <a href="${activeData.link}" target="_blank" rel="noopener noreferrer">${activeData.link}</a></p>
-          <p style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--color-cyan); margin-top: 0.3rem;">Mass: ${activeData.mass} kg | Power: ${activeData.power} W | Cost: $${activeData.cost.toLocaleString()}</p>
+        <div class="inst-hover-wrap">
+          <div class="inst-hover-trigger">
+            <span>ℹ️ Hover for Scientific Detector Mechanism &amp; NASA link</span>
+          </div>
+          <div class="inst-tooltip">
+            <h5>${activeData.name} — ${activeData.fullName}</h5>
+            <p>${activeData.desc}</p>
+            <p style="margin-top: 0.4rem;">Official NASA Link: <a href="${activeData.link}" target="_blank" rel="noopener noreferrer">${activeData.link}</a></p>
+            <p style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--color-cyan); margin-top: 0.3rem;">Mass: ${activeData.mass} kg | Power: ${activeData.power} W | Cost: $${activeData.cost.toLocaleString()}</p>
+          </div>
         </div>
 
         <div class="inst-specs-row">
@@ -882,7 +899,7 @@
     DOM.segTabGround.classList.toggle('active', activeDesignSegment === 'ground');
 
     DOM.fuelChemistryPanel.style.display = activeDesignSegment === 'launch' ? 'block' : 'none';
-    DOM.busExpansionPanel.style.display = activeDesignSegment === 'space' ? 'block' : 'none';
+    DOM.busExpansionPanel.style.display = (activeDesignSegment === 'space' && !state.customSlidersEnabled) ? 'block' : 'none';
     DOM.reentryShieldPanel.style.display = (activeDesignSegment === 'space' && state.selectedDomain.requiresHeatShield) ? 'block' : 'none';
   }
 
@@ -892,8 +909,10 @@
     // Render Fuel Options
     renderFuelOptions();
 
-    // Render Bus Sizing Options
-    renderBusSizingOptions();
+    // Render Bus Sizing Options (only used in Basic Controls mode)
+    if (!state.customSlidersEnabled) {
+      renderBusSizingOptions();
+    }
 
     // Render Re-entry Heat Shield checkbox state
     DOM.chkHeatShield.checked = state.selections.heatShieldInstalled;
@@ -902,8 +921,15 @@
       : '❌ Heat Shield Not Installed (High Re-entry Destruction Risk)';
     DOM.heatShieldStatusText.className = state.selections.heatShieldInstalled ? 'text-emerald' : 'text-crimson';
 
-    // Render 3 choices for active category
     DOM.segmentOptionsContainer.innerHTML = '';
+
+    // Advanced Controls: No presets — custom engineering sliders only
+    if (state.customSlidersEnabled) {
+      renderCustomSlidersSegment();
+      return;
+    }
+
+    // Basic Controls: Render 3 preset choices for active category
     let items = [];
     if (activeDesignSegment === 'launch') items = CATALOG.launch;
     else if (activeDesignSegment === 'space') items = CATALOG.space_bus;
@@ -949,6 +975,111 @@
     });
   }
 
+  function renderCustomSlidersSegment() {
+    const cd = state.customDesign;
+    const panel = document.createElement('div');
+    panel.className = 'custom-slider-panel';
+
+    const configs = {
+      launch: {
+        title: '🚀 CUSTOM LAUNCH VEHICLE ARCHITECTURE (NO PRESETS)',
+        badge: 'ADVANCED SLIDERS',
+        sliders: [
+          { key: 'launchPayloadMax', label: 'Max Payload Mass Capacity', min: 500, max: 25000, step: 250, unit: 'kg', hint: 'Higher payload thrust increases booster procurement cost.' },
+          { key: 'launchDeltaV', label: 'Stage Base Δv Velocity', min: 6.0, max: 18.0, step: 0.2, unit: 'km/s', hint: 'Combined with propellant chemistry Δv bonus to reach destination.' },
+          { key: 'launchReliability', label: 'Launch Structural Reliability', min: 75, max: 99, step: 1, unit: '%', hint: 'Higher quality-assurance & redundancy exponentially increases cost.' }
+        ],
+        summaryFn: () => {
+          const cost = Math.round(cd.launchPayloadMax * 35 + cd.launchDeltaV * 18000 + Math.pow(Math.max(0, cd.launchReliability - 70), 2) * 350);
+          return `<span>Launch Segment Cost: <strong class="text-cyan">$${cost.toLocaleString()}</strong></span><span>Payload Cap: <strong class="text-emerald">${cd.launchPayloadMax.toLocaleString()} kg</strong></span>`;
+        }
+      },
+      space: {
+        title: '🛰️ CUSTOM SPACECRAFT BUS ARCHITECTURE (NO PRESETS)',
+        badge: 'ADVANCED SLIDERS',
+        sliders: [
+          { key: 'spaceVolumeMax', label: 'Internal Fairing / Bus Volume', min: 2.0, max: 25.0, step: 0.5, unit: 'm³', hint: 'Each instrument requires 1.1 m³. Larger chassis adds dry mass & cost.' },
+          { key: 'spacePowerGen', label: 'Solar / RTG Power Bus Output', min: 300, max: 6000, step: 50, unit: 'W', hint: 'Must exceed avionics (75 W) + equipped instrument power draw.' },
+          { key: 'spaceFuelCap', label: 'Onboard Propellant Tank Capacity', min: 100, max: 5000, step: 50, unit: 'kg', hint: 'Adds wet mass to total launch payload.' },
+          { key: 'spaceReliability', label: 'Spacecraft Avionics Reliability', min: 75, max: 99, step: 1, unit: '%', hint: 'Redundant flight computers & thermal control reduce in-flight anomalies.' }
+        ],
+        summaryFn: () => {
+          const dry = Math.round(180 + cd.spaceVolumeMax * 95 + cd.spacePowerGen * 0.14);
+          const cost = Math.round(45000 + cd.spaceVolumeMax * 12000 + cd.spacePowerGen * 45 + cd.spaceFuelCap * 30 + Math.pow(Math.max(0, cd.spaceReliability - 70), 2) * 300);
+          return `<span>Space Bus Cost: <strong class="text-cyan">$${cost.toLocaleString()}</strong></span><span>Bus Dry Mass: <strong class="text-amber">${dry.toLocaleString()} kg</strong></span>`;
+        }
+      },
+      ground: {
+        title: '📡 CUSTOM GROUND & TELEMETRY NETWORK (NO PRESETS)',
+        badge: 'ADVANCED SLIDERS',
+        sliders: [
+          { key: 'groundBandwidth', label: 'Downlink Receiver Bandwidth', min: 20, max: 500, step: 10, unit: 'Mbps', hint: '85+ Mbps guarantees zero packet drop during science downlink.' },
+          { key: 'groundReliability', label: 'Tracking Network Reliability', min: 75, max: 99, step: 1, unit: '%', hint: 'Multi-site dish redundancy prevents telemetry blackout.' }
+        ],
+        summaryFn: () => {
+          const cost = Math.round(15000 + cd.groundBandwidth * 350 + Math.pow(Math.max(0, cd.groundReliability - 70), 2) * 250);
+          return `<span>Ground Segment Cost: <strong class="text-cyan">$${cost.toLocaleString()}</strong></span><span>Bandwidth: <strong class="text-emerald">${cd.groundBandwidth} Mbps</strong></span>`;
+        }
+      }
+    };
+
+    const cfg = configs[activeDesignSegment];
+    panel.innerHTML = `
+      <div class="custom-slider-panel-header">
+        <h4>${cfg.title}</h4>
+        <span class="hud-tag text-emerald">${cfg.badge}</span>
+      </div>
+    `;
+
+    const summaryEl = document.createElement('div');
+    summaryEl.className = 'custom-slider-summary';
+    summaryEl.innerHTML = cfg.summaryFn();
+
+    cfg.sliders.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'custom-slider-row';
+      const valDisplay = s.step < 1 ? Number(cd[s.key]).toFixed(1) : Number(cd[s.key]).toLocaleString();
+
+      const header = document.createElement('div');
+      header.className = 'custom-slider-header';
+      const labelEl = document.createElement('strong');
+      labelEl.textContent = s.label;
+      const valSpan = document.createElement('span');
+      valSpan.id = `cslider-val-${s.key}`;
+      valSpan.textContent = `${valDisplay} ${s.unit}`;
+      header.appendChild(labelEl);
+      header.appendChild(valSpan);
+
+      const input = document.createElement('input');
+      input.type = 'range';
+      input.id = `cslider-${s.key}`;
+      input.min = String(s.min);
+      input.max = String(s.max);
+      input.step = String(s.step);
+      input.value = String(cd[s.key]);
+
+      const hintEl = document.createElement('div');
+      hintEl.className = 'custom-slider-hint';
+      hintEl.textContent = s.hint;
+
+      input.addEventListener('input', (e) => {
+        const num = parseFloat(e.target.value);
+        cd[s.key] = num;
+        valSpan.textContent = `${s.step < 1 ? num.toFixed(1) : num.toLocaleString()} ${s.unit}`;
+        summaryEl.innerHTML = cfg.summaryFn();
+        calculateTempResources();
+      });
+
+      row.appendChild(header);
+      row.appendChild(input);
+      row.appendChild(hintEl);
+      panel.appendChild(row);
+    });
+
+    panel.appendChild(summaryEl);
+    DOM.segmentOptionsContainer.appendChild(panel);
+  }
+
   function renderFuelOptions() {
     DOM.fuelOptionsGrid.innerHTML = '';
     Object.values(FUEL_TYPES).forEach(fuel => {
@@ -989,44 +1120,74 @@
 
   function calculateTempResources() {
     const sel = state.selections;
+    const fuel = FUEL_TYPES[sel.selectedFuel] || FUEL_TYPES.kerosene;
 
     const rocket = CATALOG.launch.find(i => i.id === sel.launchRocket);
     const bus = CATALOG.space_bus.find(i => i.id === sel.spaceBus);
     const ground = CATALOG.ground.find(i => i.id === sel.groundStation);
-    const fuel = FUEL_TYPES[sel.selectedFuel] || FUEL_TYPES.kerosene;
     const sizing = BUS_SIZINGS[sel.busSizing] || BUS_SIZINGS.standard;
 
-    let totalCost = 0;
+    let totalCost = fuel.cost;
     let dryMass = 0;
     let fuelMass = 0;
-    let maxMass = rocket ? rocket.payloadMass : 0;
-    let powerGen = bus ? bus.basePower : 0;
+    let maxMass = 0;
+    let powerGen = 0;
     let powerConsumed = 75; // base avionics
     let volumeUsed = 0;
-    let maxVolume = (bus ? bus.baseVol : 0) + sizing.volBonus;
-    let velocityDV = (rocket ? rocket.velocityDV : 0) + fuel.dvBonus;
-    let bandwidth = ground ? ground.bandwidthMbps : 85;
+    let maxVolume = 0;
+    let velocityDV = fuel.dvBonus;
+    let bandwidth = 85;
+    let relLaunch = 90;
+    let relSpace = 90;
+    let relGround = 90;
+    let segmentsReady = false;
+    let instrumentsCountOk = true;
 
-    // Reliability
-    let relLaunch = rocket ? rocket.reliability : 90;
-    let relSpace = bus ? bus.reliability : 90;
-    let relGround = ground ? ground.reliability : 90;
+    if (state.customSlidersEnabled) {
+      const cd = state.customDesign;
+      const launchCost = Math.round(cd.launchPayloadMax * 35 + cd.launchDeltaV * 18000 + Math.pow(Math.max(0, cd.launchReliability - 70), 2) * 350);
+      const spaceDry = Math.round(180 + cd.spaceVolumeMax * 95 + cd.spacePowerGen * 0.14);
+      const spaceCost = Math.round(45000 + cd.spaceVolumeMax * 12000 + cd.spacePowerGen * 45 + cd.spaceFuelCap * 30 + Math.pow(Math.max(0, cd.spaceReliability - 70), 2) * 300);
+      const groundCost = Math.round(15000 + cd.groundBandwidth * 350 + Math.pow(Math.max(0, cd.groundReliability - 70), 2) * 250);
+
+      totalCost += launchCost + spaceCost + groundCost;
+      dryMass += spaceDry;
+      fuelMass += cd.spaceFuelCap * state.fuelCapacityScaling;
+      maxMass = cd.launchPayloadMax;
+      powerGen = cd.spacePowerGen;
+      maxVolume = cd.spaceVolumeMax;
+      velocityDV += cd.launchDeltaV;
+      bandwidth = cd.groundBandwidth;
+      relLaunch = cd.launchReliability;
+      relSpace = cd.spaceReliability;
+      relGround = cd.groundReliability;
+      segmentsReady = true;
+    } else {
+      maxMass = rocket ? rocket.payloadMass : 0;
+      powerGen = bus ? bus.basePower : 0;
+      maxVolume = (bus ? bus.baseVol : 0) + sizing.volBonus;
+      velocityDV += (rocket ? rocket.velocityDV : 0);
+      bandwidth = ground ? ground.bandwidthMbps : 85;
+      relLaunch = rocket ? rocket.reliability : 90;
+      relSpace = bus ? bus.reliability : 90;
+      relGround = ground ? ground.reliability : 90;
+
+      if (rocket) totalCost += rocket.cost;
+      if (bus) {
+        totalCost += bus.cost + sizing.costAdd;
+        dryMass += bus.dryMass + sizing.massAdd;
+        fuelMass += bus.fuelCapacity * state.fuelCapacityScaling;
+      }
+      if (ground) totalCost += ground.cost;
+
+      segmentsReady = !!(rocket && bus && ground);
+      instrumentsCountOk = state.selectedInstruments.length <= sizing.maxInstruments;
+    }
 
     // Apply Diagnostic Simulation Bonus (+10% if tested!)
     relLaunch = Math.min(99, relLaunch + state.tempResources.diagnosticsBonus);
     relSpace = Math.min(99, relSpace + state.tempResources.diagnosticsBonus);
     relGround = Math.min(99, relGround + state.tempResources.diagnosticsBonus);
-
-    if (rocket) totalCost += rocket.cost;
-    totalCost += fuel.cost;
-
-    if (bus) {
-      totalCost += bus.cost + sizing.costAdd;
-      dryMass += bus.dryMass + sizing.massAdd;
-      fuelMass += bus.fuelCapacity * state.fuelCapacityScaling;
-    }
-
-    if (ground) totalCost += ground.cost;
 
     // Heat Shield
     if (sel.heatShieldInstalled) {
@@ -1105,11 +1266,8 @@
     DOM.relGround.textContent = `${relGround}%`;
 
     // Validation
-    const instrumentsAllowed = sizing.maxInstruments;
-    const instrumentsCountOk = state.selectedInstruments.length <= instrumentsAllowed;
-
     const isValid = (
-      rocket && bus && ground &&
+      segmentsReady &&
       totalMass <= maxMass &&
       powerConsumed <= powerGen &&
       volumeUsed <= maxVolume &&
@@ -2007,10 +2165,43 @@
       playBeep(880);
     });
 
+    // Initialization Controls Mode Selection
+    if (DOM.initBtnBasic) {
+      DOM.initBtnBasic.addEventListener('click', () => {
+        playBeep(700);
+        state.customSlidersEnabled = false;
+        DOM.chkAdvSliders.checked = false;
+        DOM.advSlidersWrap.style.display = 'none';
+        DOM.initModeModal.classList.remove('active');
+        if (state.stage === 4) {
+          renderStage4Design();
+          calculateTempResources();
+        }
+      });
+    }
+
+    if (DOM.initBtnAdvanced) {
+      DOM.initBtnAdvanced.addEventListener('click', () => {
+        playBeep(900);
+        state.customSlidersEnabled = true;
+        DOM.chkAdvSliders.checked = true;
+        DOM.advSlidersWrap.style.display = 'block';
+        DOM.initModeModal.classList.remove('active');
+        if (state.stage === 4) {
+          renderStage4Design();
+          calculateTempResources();
+        }
+      });
+    }
+
     // Advanced Sliders Toggle
     DOM.chkAdvSliders.addEventListener('change', (e) => {
       state.customSlidersEnabled = e.target.checked;
       DOM.advSlidersWrap.style.display = e.target.checked ? 'block' : 'none';
+      if (state.stage === 4) {
+        renderStage4Design();
+        calculateTempResources();
+      }
     });
 
     DOM.sliderMassMargin.addEventListener('input', (e) => {
