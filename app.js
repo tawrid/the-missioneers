@@ -842,16 +842,24 @@
     gameNoticeOk: document.getElementById('game-notice-ok')
   };
 
+  let pendingNoticeCallback = null;
+
   function closeInPageNotice() {
     if (!DOM.gameNoticeModal) return;
     DOM.gameNoticeModal.classList.remove('active');
     DOM.gameNoticeModal.style.display = 'none';
+    if (DOM.gameNoticeOk) DOM.gameNoticeOk.textContent = 'ACKNOWLEDGE';
+    const cb = pendingNoticeCallback;
+    pendingNoticeCallback = null;
+    if (typeof cb === 'function') cb();
   }
 
-  function showInPageNotice(message, title = 'MISSION CONTROL NOTICE') {
+  function showInPageNotice(message, title = 'MISSION CONTROL NOTICE', onClose = null, okLabel = 'ACKNOWLEDGE') {
     if (!DOM.gameNoticeModal || !DOM.gameNoticeMessage) return;
+    pendingNoticeCallback = typeof onClose === 'function' ? onClose : null;
     if (DOM.gameNoticeTitle) DOM.gameNoticeTitle.textContent = title;
     DOM.gameNoticeMessage.textContent = String(message || '');
+    if (DOM.gameNoticeOk) DOM.gameNoticeOk.textContent = okLabel;
     DOM.gameNoticeModal.style.display = 'flex';
     DOM.gameNoticeModal.classList.add('active');
   }
@@ -883,12 +891,44 @@
     return state.reputation >= 100 ? base * 1.25 : base;
   }
 
+  let lastHudBudget = null;
+  let lastHudRep = null;
+
+  function triggerResourceDeltaAnim(valueEl, deltaText, isGain) {
+    if (!valueEl) return;
+    const box = valueEl.closest('.resource-box');
+    if (!box) return;
+    box.classList.remove('pulse-gain', 'pulse-loss');
+    void box.offsetWidth;
+    box.classList.add(isGain ? 'pulse-gain' : 'pulse-loss');
+    setTimeout(() => box.classList.remove('pulse-gain', 'pulse-loss'), 750);
+
+    const pop = document.createElement('span');
+    pop.className = `res-delta-pop ${isGain ? 'gain' : 'loss'}`;
+    pop.textContent = deltaText;
+    box.appendChild(pop);
+    setTimeout(() => pop.remove(), 1950);
+  }
+
   function updatePermanentHud() {
     const sandbox = isInfiniteBudget();
+    if (!sandbox && lastHudBudget !== null && state.budget !== lastHudBudget) {
+      const diff = state.budget - lastHudBudget;
+      const sign = diff > 0 ? '+' : '-';
+      triggerResourceDeltaAnim(DOM.hudBudget, `${sign}$${Math.abs(diff).toLocaleString()}`, diff > 0);
+    }
+    if (!sandbox && lastHudRep !== null && state.reputation !== lastHudRep) {
+      const diff = state.reputation - lastHudRep;
+      const sign = diff > 0 ? '+' : '-';
+      triggerResourceDeltaAnim(DOM.hudRep, `${sign}${Math.abs(diff)} REP`, diff > 0);
+    }
+    lastHudBudget = state.budget;
+    lastHudRep = state.reputation;
+
     DOM.hudBudget.textContent = sandbox ? '∞ SANDBOX' : `$${state.budget.toLocaleString()}`;
     DOM.hudRep.textContent = sandbox
       ? '∞ SANDBOX'
-      : (state.reputation >= 100 ? '100 / 100 🏆 FLAGSHIP' : `${state.reputation} / 100`);
+      : (state.reputation >= 100 ? '100 / 100 FLAGSHIP' : `${state.reputation} / 100`);
 
     if (sandbox || state.reputation >= 100) {
       DOM.hudRep.className = 'res-val text-gold';
@@ -1583,8 +1623,8 @@
     if (!sandbox && totalCost > state.budget) {
       buildIssues.push(
         isAdv
-          ? `Over Budget ($${totalCost.toLocaleString()} / $${state.budget.toLocaleString()}): Lower slider targets (Payload Mass, Delta-V, Power, or Reliability) or claim a grant/loan in Stage 7.`
-          : `Over Budget ($${totalCost.toLocaleString()} / $${state.budget.toLocaleString()}): Pick lower-cost hardware or claim a grant/loan in Stage 7.`
+          ? `Over Budget ($${totalCost.toLocaleString()} / $${state.budget.toLocaleString()}): Lower slider targets (Payload Mass, Delta-V, Power, or Reliability) or claim an Emergency Grant below.`
+          : `Over Budget ($${totalCost.toLocaleString()} / $${state.budget.toLocaleString()}): Pick lower-cost hardware or claim an Emergency Grant below.`
       );
     }
     if (!instrumentsCountOk) {
@@ -1611,6 +1651,21 @@
         });
         DOM.buildVerifyIssues.appendChild(titleEl);
         DOM.buildVerifyIssues.appendChild(ul);
+
+        if (!sandbox && totalCost > state.budget) {
+          const grantBtn = document.createElement('button');
+          grantBtn.type = 'button';
+          grantBtn.className = 'inline-grant-btn';
+          grantBtn.textContent = 'CLAIM EMERGENCY GRANT (+$150,000 | -8 REP)';
+          grantBtn.addEventListener('click', () => {
+            state.budget += 150000;
+            state.reputation = Math.max(0, state.reputation - 8);
+            playBeep(720);
+            updatePermanentHud();
+            calculateTempResources();
+          });
+          DOM.buildVerifyIssues.appendChild(grantBtn);
+        }
       }
     }
 
@@ -1744,6 +1799,8 @@
   let canvasFlightCtx = null;
   let flightDurationMs = 12000;
 
+  let hasSeenStage6Tutorial = false;
+
   function startStage6Flight() {
     // Deduct procurement cost (unless Sandbox)
     if (!isInfiniteBudget()) {
@@ -1772,17 +1829,34 @@
     // Flight duration scales with mission distance!
     flightDurationMs = state.selectedDomain.transitDurationSec * 1000;
 
-    logFlightMessage(`🚀 IGNITION [${state.missionName}]: Spacecraft launching on ${state.selectedDomain.name} mission trajectory.`);
-    logFlightMessage(`⏱️ Mission transit profile: ${state.selectedDomain.transitDurationSec}s transit (${getDifficultyConfig().name}).`);
+    logFlightMessage(`IGNITION [${state.missionName}]: Spacecraft launching on ${state.selectedDomain.name} trajectory.`);
+    logFlightMessage(`Mission transit profile: ${state.selectedDomain.transitDurationSec}s (${getDifficultyConfig().name}).`);
 
     const canvas = DOM.flightCanvas;
     canvasFlightCtx = canvas.getContext('2d');
 
     flightProgress = 0;
     if (flightAnimId) cancelAnimationFrame(flightAnimId);
-    runFlightLoop();
 
-    scheduleFlightMilestones();
+    const beginFlight = () => {
+      runFlightLoop();
+      scheduleFlightMilestones();
+    };
+
+    if (!hasSeenStage6Tutorial) {
+      hasSeenStage6Tutorial = true;
+      showInPageNotice(
+        'FLIGHT BRIEFING:\n' +
+        '1. Watch the 3 health bars (Rocket, Sensors, Telemetry) below the flight view.\n' +
+        '2. If an Anomaly Alert appears on the right, click INTERVENE before the 15s timer runs out.\n' +
+        '3. When flight finishes, click ENTER USER SEGMENT to refine and sell your data.',
+        'STAGE 6 // FLIGHT BRIEFING',
+        beginFlight,
+        'LAUNCH MISSION'
+      );
+    } else {
+      beginFlight();
+    }
   }
 
   function logFlightMessage(msg, isAlert = false) {
@@ -2912,6 +2986,26 @@
       playBeep(880);
     });
 
+    const selectTextSize = document.getElementById('select-text-size');
+    const applyTextSize = (size) => {
+      const val = ['small', 'normal', 'large'].includes(size) ? size : 'normal';
+      document.documentElement.classList.remove('text-size-small', 'text-size-normal', 'text-size-large');
+      document.documentElement.classList.add(`text-size-${val}`);
+      if (selectTextSize) selectTextSize.value = val;
+      try { localStorage.setItem('tm_text_size', val); } catch (err) {}
+    };
+    try {
+      applyTextSize(localStorage.getItem('tm_text_size') || 'normal');
+    } catch (err) {
+      applyTextSize('normal');
+    }
+    if (selectTextSize) {
+      selectTextSize.addEventListener('change', (e) => {
+        applyTextSize(e.target.value);
+        playBeep(760);
+      });
+    }
+
     // Initialization Controls Mode Selection -> chains to Difficulty Selection
     if (DOM.initBtnBasic) {
       DOM.initBtnBasic.addEventListener('click', () => {
@@ -3168,12 +3262,12 @@
   const SCREEN_ELEMENT_GUIDES = [
     { selector: '#menu-btn-singleplayer', text: 'Start a solo game where you control every step.' },
     { selector: '#menu-btn-multiplayer', text: 'Play Co-op (4 stations) or Saboteur Impostor mode.' },
-    { selector: '#menu-btn-settings', text: 'Adjust audio volume, advanced sliders, or local AI.' },
-    { selector: '#menu-btn-manual', text: 'Read the full NASA engineering rules & data levels.' },
+    { selector: '#menu-btn-settings', text: 'Adjust sound volume, text size, or spacecraft design mode.' },
+    { selector: '#menu-btn-manual', text: 'Read the engineering rules & data levels.' },
     { selector: '.resource-box.budget', text: 'Your total money to buy rockets, sensors & lab work.' },
     { selector: '.resource-box.rep', text: 'Reputation unlocks Tier 2 sensors & boosts data prices.' },
     { selector: '#btn-open-vault', text: 'View all science datasets you currently own.' },
-    { selector: '#btn-open-settings', text: 'Change sound, advanced sliders, or AI settings.' },
+    { selector: '#btn-open-settings', text: 'Change sound volume, text size, or spacecraft design mode.' },
     { selector: '#btn-return-menu', text: 'Go back to the Main Menu.' },
     { selector: '#trends-ticker', text: 'Live Market Trend! Click to lock/unlock bonus payouts.' },
     { selector: '#domain-grid', text: 'Pick where your mission goes (Earth, Planets, Sun, Deep Space, Life).' },
@@ -3235,10 +3329,16 @@
     DOM.coachCalloutsLayer.innerHTML = '';
     DOM.screenCoachOverlay.classList.add('active');
 
+    const hintBanner = document.createElement('div');
+    hintBanner.className = 'coach-hint-banner';
+    hintBanner.textContent = 'Hover or tap any highlighted area to read its description.';
+    DOM.coachCalloutsLayer.appendChild(hintBanner);
+
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     let delayIdx = 0;
     const cutouts = [];
+    const allPairs = [];
 
     SCREEN_ELEMENT_GUIDES.forEach(item => {
       const el = document.querySelector(item.selector);
@@ -3265,21 +3365,33 @@
       tip.className = 'coach-tip-pill';
       tip.textContent = item.text;
       // Place tip below or above the highlighted element so it stays on screen
-      const placeAbove = rect.bottom + 64 > vh && rect.top > 75;
-      tip.style.left = `${Math.min(Math.max(8, rect.left), Math.max(8, vw - 275))}px`;
+      const placeAbove = rect.bottom + 74 > vh && rect.top > 85;
+      tip.style.left = `${Math.min(Math.max(8, rect.left), Math.max(8, vw - 295))}px`;
       tip.style.top = placeAbove
-        ? `${Math.max(12, rect.top - 50)}px`
-        : `${Math.min(vh - 70, rect.bottom + 8)}px`;
-      tip.style.animationDelay = `${delayIdx * 0.04}s`;
+        ? `${Math.max(12, rect.top - 58)}px`
+        : `${Math.min(vh - 80, rect.bottom + 8)}px`;
 
-      const setHovered = (hovered) => {
-        box.classList.toggle('is-hovered', hovered);
-        tip.classList.toggle('is-hovered', hovered);
+      const pair = { box, tip };
+      allPairs.push(pair);
+
+      const activateOnlyThis = (active) => {
+        allPairs.forEach(p => {
+          p.box.classList.remove('is-hovered');
+          p.tip.classList.remove('is-hovered');
+        });
+        if (active) {
+          box.classList.add('is-hovered');
+          tip.classList.add('is-hovered');
+        }
       };
-      box.addEventListener('mouseenter', () => setHovered(true));
-      box.addEventListener('mouseleave', () => setHovered(false));
-      tip.addEventListener('mouseenter', () => setHovered(true));
-      tip.addEventListener('mouseleave', () => setHovered(false));
+
+      box.addEventListener('mouseenter', () => activateOnlyThis(true));
+      box.addEventListener('mouseleave', () => activateOnlyThis(false));
+      box.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const wasActive = box.classList.contains('is-hovered');
+        activateOnlyThis(!wasActive);
+      });
 
       DOM.coachCalloutsLayer.appendChild(box);
       DOM.coachCalloutsLayer.appendChild(tip);

@@ -27,185 +27,208 @@
     </div>
 
     <div class="cutscene-stage" id="cutscene-stage">
-      <!-- Scene 0: Orbital Target Selection -->
+      <!-- Scene 0: Orbital Target Selection (Consistent Geometric Style) -->
       <div class="cutscene-scene" data-scene="0" data-caption="STAGE 1 — Choose your science destination: Sun, Earth, Planets, or Deep Space.">
         <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="csSunGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#fef08a"/>
-              <stop offset="45%" stop-color="#f59e0b" stop-opacity="0.7"/>
-              <stop offset="100%" stop-color="#b45309" stop-opacity="0"/>
-            </radialGradient>
-            <radialGradient id="csEarthGrad" cx="35%" cy="35%" r="65%">
-              <stop offset="0%" stop-color="#38bdf8"/>
-              <stop offset="65%" stop-color="#0284c7"/>
-              <stop offset="100%" stop-color="#0f172a"/>
-            </radialGradient>
-          </defs>
-          <g stroke="rgba(56,189,248,0.12)" stroke-width="1" fill="none">
-            <line x1="0" y1="337" x2="1200" y2="337"/>
-            <line x1="600" y1="0" x2="600" y2="675"/>
+          <ellipse cx="600" cy="315" rx="430" ry="175" fill="none" stroke="rgba(186,230,253,0.28)" stroke-width="2" stroke-dasharray="10 8"/>
+          <ellipse cx="600" cy="315" rx="250" ry="102" fill="none" stroke="rgba(251,191,36,0.3)" stroke-width="2"/>
+
+          <!-- Sun (clean flat + geometric rays) -->
+          <g transform="translate(225, 315)">
+            <circle cx="0" cy="0" r="46" fill="#fbbf24" stroke="#fef08a" stroke-width="3"/>
+            <g stroke="#fef08a" stroke-width="3.5" stroke-linecap="round">
+              <line x1="0" y1="-64" x2="0" y2="-54"/>
+              <line x1="0" y1="54" x2="0" y2="64"/>
+              <line x1="-64" y1="0" x2="-54" y2="0"/>
+              <line x1="54" y1="0" x2="64" y2="0"/>
+              <line x1="-45" y1="-45" x2="-38" y2="-38"/>
+              <line x1="38" y1="38" x2="45" y2="45"/>
+              <line x1="45" y1="-45" x2="38" y2="-38"/>
+              <line x1="-38" y1="38" x2="-45" y2="45"/>
+            </g>
           </g>
-          <ellipse cx="600" cy="337" rx="440" ry="190" fill="none" stroke="rgba(56,189,248,0.22)" stroke-width="1.5" stroke-dasharray="8 8"/>
-          <ellipse cx="600" cy="337" rx="260" ry="112" fill="none" stroke="rgba(251,191,36,0.25)" stroke-width="1.5"/>
-          <g transform="translate(220, 337)">
-            <circle cx="0" cy="0" r="115" fill="url(#csSunGlow)"/>
-            <circle cx="0" cy="0" r="42" fill="#fbbf24"/>
-          </g>
-          <g transform="translate(600, 337)">
+
+          <!-- Earth (clean flat + geometric continents + target reticle) -->
+          <g transform="translate(600, 315)">
             <g class="cs-earth-body">
-              <circle cx="0" cy="0" r="56" fill="url(#csEarthGrad)" stroke="rgba(125,211,252,0.5)" stroke-width="2"/>
+              <circle cx="0" cy="0" r="56" fill="#0284c7" stroke="#bae6fd" stroke-width="3"/>
+              <path d="M-24,-28 Q-6,-18 -14,0 Q-26,12 -10,30" fill="none" stroke="#34d399" stroke-width="8" stroke-linecap="round"/>
+              <path d="M14,-22 Q30,-8 22,12 Q12,24 24,34" fill="none" stroke="#34d399" stroke-width="7" stroke-linecap="round"/>
             </g>
             <g class="cs-reticle">
-              <circle cx="0" cy="0" r="88" fill="none" stroke="#00f2fe" stroke-width="2.5" stroke-dasharray="20 10"/>
-              <circle cx="0" cy="0" r="108" fill="none" stroke="rgba(0,242,254,0.35)" stroke-width="1"/>
-              <line x1="-124" y1="0" x2="-82" y2="0" stroke="#00f2fe" stroke-width="2.5"/>
-              <line x1="82" y1="0" x2="124" y2="0" stroke="#00f2fe" stroke-width="2.5"/>
-              <line x1="0" y1="-124" x2="0" y2="-82" stroke="#00f2fe" stroke-width="2.5"/>
-              <line x1="0" y1="82" x2="0" y2="124" stroke="#00f2fe" stroke-width="2.5"/>
+              <circle cx="0" cy="0" r="84" fill="none" stroke="#7dd3fc" stroke-width="2.5" stroke-dasharray="18 10"/>
+              <line x1="-110" y1="0" x2="-78" y2="0" stroke="#7dd3fc" stroke-width="2.5"/>
+              <line x1="78" y1="0" x2="110" y2="0" stroke="#7dd3fc" stroke-width="2.5"/>
+              <line x1="0" y1="-110" x2="0" y2="-78" stroke="#7dd3fc" stroke-width="2.5"/>
+              <line x1="0" y1="78" x2="0" y2="110" stroke="#7dd3fc" stroke-width="2.5"/>
             </g>
           </g>
-          <g transform="translate(970, 275)">
+
+          <!-- Ringed Planet (consistent flat + clean stroke) -->
+          <g transform="translate(965, 295)">
             <g class="cs-planet-ringed">
-              <ellipse cx="0" cy="0" rx="74" ry="18" fill="none" stroke="#94a3b8" stroke-width="3.5" transform="rotate(-16)"/>
-              <circle cx="0" cy="0" r="32" fill="#cbd5e1"/>
+              <circle cx="0" cy="0" r="38" fill="#64748b" stroke="#e2e8f0" stroke-width="3"/>
+              <ellipse cx="0" cy="0" rx="76" ry="20" fill="none" stroke="#e2e8f0" stroke-width="4" transform="rotate(-18)"/>
             </g>
           </g>
         </svg>
       </div>
 
-      <!-- Scene 1: Sensor Assembly & Surface Scan -->
-      <div class="cutscene-scene" data-scene="1" data-caption="STAGE 2 — Equip Tier 1 or Tier 2 NASA science sensors to collect data.">
+      <!-- Scene 1: Scientific Sensors (Camera/Lens, Telescope, Radar Sensor) -->
+      <div class="cutscene-scene" data-scene="1" data-caption="STAGE 2 — Equip scientific sensors (cameras, telescopes, spectrometers) to collect data.">
         <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-          <path d="M120,590 Q600,485 1080,590" fill="none" stroke="rgba(56,189,248,0.45)" stroke-width="3"/>
-          <g transform="translate(600, 255)">
-            <g class="cs-bus-core">
-              <rect class="cs-wing-l" x="-210" y="-18" width="130" height="36" rx="3" fill="rgba(2,132,199,0.45)" stroke="#38bdf8" stroke-width="2"/>
-              <rect class="cs-wing-r" x="80" y="-18" width="130" height="36" rx="3" fill="rgba(2,132,199,0.45)" stroke="#38bdf8" stroke-width="2"/>
-              <rect x="-64" y="-54" width="128" height="108" rx="12" fill="#0f172a" stroke="#10b981" stroke-width="3"/>
-              <circle cx="0" cy="-8" r="18" fill="#0ea5e9" stroke="#e0f2fe" stroke-width="2"/>
-              <line x1="-42" y1="28" x2="42" y2="28" stroke="#38bdf8" stroke-width="2.5"/>
+          <path d="M140,520 Q600,440 1060,520" fill="none" stroke="rgba(186,230,253,0.4)" stroke-width="3"/>
+
+          <!-- Left Sensor: Telescope -->
+          <g transform="translate(300, 275)">
+            <g class="cs-sensor-left" stroke="#bae6fd" stroke-width="3.5" fill="#1e384f" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="-46" y="-26" width="84" height="26" rx="4" transform="rotate(-22)"/>
+              <rect x="30" y="-23" width="16" height="20" rx="2" transform="rotate(-22)"/>
+              <line x1="0" y1="0" x2="-26" y2="54"/>
+              <line x1="0" y1="0" x2="26" y2="54"/>
+              <line x1="0" y1="0" x2="0" y2="54"/>
             </g>
           </g>
-          <g transform="translate(390, 255)">
-            <g class="cs-sensor-left">
-              <rect x="-44" y="-28" width="88" height="56" rx="8" fill="#0f172a" stroke="#00f2fe" stroke-width="2.5"/>
-              <circle cx="0" cy="0" r="14" fill="#00f2fe"/>
+
+          <!-- Center Sensor: Optical Camera / Detector with Signal Waves -->
+          <g transform="translate(600, 260)">
+            <g class="cs-bus-core" stroke="#7dd3fc" stroke-width="3.5" fill="#1e384f" stroke-linecap="round">
+              <rect x="-54" y="-36" width="108" height="72" rx="12"/>
+              <circle cx="0" cy="0" r="20" fill="#0284c7" stroke="#ffffff" stroke-width="3"/>
+              <path d="M-30,52 Q0,70 30,52" fill="none" stroke="#38bdf8" stroke-width="3.5"/>
+              <path d="M-48,70 Q0,96 48,70" fill="none" stroke="#38bdf8" stroke-width="3"/>
+            </g>
+            <polygon class="cs-scan-cone" points="-20,90 20,90 140,220 -140,220" fill="rgba(125, 211, 252, 0.12)" stroke="rgba(125, 211, 252, 0.45)" stroke-width="1.5" stroke-dasharray="6 6"/>
+          </g>
+
+          <!-- Right Sensor: Spectrometer Dish -->
+          <g transform="translate(900, 275)">
+            <g class="cs-sensor-right" stroke="#fbbf24" stroke-width="3.5" fill="none" stroke-linecap="round">
+              <path d="M-40,-20 A46,46 0 0,0 24,44" fill="#1e384f"/>
+              <line x1="-8" y1="12" x2="18" y2="-14"/>
+              <circle cx="22" cy="-18" r="5" fill="#fbbf24"/>
+              <path d="M12,-40 A28,28 0 0,1 40,-12"/>
+              <path d="M22,-54 A44,44 0 0,1 54,-22"/>
+              <line x1="-18" y1="44" x2="18" y2="44"/>
             </g>
           </g>
-          <g transform="translate(810, 255)">
-            <g class="cs-sensor-right">
-              <polygon points="-40,-28 40,-16 40,16 -40,28" fill="#0f172a" stroke="#fbbf24" stroke-width="2.5"/>
-              <circle cx="-8" cy="0" r="10" fill="#fbbf24"/>
+        </svg>
+      </div>
+
+      <!-- Scene 2: 3-Segment Engineering Link (Streamlined Rocket + Satellite + Ground Dish) -->
+      <div class="cutscene-scene" data-scene="2" data-caption="STAGE 3 &amp; 4 — Design your Rocket, Satellite Bus, and Ground Dish within limits.">
+        <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <!-- Launch Segment: Streamlined Rocket -->
+          <g transform="translate(270, 315)">
+            <g class="cs-seg-1">
+              <circle cx="0" cy="0" r="96" fill="#1e384f" stroke="#fbbf24" stroke-width="3"/>
+              <path d="M0,-58 C24,-34 24,14 14,36 L-14,36 C-24,14 -24,-34 0,-58 Z" fill="#f8fafc" stroke="#fbbf24" stroke-width="2.5"/>
+              <circle cx="0" cy="-14" r="9" fill="#0284c7"/>
+              <path d="M-16,12 L-34,36 L-14,32 Z" fill="#fbbf24"/>
+              <path d="M16,12 L34,36 L14,32 Z" fill="#fbbf24"/>
+              <path d="M-8,36 L0,56 L8,36 Z" fill="#f97316"/>
+            </g>
+          </g>
+          <line class="cs-link-1" x1="376" y1="315" x2="494" y2="315" stroke="#7dd3fc" stroke-width="3" stroke-dasharray="10 8"/>
+
+          <!-- Space Segment: Satellite Bus -->
+          <g transform="translate(600, 315)">
+            <g class="cs-seg-2">
+              <circle cx="0" cy="0" r="96" fill="#1e384f" stroke="#7dd3fc" stroke-width="3"/>
+              <rect x="-72" y="-16" width="38" height="32" rx="2" fill="#0284c7" stroke="#bae6fd" stroke-width="2"/>
+              <rect x="34" y="-16" width="38" height="32" rx="2" fill="#0284c7" stroke="#bae6fd" stroke-width="2"/>
+              <rect x="-26" y="-28" width="52" height="56" rx="6" fill="#334155" stroke="#ffffff" stroke-width="2.5"/>
+              <circle cx="0" cy="-4" r="10" fill="#7dd3fc"/>
+            </g>
+          </g>
+          <line class="cs-link-2" x1="706" y1="315" x2="824" y2="315" stroke="#34d399" stroke-width="3" stroke-dasharray="10 8"/>
+
+          <!-- Ground Segment: Ground Dish -->
+          <g transform="translate(930, 315)">
+            <g class="cs-seg-3" stroke="#34d399" stroke-width="3.5" fill="none" stroke-linecap="round">
+              <circle cx="0" cy="0" r="96" fill="#1e384f" stroke="#34d399" stroke-width="3"/>
+              <path d="M-40,-16 A46,46 0 0,0 22,40" fill="#0f2332"/>
+              <line x1="-8" y1="12" x2="18" y2="-14"/>
+              <circle cx="22" cy="-18" r="5" fill="#34d399"/>
+              <path d="M12,-36 A24,24 0 0,1 36,-12"/>
+              <line x1="-22" y1="48" x2="22" y2="48"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Scene 3: Stage 5 Build & Verify Launch (Same Streamlined Rocket) -->
+      <div class="cutscene-scene" data-scene="3" data-caption="STAGE 5 — Run safety diagnostics to boost reliability, then launch into orbit.">
+        <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <path d="M100,565 Q600,455 1100,565" fill="none" stroke="#38bdf8" stroke-width="4" opacity="0.65"/>
+          <path class="cs-traj-arc" d="M360,470 Q580,200 940,145" fill="none" stroke="#7dd3fc" stroke-width="3.5" stroke-dasharray="12 8"/>
+          <circle cx="940" cy="145" r="11" fill="#34d399"/>
+          <g transform="translate(360, 445) rotate(24)">
+            <g class="cs-rocket-ship">
+              <path d="M0,-62 C26,-36 26,16 15,40 L-15,40 C-26,16 -26,-36 0,-62 Z" fill="#f8fafc" stroke="#38bdf8" stroke-width="2.5"/>
+              <circle cx="0" cy="-14" r="10" fill="#0284c7"/>
+              <path d="M-17,14 L-36,40 L-15,36 Z" fill="#ef4444"/>
+              <path d="M17,14 L36,40 L15,36 Z" fill="#ef4444"/>
+              <polygon class="cs-plume" points="-12,40 0,104 12,40" fill="#f59e0b"/>
+              <polygon class="cs-plume-inner" points="-5,40 0,76 5,40" fill="#fef08a"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Scene 4: Stage 6 Live Flight & Anomaly Stabilization -->
+      <div class="cutscene-scene" data-scene="4" data-caption="STAGE 6 — Monitor live flight telemetry and solve anomalies before they cause damage!">
+        <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <g transform="translate(390, 245)">
+            <g class="cs-sat-anomaly">
+              <circle class="cs-anomaly-ring" cx="0" cy="0" r="112" fill="none" stroke="#fbbf24" stroke-width="3" stroke-dasharray="10 8"/>
+              <circle class="cs-shield-wave" cx="0" cy="0" r="88" fill="none" stroke="#34d399" stroke-width="3.5"/>
+              <rect x="-78" y="-14" width="42" height="28" fill="#0284c7" stroke="#bae6fd" stroke-width="2"/>
+              <rect x="36" y="-14" width="42" height="28" fill="#0284c7" stroke="#bae6fd" stroke-width="2"/>
+              <rect x="-28" y="-28" width="56" height="56" rx="6" fill="#1e384f" stroke="#ffffff" stroke-width="2.5"/>
+              <circle cx="0" cy="0" r="10" fill="#7dd3fc"/>
+            </g>
+          </g>
+          <path class="cs-downlink-wave" d="M475,305 Q645,385 795,435" fill="none" stroke="#7dd3fc" stroke-width="4" stroke-dasharray="14 10"/>
+          <g transform="translate(860, 445)" stroke="#34d399" stroke-width="4" fill="none" stroke-linecap="round">
+            <path d="M-44,-18 A50,50 0 0,0 24,42" fill="#1e384f"/>
+            <line x1="-10" y1="12" x2="20" y2="-18"/>
+            <circle cx="24" cy="-22" r="5.5" fill="#34d399"/>
+            <line x1="-26" y1="50" x2="26" y2="50"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Scene 5: Stage 7 Data Refinery & Money Payout -->
+      <div class="cutscene-scene" data-scene="5" data-caption="STAGE 7 — Refine data (L0 to L4) and sell to buyers to earn budget and reputation.">
+        <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <path d="M270,225 Q410,255 540,315" fill="none" stroke="#7dd3fc" stroke-width="3" stroke-dasharray="8 6"/>
+          <path d="M270,415 Q410,385 540,315" fill="none" stroke="#7dd3fc" stroke-width="3" stroke-dasharray="8 6"/>
+          <g transform="translate(245, 220)">
+            <g class="cs-node-l0">
+              <circle cx="0" cy="0" r="42" fill="#1e384f" stroke="#cbd5e1" stroke-width="3"/>
+              <text x="0" y="7" fill="#f8fafc" font-size="20" font-family="monospace" text-anchor="middle" font-weight="bold">L0</text>
+            </g>
+          </g>
+          <g transform="translate(245, 420)">
+            <g class="cs-node-l2">
+              <circle cx="0" cy="0" r="42" fill="#1e384f" stroke="#7dd3fc" stroke-width="3"/>
+              <text x="0" y="7" fill="#7dd3fc" font-size="20" font-family="monospace" text-anchor="middle" font-weight="bold">L2</text>
             </g>
           </g>
           <g transform="translate(600, 315)">
-            <polygon class="cs-scan-cone" points="-24,0 24,0 210,235 -210,235" fill="rgba(0, 242, 254, 0.14)" stroke="rgba(0, 242, 254, 0.55)" stroke-width="1.5" stroke-dasharray="6 6"/>
-          </g>
-        </svg>
-      </div>
-
-      <!-- Scene 2: 3-Segment Engineering Link -->
-      <div class="cutscene-scene" data-scene="2" data-caption="STAGE 3 &amp; 4 — Build Launch Rocket, Space Bus, and Ground Dish within limits.">
-        <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-          <g transform="translate(270, 337)">
-            <g class="cs-seg-1">
-              <circle cx="0" cy="0" r="98" fill="rgba(15,23,42,0.75)" stroke="#f59e0b" stroke-width="2.5"/>
-              <path d="M0,-64 L22,-14 L22,50 L-22,50 L-22,-14 Z" fill="#f8fafc" stroke="#f59e0b" stroke-width="2"/>
-              <polygon points="-22,26 -40,58 -22,50" fill="#f59e0b"/>
-              <polygon points="22,26 40,58 22,50" fill="#f59e0b"/>
-            </g>
-          </g>
-          <line class="cs-link-1" x1="378" y1="337" x2="492" y2="337" stroke="#00f2fe" stroke-width="3" stroke-dasharray="10 8"/>
-          <g transform="translate(600, 337)">
-            <g class="cs-seg-2">
-              <circle cx="0" cy="0" r="98" fill="rgba(15,23,42,0.75)" stroke="#00f2fe" stroke-width="2.5"/>
-              <rect x="-74" y="-14" width="38" height="28" fill="#0284c7" stroke="#7dd3fc" stroke-width="1.5"/>
-              <rect x="36" y="-14" width="38" height="28" fill="#0284c7" stroke="#7dd3fc" stroke-width="1.5"/>
-              <rect x="-32" y="-32" width="64" height="64" rx="8" fill="#1e293b" stroke="#00f2fe" stroke-width="2.5"/>
-            </g>
-          </g>
-          <line class="cs-link-2" x1="708" y1="337" x2="822" y2="337" stroke="#10b981" stroke-width="3" stroke-dasharray="10 8"/>
-          <g transform="translate(930, 337)">
-            <g class="cs-seg-3">
-              <circle cx="0" cy="0" r="98" fill="rgba(15,23,42,0.75)" stroke="#10b981" stroke-width="2.5"/>
-              <path d="M-48,-12 Q0,44 48,-12" fill="none" stroke="#10b981" stroke-width="4.5"/>
-              <line x1="0" y1="16" x2="0" y2="-36" stroke="#10b981" stroke-width="3"/>
-              <circle cx="0" cy="-42" r="7" fill="#34d399"/>
-              <rect x="-26" y="34" width="52" height="16" rx="4" fill="#334155"/>
-            </g>
-          </g>
-        </svg>
-      </div>
-
-      <!-- Scene 3: Orbital Ascent & Insertion -->
-      <div class="cutscene-scene" data-scene="3" data-caption="STAGE 5 &amp; 6 — Run safety diagnostics and launch your spacecraft into orbit.">
-        <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-          <path d="M100,615 Q600,490 1100,615" fill="none" stroke="#0284c7" stroke-width="4" opacity="0.65"/>
-          <path class="cs-traj-arc" d="M360,520 Q580,220 960,155" fill="none" stroke="#00f2fe" stroke-width="3" stroke-dasharray="12 8"/>
-          <circle cx="960" cy="155" r="10" fill="#10b981" opacity="0.85"/>
-          <g transform="translate(360, 490)">
-            <g class="cs-rocket-ship">
-              <path d="M0,-68 L20,-16 L20,48 L-20,48 L-20,-16 Z" fill="#f8fafc" stroke="#38bdf8" stroke-width="2.5"/>
-              <polygon points="-20,26 -38,54 -20,48" fill="#ef4444"/>
-              <polygon points="20,26 38,54 20,48" fill="#ef4444"/>
-              <polygon class="cs-plume" points="-14,48 0,118 14,48" fill="#f59e0b"/>
-              <polygon class="cs-plume-inner" points="-6,48 0,88 6,48" fill="#fef08a"/>
-            </g>
-          </g>
-        </svg>
-      </div>
-
-      <!-- Scene 4: Anomaly Stabilization & Telemetry Downlink -->
-      <div class="cutscene-scene" data-scene="4" data-caption="STAGE 6 — Solve flight anomalies quickly before they damage your mission!">
-        <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-          <g transform="translate(380, 235)">
-            <g class="cs-sat-anomaly">
-              <circle class="cs-anomaly-ring" cx="0" cy="0" r="115" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="10 8"/>
-              <circle class="cs-shield-wave" cx="0" cy="0" r="88" fill="none" stroke="#10b981" stroke-width="3.5"/>
-              <rect x="-86" y="-14" width="46" height="28" fill="#0284c7" stroke="#7dd3fc" stroke-width="1.5"/>
-              <rect x="40" y="-14" width="46" height="28" fill="#0284c7" stroke="#7dd3fc" stroke-width="1.5"/>
-              <rect x="-34" y="-34" width="68" height="68" rx="9" fill="#0f172a" stroke="#38bdf8" stroke-width="3"/>
-            </g>
-          </g>
-          <path class="cs-downlink-wave" d="M445,295 Q625,405 805,465" fill="none" stroke="#00f2fe" stroke-width="4" stroke-dasharray="14 10"/>
-          <g transform="translate(860, 490)">
-            <path d="M-56,-30 Q0,34 56,-30" fill="none" stroke="#10b981" stroke-width="5"/>
-            <line x1="0" y1="0" x2="0" y2="-48" stroke="#10b981" stroke-width="3.5"/>
-            <circle cx="0" cy="-54" r="7" fill="#34d399"/>
-          </g>
-        </svg>
-      </div>
-
-      <!-- Scene 5: L4 Data Splicer & Agency Growth -->
-      <div class="cutscene-scene" data-scene="5" data-caption="STAGE 7 — Refine data (L0 to L4 Splicer) and sell to buyers to grow your agency.">
-        <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-          <path d="M270,225 Q410,255 540,337" fill="none" stroke="#38bdf8" stroke-width="3" stroke-dasharray="8 6"/>
-          <path d="M270,450 Q410,420 540,337" fill="none" stroke="#38bdf8" stroke-width="3" stroke-dasharray="8 6"/>
-          <g transform="translate(245, 220)">
-            <g class="cs-node-l0">
-              <circle cx="0" cy="0" r="42" fill="#0f172a" stroke="#94a3b8" stroke-width="3"/>
-              <text x="0" y="7" fill="#e2e8f0" font-size="20" font-family="monospace" text-anchor="middle" font-weight="bold">L0</text>
-            </g>
-          </g>
-          <g transform="translate(245, 455)">
-            <g class="cs-node-l2">
-              <circle cx="0" cy="0" r="42" fill="#0f172a" stroke="#38bdf8" stroke-width="3"/>
-              <text x="0" y="7" fill="#38bdf8" font-size="20" font-family="monospace" text-anchor="middle" font-weight="bold">L2</text>
-            </g>
-          </g>
-          <g transform="translate(600, 337)">
             <g class="cs-node-l4">
-              <polygon points="0,-72 64,-32 64,32 0,72 -64,32 -64,-32" fill="#0f172a" stroke="#fbbf24" stroke-width="4"/>
+              <polygon points="0,-68 60,-30 60,30 0,68 -60,30 -60,-30" fill="#1e384f" stroke="#fbbf24" stroke-width="4"/>
               <text x="0" y="9" fill="#fbbf24" font-size="28" font-family="monospace" text-anchor="middle" font-weight="bold">L4</text>
             </g>
           </g>
-          <line x1="675" y1="337" x2="815" y2="337" stroke="#10b981" stroke-width="4"/>
-          <g transform="translate(915, 365)">
+          <line x1="672" y1="315" x2="810" y2="315" stroke="#34d399" stroke-width="4" stroke-dasharray="10 6"/>
+          <!-- Money Payout Icon -->
+          <g transform="translate(915, 315)">
             <g class="cs-value-bars">
-              <rect x="-54" y="10" width="24" height="58" fill="#38bdf8" rx="4"/>
-              <rect x="-14" y="-22" width="24" height="90" fill="#10b981" rx="4"/>
-              <rect x="26" y="-64" width="24" height="132" fill="#fbbf24" rx="4"/>
+              <rect x="-74" y="-44" width="148" height="88" rx="8" fill="#14532d" stroke="#34d399" stroke-width="4"/>
+              <circle cx="0" cy="0" r="30" fill="#166534" stroke="#86efac" stroke-width="2.5"/>
+              <text x="0" y="13" fill="#fef08a" font-size="40" font-family="Inter, sans-serif" font-weight="800" text-anchor="middle">$</text>
             </g>
           </g>
         </svg>
@@ -261,52 +284,48 @@
 
       <div class="menu-buttons-group">
         <button class="menu-btn primary" id="menu-btn-singleplayer">
-          <span class="btn-icon">🧑‍🚀</span>
+          <span class="btn-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="6"/><rect x="8.5" y="7" width="7" height="5" rx="2"/><path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6"/></svg></span>
           <div class="btn-text">
             <strong>SINGLEPLAYER</strong>
-            <small>Command all flight segments, engineering, and data sales solo</small>
+            <small>Command all mission stages and data sales solo</small>
           </div>
         </button>
 
         <button class="menu-btn secondary" id="menu-btn-multiplayer">
-          <span class="btn-icon">👥</span>
+          <span class="btn-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><circle cx="16.5" cy="9" r="2.8"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M15 14.5c2.5.4 4.5 2 4.5 4.5"/></svg></span>
           <div class="btn-text">
             <strong>MULTIPLAYER MODES</strong>
-            <small>Select Co-op Crew Stations or Saboteur Impostor mode</small>
+            <small>Co-op Crew Stations or Saboteur Impostor mode</small>
           </div>
         </button>
 
         <!-- Multiplayer Sub-Selection (Hidden by default) -->
         <div class="mp-subgroup" id="mp-subgroup" style="display: none;">
           <button class="menu-sub-btn" id="mp-btn-coop">
-            <span>🤝 CO-OP CREW MODE</span>
+            <span>CO-OP CREW MODE</span>
             <small>4 Dedicated Stations: Launch, Space, Ground &amp; User</small>
           </button>
           <button class="menu-sub-btn" id="mp-btn-sabotage">
-            <span>🕵️ SABOTEUR IMPOSTOR MODE</span>
-            <small>One crew member secretly sabotages systems before bankruptcy</small>
+            <span>SABOTEUR IMPOSTOR MODE</span>
+            <small>One crew member secretly sabotages systems</small>
           </button>
         </div>
 
         <button class="menu-btn secondary" id="menu-btn-settings">
-          <span class="btn-icon">⚙️</span>
+          <span class="btn-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.39 1.26 1 1.51.31.13.65.2 1 .2H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
           <div class="btn-text">
             <strong>SETTINGS</strong>
-            <small>Audio volume, advanced engineering sliders &amp; AI backend</small>
+            <small>Audio, text size &amp; spacecraft design mode</small>
           </div>
         </button>
 
         <button class="menu-btn secondary" id="menu-btn-manual">
-          <span class="btn-icon">📖</span>
+          <span class="btn-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
           <div class="btn-text">
-            <strong>NASA MISSION MANUAL</strong>
-            <small>Systems engineering constraints, data levels L0–L4 &amp; rules</small>
+            <strong>MISSION MANUAL</strong>
+            <small>Engineering constraints, data levels L0–L4 &amp; rules</small>
           </div>
         </button>
-      </div>
-
-      <div class="menu-footer">
-        <span>NASA Earth Science, Planetary Science, Heliophysics, Astrophysics &amp; Life Sciences Data</span>
       </div>
     </div>
   </div>
@@ -599,8 +618,8 @@
 
             <!-- Custom Fuel Chemistry Selector (Inside Launch Segment) -->
             <div class="custom-panel" id="fuel-chemistry-panel">
-              <h4>🚀 PROPELLANT CHEMISTRY SELECTION</h4>
-              <p>Propellant chemistry dictates engine specific impulse ($I_{sp}$), density, tank volume, and launch cost.</p>
+              <h4><svg class="inline-heading-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C15.5 5.5 16 11 14 15H10C8 11 8.5 5.5 12 2Z"/><circle cx="12" cy="9" r="1.5"/><path d="M9.5 12.5L6 16l4-1"/><path d="M14.5 12.5L18 16l-4-1"/><path d="M10 15l2 5 2-5"/></svg> PROPELLANT CHEMISTRY SELECTION</h4>
+              <p>Propellant chemistry sets engine specific impulse (<i>I</i><sub>sp</sub>), density, tank size, and launch cost.</p>
               <div class="fuel-options-grid" id="fuel-options-grid">
                 <!-- RP-1 Kerosene, Methalox, Hydrolox, Hypergolic -->
               </div>
@@ -608,8 +627,8 @@
 
             <!-- Spacecraft Bus Expansion Sizing (Inside Space Segment) -->
             <div class="custom-panel" id="bus-expansion-panel" style="display: none;">
-              <h4>🛰️ SPACECRAFT BUS SIZING &amp; VOLUME EXPANSION</h4>
-              <p>Enlarge the spacecraft bus chassis to accommodate more scientific instruments at the penalty of increased dry mass and fuel consumption.</p>
+              <h4><svg class="inline-heading-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="8" width="6" height="8" rx="1"/><rect x="2" y="10" width="5" height="4"/><rect x="17" y="10" width="5" height="4"/><line x1="7" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="17" y2="12"/></svg> SPACECRAFT BUS (SATELLITE BODY) &amp; VOLUME</h4>
+              <p>Enlarge the satellite body to fit more sensors (adds dry mass and fuel use).</p>
               <div class="bus-sizing-grid" id="bus-sizing-grid">
                 <!-- Standard, Extended, Flagship Expansion -->
               </div>
@@ -617,7 +636,7 @@
 
             <!-- Thermal Re-entry Heat Shield Panel (For Return Missions) -->
             <div class="custom-panel" id="reentry-shield-panel" style="display: none;">
-              <h4>🛡️ ATMOSPHERIC RE-ENTRY HEAT SHIELDING</h4>
+              <h4><svg class="inline-heading-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 5v6c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V5l-8-3z"/></svg> ATMOSPHERIC RE-ENTRY HEAT SHIELDING</h4>
               <p>Mandatory for biological sample recovery and return missions to survive 1600°C atmospheric deceleration!</p>
               <div class="shield-toggle-wrap">
                 <label class="switch">
@@ -834,7 +853,7 @@
             <!-- Timed Anomaly Alert Box -->
             <div class="anomaly-alert-box" id="anomaly-alert-box" style="display: none;">
               <div class="anomaly-header">
-                <h4 id="anomaly-segment-badge">⚠️ ANOMALY DETECTED!</h4>
+                <h4 id="anomaly-segment-badge"><svg class="inline-heading-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> ANOMALY DETECTED!</h4>
                 <span class="anomaly-countdown" id="anomaly-countdown-text">URGENT: 15s</span>
               </div>
               <div class="anomaly-timer-bar-wrap">
@@ -1034,8 +1053,21 @@
       <div class="modal-body">
         <!-- SFX Volume -->
         <div class="setting-item">
-          <label for="slider-volume">Audio Synthesizer Volume (<span id="volume-val">80%</span>):</label>
+          <label for="slider-volume" style="display: flex; align-items: center; gap: 0.45rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+            <span id="volume-val">80%</span>
+          </label>
           <input type="range" id="slider-volume" min="0" max="100" value="80">
+        </div>
+
+        <!-- Text Size Accessibility -->
+        <div class="setting-item" style="margin-top: 0.85rem;">
+          <label for="select-text-size">Text Size (Accessibility):</label>
+          <select id="select-text-size" class="form-select">
+            <option value="small">Small</option>
+            <option value="normal" selected>Normal (Default)</option>
+            <option value="large">Large</option>
+          </select>
         </div>
 
         <!-- Advanced Engineering Sliders Toggle -->
