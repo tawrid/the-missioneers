@@ -387,6 +387,27 @@
 
   let audioCtx = null;
   let masterVolume = 0.8;
+  let bgMusicAudio = null;
+
+  function updateBgMusicVolume() {
+    if (bgMusicAudio) {
+      bgMusicAudio.volume = Math.max(0, Math.min(1, masterVolume * 0.35));
+    }
+  }
+
+  function ensureBgMusicPlaying() {
+    try {
+      if (!bgMusicAudio) {
+        bgMusicAudio = new Audio('/equatorial-complex.mp3');
+        bgMusicAudio.loop = true;
+        bgMusicAudio.preload = 'auto';
+      }
+      updateBgMusicVolume();
+      if (bgMusicAudio.paused) {
+        bgMusicAudio.play().catch(() => {});
+      }
+    } catch {}
+  }
 
   function initAudio() {
     if (!audioCtx) {
@@ -634,9 +655,11 @@
     selectedInventoryIdx: null,
     vaultViewMode: 'grid',
 
-    // Advancements tracking
+    // Advancements & Lifetime Stats tracking
+    currentMissionSpent: 0,
     advStats: {
       totalSpent: 0,
+      maxMissionSpent: 0,
       missionsCompleted: 0,
       totalEarned: 0,
       datasetsRefined: 0,
@@ -689,6 +712,15 @@
     mpBtnSabotage: document.getElementById('mp-btn-sabotage'),
     menuBtnSettings: document.getElementById('menu-btn-settings'),
     menuBtnManual: document.getElementById('menu-btn-manual'),
+    menuBtnCredits: document.getElementById('menu-btn-credits'),
+    menuBtnStats: document.getElementById('menu-btn-stats'),
+    creditsModal: document.getElementById('credits-modal'),
+    creditsModalClose: document.getElementById('credits-modal-close'),
+    creditsModalDone: document.getElementById('credits-modal-done'),
+    statsModal: document.getElementById('stats-modal'),
+    statsModalClose: document.getElementById('stats-modal-close'),
+    statsModalDone: document.getElementById('stats-modal-done'),
+    statsGrid: document.getElementById('stats-grid'),
 
     // App Container
     appContainer: document.getElementById('app-container'),
@@ -1101,8 +1133,8 @@
       id: 'big_spender',
       title: 'Big Spender',
       type: 'tiered',
-      stat: 'totalSpent',
-      description: 'Spend total budget on spacecraft hardware, diagnostics, and data processing.',
+      stat: 'maxMissionSpent',
+      description: 'Spend budget on a single mission (hardware, diagnostics, and processing).',
       tiers: [
         { key: 'bronze', label: 'Bronze', target: 1000000 },
         { key: 'silver', label: 'Silver', target: 2000000 },
@@ -1214,6 +1246,7 @@
   function defaultAdvStats() {
     return {
       totalSpent: 0,
+      maxMissionSpent: 0,
       missionsCompleted: 0,
       totalEarned: 0,
       datasetsRefined: 0,
@@ -1317,8 +1350,37 @@
   function recordBudgetSpent(amount) {
     if (!amount || amount <= 0) return;
     state.advStats.totalSpent = (state.advStats.totalSpent || 0) + amount;
+    state.currentMissionSpent = (state.currentMissionSpent || 0) + amount;
+    if (state.currentMissionSpent > (state.advStats.maxMissionSpent || 0)) {
+      state.advStats.maxMissionSpent = state.currentMissionSpent;
+    }
     saveAdvancementsState();
     evaluateAdvancements();
+  }
+
+  function renderStatsModal() {
+    if (!DOM.statsGrid) return;
+    const s = state.advStats || defaultAdvStats();
+    const advGoldOrSingle = ADVANCEMENT_DEFS.filter(def => {
+      const t = getAdvancementTier(def);
+      return (def.type === 'tiered' && t === 'gold') || (def.type === 'single' && t === 'single') || (def.type === 'completionist' && t === 'gold');
+    }).length;
+    const items = [
+      { label: 'Missions Finished', value: (s.missionsCompleted || 0).toLocaleString() },
+      { label: 'Trending Missions', value: (s.trendingMissions || 0).toLocaleString() },
+      { label: 'Total Money Spent', value: `$${(s.totalSpent || 0).toLocaleString()}` },
+      { label: 'Highest Single-Mission Spend', value: `$${(s.maxMissionSpent || 0).toLocaleString()}` },
+      { label: 'Total Revenue Earned', value: `$${(s.totalEarned || 0).toLocaleString()}` },
+      { label: 'Datasets Refined', value: (s.datasetsRefined || 0).toLocaleString() },
+      { label: 'Anomalies Resolved', value: (s.anomaliesResolved || 0).toLocaleString() },
+      { label: 'Advancements Mastered', value: `${advGoldOrSingle} / ${ADVANCEMENT_DEFS.length}` }
+    ];
+    DOM.statsGrid.innerHTML = items.map(item => `
+      <div class="stat-card">
+        <span class="stat-label">${item.label}</span>
+        <span class="stat-value">${item.value}</span>
+      </div>
+    `).join('');
   }
 
   function checkDataManiacOnBuild() {
@@ -4841,6 +4903,7 @@
       groundStation: null
     };
     state.tempResources.diagnosticsBonus = 0;
+    state.currentMissionSpent = 0;
     randomizeDesignVariants();
 
     updatePermanentHud();
@@ -4908,6 +4971,37 @@
       DOM.rulesModal.classList.add('active');
       DOM.rulesModal.style.display = 'flex';
     });
+
+    const closeCreditsModal = () => {
+      if (!DOM.creditsModal) return;
+      DOM.creditsModal.classList.remove('active');
+      DOM.creditsModal.style.display = 'none';
+    };
+    if (DOM.menuBtnCredits && DOM.creditsModal) {
+      DOM.menuBtnCredits.addEventListener('click', () => {
+        playBeep(650);
+        DOM.creditsModal.classList.add('active');
+        DOM.creditsModal.style.display = 'flex';
+      });
+    }
+    if (DOM.creditsModalClose) DOM.creditsModalClose.addEventListener('click', closeCreditsModal);
+    if (DOM.creditsModalDone) DOM.creditsModalDone.addEventListener('click', closeCreditsModal);
+
+    const closeStatsModal = () => {
+      if (!DOM.statsModal) return;
+      DOM.statsModal.classList.remove('active');
+      DOM.statsModal.style.display = 'none';
+    };
+    if (DOM.menuBtnStats && DOM.statsModal) {
+      DOM.menuBtnStats.addEventListener('click', () => {
+        playBeep(650);
+        renderStatsModal();
+        DOM.statsModal.classList.add('active');
+        DOM.statsModal.style.display = 'flex';
+      });
+    }
+    if (DOM.statsModalClose) DOM.statsModalClose.addEventListener('click', closeStatsModal);
+    if (DOM.statsModalDone) DOM.statsModalDone.addEventListener('click', closeStatsModal);
 
     DOM.btnReturnMenu.addEventListener('click', () => {
       playBeep(600);
@@ -5070,6 +5164,7 @@
     DOM.sliderVolume.addEventListener('input', (e) => {
       masterVolume = parseInt(e.target.value) / 100;
       DOM.volumeVal.textContent = `${e.target.value}%`;
+      updateBgMusicVolume();
       playBeep(880);
     });
 
@@ -5449,6 +5544,8 @@
     { selector: '#menu-btn-multiplayer', text: 'Play Co-op (4 stations) or Saboteur Impostor mode.' },
     { selector: '#menu-btn-settings', text: 'Adjust sound volume, text size, or spacecraft design mode.' },
     { selector: '#menu-btn-manual', text: 'Read the engineering rules & data levels.' },
+    { selector: '#menu-btn-credits', text: 'View music licensing and acknowledgments.' },
+    { selector: '#menu-btn-stats', text: 'View your lifetime mission statistics and records.' },
     { selector: '.resource-box.budget', text: 'Your total money to buy rockets, sensors & lab work.' },
     { selector: '.resource-box.rep', text: 'Reputation unlocks Tier 2 sensors & boosts data prices.' },
     { selector: '#btn-open-vault', text: 'View all science datasets you currently own.' },
@@ -5656,6 +5753,7 @@
       localStorage.removeItem(ADVANCEMENTS_STORAGE_KEY);
     } catch (e) {}
     state.advStats = defaultAdvStats();
+    state.currentMissionSpent = 0;
     state.advUnlocked = {};
     document.documentElement.classList.remove('text-size-small', 'text-size-large');
     document.documentElement.classList.add('text-size-normal');
@@ -6101,7 +6199,7 @@
   }
 
   let cutsceneSoundEnabled = true;
-  let cutsceneAudioUnlocked = false;
+  let hasUserAudioGesture = false;
 
   function playCutsceneTones(sceneIdx) {
     if (!cutsceneSoundEnabled || masterVolume <= 0) return;
@@ -6176,18 +6274,9 @@
     if (!cutsceneSoundEnabled || masterVolume <= 0) return;
     try {
       initAudio();
-      if (!audioCtx) return;
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume().then(() => {
-          cutsceneAudioUnlocked = true;
-          if (cutsceneSoundEnabled) playCutsceneTones(sceneIdx);
-        }).catch(() => {});
-        return;
-      }
-      if (audioCtx.state === 'running') {
-        cutsceneAudioUnlocked = true;
-        playCutsceneTones(sceneIdx);
-      }
+      if (!audioCtx || audioCtx.state !== 'running') return;
+      hasUserAudioGesture = true;
+      playCutsceneTones(sceneIdx);
     } catch {
       // Ignore if AudioContext is blocked
     }
@@ -6202,23 +6291,29 @@
     let fallbackTimer = null;
     let activeSceneIdx = 0;
 
+    const isAudioLive = () => Boolean(cutsceneSoundEnabled && audioCtx && audioCtx.state === 'running');
+
     const updateSoundBtnLabel = () => {
       if (!DOM.btnCutsceneSound) return;
-      DOM.btnCutsceneSound.textContent = cutsceneSoundEnabled ? 'AUDIO: ON' : 'AUDIO: OFF';
+      DOM.btnCutsceneSound.textContent = isAudioLive() ? 'AUDIO: ON' : 'AUDIO: OFF';
     };
+
+    try { initAudio(); } catch {}
+    updateSoundBtnLabel();
 
     const unlockAudioOnGesture = (e) => {
       if (e && DOM.btnCutsceneSound && DOM.btnCutsceneSound.contains(e.target)) return;
+      hasUserAudioGesture = true;
       try {
         initAudio();
         if (!audioCtx) return;
         if (audioCtx.state === 'suspended') {
           audioCtx.resume().then(() => {
-            cutsceneAudioUnlocked = true;
+            updateSoundBtnLabel();
             if (cutsceneSoundEnabled) playCutsceneTones(activeSceneIdx);
           }).catch(() => {});
-        } else if (audioCtx.state === 'running' && !cutsceneAudioUnlocked) {
-          cutsceneAudioUnlocked = true;
+        } else if (audioCtx.state === 'running') {
+          updateSoundBtnLabel();
           if (cutsceneSoundEnabled) playCutsceneTones(activeSceneIdx);
         }
       } catch {}
@@ -6230,14 +6325,17 @@
       DOM.btnCutsceneSound.addEventListener('click', (e) => {
         e.stopPropagation();
         try { initAudio(); } catch {}
-        // First click when browser had blocked autoplay: unlock & play immediately on 1st click without toggling OFF
-        if (!cutsceneAudioUnlocked || !audioCtx || audioCtx.state !== 'running') {
+        // First user interaction or suspended context: unlock AudioContext & play immediately
+        if (!hasUserAudioGesture || !audioCtx || audioCtx.state !== 'running') {
+          hasUserAudioGesture = true;
           cutsceneSoundEnabled = true;
-          cutsceneAudioUnlocked = true;
-          updateSoundBtnLabel();
           if (audioCtx && audioCtx.state === 'suspended') {
-            audioCtx.resume().then(() => playCutsceneTones(activeSceneIdx)).catch(() => {});
+            audioCtx.resume().then(() => {
+              updateSoundBtnLabel();
+              playCutsceneTones(activeSceneIdx);
+            }).catch(() => {});
           } else {
+            updateSoundBtnLabel();
             playCutsceneTones(activeSceneIdx);
           }
           return;
@@ -6433,6 +6531,10 @@
     renderStage1Domains();
     setupEventListeners();
     startIntroCutscene();
+
+    const startMusicOnGesture = () => ensureBgMusicPlaying();
+    document.addEventListener('pointerdown', startMusicOnGesture, { once: true });
+    document.addEventListener('keydown', startMusicOnGesture, { once: true });
   }
 
   document.addEventListener('DOMContentLoaded', init);

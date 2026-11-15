@@ -36,6 +36,7 @@ ALLOWED_STATIC_FILES = {
     "/index.html": "index.html",
     "/app.js": "app.js",
     "/style.css": "style.css",
+    "/equatorial-complex.mp3": "Equatorial Complex.mp3",
 }
 
 CSP_POLICY = (
