@@ -3582,3 +3582,119 @@ html.text-size-large {
   border-right: 10px solid transparent;
   border-top: 12px solid #38bdf8;
 }
+
+/* Advancements Modal & Toast */
+.advancements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.85rem;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.adv-card {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid var(--border-hud);
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.adv-card.tier-bronze { border-color: #cd7f32; }
+.adv-card.tier-silver { border-color: #cbd5e1; }
+.adv-card.tier-gold,
+.adv-card.tier-single-done { border-color: #fbbf24; box-shadow: 0 0 12px rgba(251, 191, 36, 0.16); }
+
+.adv-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.adv-card-title {
+  font-family: var(--font-hud);
+  font-size: 0.9rem;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.adv-tier-pill {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.adv-tier-pill.locked { background: rgba(100, 116, 139, 0.25); color: #94a3b8; }
+.adv-tier-pill.bronze { background: rgba(205, 127, 50, 0.22); color: #f6ad55; border: 1px solid #cd7f32; }
+.adv-tier-pill.silver { background: rgba(203, 213, 225, 0.2); color: #e2e8f0; border: 1px solid #cbd5e1; }
+.adv-tier-pill.gold { background: rgba(251, 191, 36, 0.22); color: #fde047; border: 1px solid #fbbf24; }
+.adv-tier-pill.single { background: rgba(56, 189, 248, 0.18); color: #7dd3fc; border: 1px solid #38bdf8; }
+
+.adv-card-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.adv-tier-targets {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+
+.adv-target-chip {
+  padding: 0.12rem 0.4rem;
+  background: rgba(30, 41, 59, 0.8);
+  color: #94a3b8;
+}
+
+.adv-target-chip.done {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+.adv-progress-wrap {
+  width: 100%;
+  height: 6px;
+  background: rgba(30, 41, 59, 0.9);
+  overflow: hidden;
+  margin-top: 0.2rem;
+}
+
+.adv-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8, #fbbf24);
+  transition: width 0.25s ease;
+}
+
+.advancement-toast {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  z-index: 9700;
+  background: #142638;
+  border: 2px solid #fbbf24;
+  color: #ffffff;
+  padding: 0.75rem 1.05rem;
+  box-shadow: 5px 5px 0 rgba(10, 18, 28, 0.85);
+  font-family: var(--font-hud);
+  font-size: 0.85rem;
+  max-width: 340px;
+  opacity: 0;
+  transform: translateY(16px);
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.advancement-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}

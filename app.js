@@ -632,7 +632,22 @@
 
     // Selection in Refinery
     selectedInventoryIdx: null,
-    vaultViewMode: 'grid'
+    vaultViewMode: 'grid',
+
+    // Advancements tracking
+    advStats: {
+      totalSpent: 0,
+      missionsCompleted: 0,
+      totalEarned: 0,
+      datasetsRefined: 0,
+      anomaliesResolved: 0,
+      trendingMissions: 0,
+      dataManiac: false,
+      l4Spliced: false,
+      maxRepReached: false,
+      debtCleared: false
+    },
+    advUnlocked: {}
   };
 
   // ========================================================================
@@ -894,7 +909,26 @@
     gameNoticeMessage: document.getElementById('game-notice-message'),
     gameNoticeClose: document.getElementById('game-notice-close'),
     gameNoticeCancel: document.getElementById('game-notice-cancel'),
-    gameNoticeOk: document.getElementById('game-notice-ok')
+    gameNoticeOk: document.getElementById('game-notice-ok'),
+
+    // Bank Modal
+    btnOpenBank: document.getElementById('btn-open-bank'),
+    bankModal: document.getElementById('bank-modal'),
+    bankModalClose: document.getElementById('bank-modal-close'),
+    bankModalDone: document.getElementById('bank-modal-done'),
+    modalDebtAmountText: document.getElementById('modal-debt-amount-text'),
+    btnModalLoanGrant: document.getElementById('btn-modal-loan-grant'),
+    btnModalLoanBank: document.getElementById('btn-modal-loan-bank'),
+    btnModalPayDebt: document.getElementById('btn-modal-pay-debt'),
+
+    // Advancements Modal & Toast
+    btnOpenAdvancements: document.getElementById('btn-open-advancements'),
+    advancementsModal: document.getElementById('advancements-modal'),
+    advancementsModalClose: document.getElementById('advancements-modal-close'),
+    advancementsModalDone: document.getElementById('advancements-modal-done'),
+    advancementsSummary: document.getElementById('advancements-summary'),
+    advancementsGrid: document.getElementById('advancements-grid'),
+    advancementToast: document.getElementById('advancement-toast')
   };
 
   let pendingNoticeCallback = null;
@@ -1005,6 +1039,326 @@
 
     DOM.vaultCountBadge.textContent = state.dataInventory.length;
     DOM.debtAmountText.textContent = `$${state.activeDebt.toLocaleString()}`;
+    if (DOM.modalDebtAmountText) {
+      DOM.modalDebtAmountText.textContent = `$${state.activeDebt.toLocaleString()}`;
+    }
+    if (!sandbox && state.reputation >= 100 && state.advStats && !state.advStats.maxRepReached) {
+      state.advStats.maxRepReached = true;
+      saveAdvancementsState();
+      evaluateAdvancements();
+    }
+  }
+
+  function updateL4ForgeButtonVisibility() {
+    if (!DOM.btnOpenL4Forge) return;
+    const hasL3A = state.dataInventory.some(item => item.level === 'L3A');
+    DOM.btnOpenL4Forge.style.display = hasL3A ? 'inline-flex' : 'none';
+  }
+
+  // ========================================================================
+  // 4B. ADVANCEMENTS SYSTEM (TIERED & SINGLE)
+  // ========================================================================
+
+  const ADVANCEMENTS_STORAGE_KEY = 'tm_advancements_v1';
+
+  const ADVANCEMENT_DEFS = [
+    {
+      id: 'big_spender',
+      title: 'Big Spender',
+      type: 'tiered',
+      stat: 'totalSpent',
+      description: 'Spend total budget on spacecraft hardware, diagnostics, and data processing.',
+      tiers: [
+        { key: 'bronze', label: 'Bronze', target: 1000000 },
+        { key: 'silver', label: 'Silver', target: 2000000 },
+        { key: 'gold', label: 'Gold', target: 4000000 }
+      ],
+      formatVal: v => `$${Number(v).toLocaleString()}`
+    },
+    {
+      id: 'mission_veteran',
+      title: 'Mission Veteran',
+      type: 'tiered',
+      stat: 'missionsCompleted',
+      description: 'Successfully complete full orbital or deep-space missions.',
+      tiers: [
+        { key: 'bronze', label: 'Bronze', target: 1 },
+        { key: 'silver', label: 'Silver', target: 5 },
+        { key: 'gold', label: 'Gold', target: 10 }
+      ],
+      formatVal: v => `${v}`
+    },
+    {
+      id: 'data_tycoon',
+      title: 'Data Tycoon',
+      type: 'tiered',
+      stat: 'totalEarned',
+      description: 'Earn total revenue by selling refined datasets to buyers.',
+      tiers: [
+        { key: 'bronze', label: 'Bronze', target: 500000 },
+        { key: 'silver', label: 'Silver', target: 2000000 },
+        { key: 'gold', label: 'Gold', target: 5000000 }
+      ],
+      formatVal: v => `$${Number(v).toLocaleString()}`
+    },
+    {
+      id: 'master_refiner',
+      title: 'Master Refiner',
+      type: 'tiered',
+      stat: 'datasetsRefined',
+      description: 'Refine raw telemetry datasets up through L1, L2, and L3A.',
+      tiers: [
+        { key: 'bronze', label: 'Bronze', target: 3 },
+        { key: 'silver', label: 'Silver', target: 10 },
+        { key: 'gold', label: 'Gold', target: 25 }
+      ],
+      formatVal: v => `${v}`
+    },
+    {
+      id: 'crisis_handler',
+      title: 'Crisis Handler',
+      type: 'tiered',
+      stat: 'anomaliesResolved',
+      description: 'Resolve mid-flight spacecraft anomalies before systems fail.',
+      tiers: [
+        { key: 'bronze', label: 'Bronze', target: 1 },
+        { key: 'silver', label: 'Silver', target: 3 },
+        { key: 'gold', label: 'Gold', target: 8 }
+      ],
+      formatVal: v => `${v}`
+    },
+    {
+      id: 'trend_hunter',
+      title: 'Trend Hunter',
+      type: 'tiered',
+      stat: 'trendingMissions',
+      description: 'Launch missions targeting a currently trending scientific category.',
+      tiers: [
+        { key: 'bronze', label: 'Bronze', target: 1 },
+        { key: 'silver', label: 'Silver', target: 3 },
+        { key: 'gold', label: 'Gold', target: 6 }
+      ],
+      formatVal: v => `${v}`
+    },
+    {
+      id: 'data_maniac',
+      title: 'Data Maniac',
+      type: 'single',
+      stat: 'dataManiac',
+      description: 'Put every instrument of a single category onto one spacecraft.'
+    },
+    {
+      id: 'l4_architect',
+      title: 'L4 Architect',
+      type: 'single',
+      stat: 'l4Spliced',
+      description: 'Splice two L3A datasets together into a Level 4 Master Dataset.'
+    },
+    {
+      id: 'flagship_partner',
+      title: 'Flagship Partner',
+      type: 'single',
+      stat: 'maxRepReached',
+      description: 'Reach 100 / 100 Flagship Reputation.'
+    },
+    {
+      id: 'debt_free',
+      title: 'Debt-Free',
+      type: 'single',
+      stat: 'debtCleared',
+      description: 'Pay off an active bank loan in full.'
+    },
+    {
+      id: 'master_missioneer',
+      title: 'Master Missioneer',
+      type: 'completionist',
+      description: 'Reach Gold on every tiered advancement and unlock every single advancement.'
+    }
+  ];
+
+  function defaultAdvStats() {
+    return {
+      totalSpent: 0,
+      missionsCompleted: 0,
+      totalEarned: 0,
+      datasetsRefined: 0,
+      anomaliesResolved: 0,
+      trendingMissions: 0,
+      dataManiac: false,
+      l4Spliced: false,
+      maxRepReached: false,
+      debtCleared: false
+    };
+  }
+
+  function loadAdvancementsState() {
+    try {
+      const raw = localStorage.getItem(ADVANCEMENTS_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        state.advStats = Object.assign(defaultAdvStats(), parsed.stats || {});
+        state.advUnlocked = parsed.unlocked && typeof parsed.unlocked === 'object' ? parsed.unlocked : {};
+      }
+    } catch (e) {
+      // ignore storage errors
+    }
+  }
+
+  function saveAdvancementsState() {
+    try {
+      localStorage.setItem(ADVANCEMENTS_STORAGE_KEY, JSON.stringify({
+        stats: state.advStats,
+        unlocked: state.advUnlocked
+      }));
+    } catch (e) {
+      // ignore storage errors
+    }
+  }
+
+  let advToastTimer = null;
+  function showAdvancementToast(title, tierLabel) {
+    if (!DOM.advancementToast) return;
+    DOM.advancementToast.innerHTML = `${ICONS.trophy} <div><strong>Advancement Unlocked: ${title}</strong><span>${tierLabel}</span></div>`;
+    DOM.advancementToast.style.display = 'flex';
+    if (advToastTimer) clearTimeout(advToastTimer);
+    advToastTimer = setTimeout(() => {
+      if (DOM.advancementToast) DOM.advancementToast.style.display = 'none';
+    }, 4200);
+  }
+
+  function getAdvancementTier(def) {
+    if (def.type === 'tiered') {
+      const val = Number(state.advStats[def.stat] || 0);
+      let tier = null;
+      def.tiers.forEach(t => {
+        if (val >= t.target) tier = t.key;
+      });
+      return tier;
+    }
+    if (def.type === 'single') {
+      return state.advStats[def.stat] ? 'single' : null;
+    }
+    if (def.type === 'completionist') {
+      const allDone = ADVANCEMENT_DEFS
+        .filter(d => d.id !== 'master_missioneer')
+        .every(d => (d.type === 'tiered' ? getAdvancementTier(d) === 'gold' : getAdvancementTier(d) === 'single'));
+      return allDone ? 'gold' : null;
+    }
+    return null;
+  }
+
+  function evaluateAdvancements() {
+    const tierOrder = { bronze: 1, silver: 2, gold: 3, single: 3 };
+    let changed = false;
+    const newlyUnlocked = [];
+
+    ADVANCEMENT_DEFS.forEach(def => {
+      const achieved = getAdvancementTier(def);
+      if (!achieved) return;
+      const prev = state.advUnlocked[def.id] || null;
+      if (!prev || (tierOrder[achieved] || 0) > (tierOrder[prev] || 0)) {
+        state.advUnlocked[def.id] = achieved;
+        changed = true;
+        const label = def.type === 'single'
+          ? 'Completed'
+          : `${achieved.charAt(0).toUpperCase() + achieved.slice(1)} Tier`;
+        newlyUnlocked.push({ title: def.title, label });
+      }
+    });
+
+    if (changed) {
+      saveAdvancementsState();
+      if (newlyUnlocked.length > 0) {
+        const last = newlyUnlocked[newlyUnlocked.length - 1];
+        showAdvancementToast(last.title, last.label);
+      }
+    }
+    if (DOM.advancementsModal && DOM.advancementsModal.style.display === 'flex') {
+      renderAdvancementsModal();
+    }
+  }
+
+  function recordBudgetSpent(amount) {
+    if (!amount || amount <= 0) return;
+    state.advStats.totalSpent = (state.advStats.totalSpent || 0) + amount;
+    saveAdvancementsState();
+    evaluateAdvancements();
+  }
+
+  function checkDataManiacOnBuild() {
+    if (!state.selectedDomain || !Array.isArray(state.selectedDomain.instruments) || !Array.isArray(state.selectedInstruments)) return;
+    const domainInsts = state.selectedDomain.instruments;
+    if (domainInsts.length > 0 && domainInsts.every(grp => state.selectedInstruments.some(sel => sel.instId === grp.id))) {
+      state.advStats.dataManiac = true;
+      saveAdvancementsState();
+      evaluateAdvancements();
+    }
+  }
+
+  function renderAdvancementsModal() {
+    if (!DOM.advancementsGrid || !DOM.advancementsSummary) return;
+
+    let goldOrSingleCount = 0;
+    const totalCount = ADVANCEMENT_DEFS.length;
+
+    DOM.advancementsGrid.innerHTML = ADVANCEMENT_DEFS.map(def => {
+      const unlockedTier = getAdvancementTier(def);
+      if ((def.type === 'tiered' && unlockedTier === 'gold') ||
+          (def.type === 'single' && unlockedTier === 'single') ||
+          (def.type === 'completionist' && unlockedTier === 'gold')) {
+        goldOrSingleCount++;
+      }
+
+      const cardTierClass = unlockedTier
+        ? (def.type === 'single' ? 'tier-single-done' : `tier-${unlockedTier}`)
+        : '';
+
+      const pillClass = unlockedTier || 'locked';
+      const pillLabel = !unlockedTier
+        ? 'LOCKED'
+        : (def.type === 'single' ? 'UNLOCKED' : unlockedTier.toUpperCase());
+
+      let progressHtml = '';
+      if (def.type === 'tiered') {
+        const val = Number(state.advStats[def.stat] || 0);
+        const maxTarget = def.tiers[def.tiers.length - 1].target;
+        const pct = Math.min(100, Math.round((val / maxTarget) * 100));
+        const chips = def.tiers.map(t => {
+          const hit = val >= t.target;
+          return `<span class="adv-target-chip ${hit ? 'hit' : ''}">${t.label}: ${def.formatVal(t.target)}</span>`;
+        }).join('');
+        progressHtml = `
+          <div class="adv-tier-targets">${chips}</div>
+          <div class="adv-progress-wrap"><div class="adv-progress-fill" style="width:${pct}%"></div></div>
+          <div class="adv-progress-text">Progress: ${def.formatVal(val)} / ${def.formatVal(maxTarget)}</div>
+        `;
+      } else if (def.type === 'completionist') {
+        const otherTotal = ADVANCEMENT_DEFS.length - 1;
+        const otherDone = ADVANCEMENT_DEFS
+          .filter(d => d.id !== 'master_missioneer')
+          .filter(d => (d.type === 'tiered' ? getAdvancementTier(d) === 'gold' : getAdvancementTier(d) === 'single'))
+          .length;
+        const pct = Math.round((otherDone / otherTotal) * 100);
+        progressHtml = `
+          <div class="adv-progress-wrap"><div class="adv-progress-fill" style="width:${pct}%"></div></div>
+          <div class="adv-progress-text">Mastered: ${otherDone} / ${otherTotal}</div>
+        `;
+      }
+
+      return `
+        <div class="adv-card ${cardTierClass}">
+          <div class="adv-card-head">
+            <span class="adv-title">${def.title}</span>
+            <span class="adv-tier-pill ${pillClass}">${pillLabel}</span>
+          </div>
+          <p class="adv-desc">${def.description}</p>
+          ${progressHtml}
+        </div>
+      `;
+    }).join('');
+
+    DOM.advancementsSummary.textContent = `${goldOrSingleCount} / ${totalCount} Advancements Mastered`;
   }
 
   function goToStage(stageNum) {
@@ -1800,6 +2154,7 @@
 
     if (!sandbox) {
       state.budget -= DIAGNOSTIC_COST;
+      recordBudgetSpent(DIAGNOSTIC_COST);
       updatePermanentHud();
       DOM.invCurrentBudget.textContent = `$${state.budget.toLocaleString()}`;
       DOM.invRemaining.textContent = `$${(state.budget - state.tempResources.totalCost).toLocaleString()}`;
@@ -1883,8 +2238,10 @@
     // Deduct procurement cost (unless Sandbox)
     if (!isInfiniteBudget()) {
       state.budget -= state.tempResources.totalCost;
+      recordBudgetSpent(state.tempResources.totalCost);
       updatePermanentHud();
     }
+    checkDataManiacOnBuild();
 
     state.flight = {
       segment: 'launch',
@@ -2029,6 +2386,14 @@
       DOM.flightPhaseName.textContent = 'MISSION FLIGHT OPERATIONS COMPLETE';
       logFlightMessage('MISSION COMPLETED: Downlinked telemetry verified. Proceed to User Segment.', false, 'trophy');
       DOM.btnCompleteFlight.style.display = 'block';
+      if (state.flight.dataAccumulatedMB > 0) {
+        state.advStats.missionsCompleted = (state.advStats.missionsCompleted || 0) + 1;
+        if (state.selectedDomain && state.currentTrend && state.currentTrend.domain === state.selectedDomain.id) {
+          state.advStats.trendingMissions = (state.advStats.trendingMissions || 0) + 1;
+        }
+        saveAdvancementsState();
+        evaluateAdvancements();
+      }
       if (typeof tutorialOnFlightComplete === 'function') tutorialOnFlightComplete();
     }
   }
@@ -2311,6 +2676,9 @@
       logFlightMessage(`ANOMALY RESOLVED: ${anomaly.seg.toUpperCase()} station stabilized the issue!`, false, 'check');
       DOM.anomalyAlertBox.style.display = 'none';
       state.flight.anomalyActive = false;
+      state.advStats.anomaliesResolved = (state.advStats.anomaliesResolved || 0) + 1;
+      saveAdvancementsState();
+      evaluateAdvancements();
       if (state.flight.paused) setFlightPaused(false);
       if (typeof tutorialOnAnomalyResolved === 'function') tutorialOnAnomalyResolved();
     } else {
@@ -2370,7 +2738,7 @@
     if (DOM.invDecayHint) {
       DOM.invDecayHint.innerHTML = state.difficulty === 'hard'
         ? `${ICONS.alert} HARD MODE: Unsold non-L4 datasets decay 15%/cycle (L4 &amp; Splicer components ignore decay)`
-        : `${ICONS.check} Stored datasets retain 100% of their scientific value across cycles`;
+        : '';
     }
 
     renderInventoryList();
@@ -2378,13 +2746,14 @@
   }
 
   function renderInventoryList() {
+    updateL4ForgeButtonVisibility();
     DOM.dataInventoryList.innerHTML = '';
     DOM.dataInventoryList.classList.toggle('list-view', state.inventoryViewMode === 'list');
     if (DOM.btnInvGrid) DOM.btnInvGrid.classList.toggle('active', state.inventoryViewMode === 'grid');
     if (DOM.btnInvList) DOM.btnInvList.classList.toggle('active', state.inventoryViewMode === 'list');
 
     if (state.dataInventory.length === 0) {
-      DOM.dataInventoryList.innerHTML = `<p style="grid-column: 1/-1; color: var(--text-muted); font-size: 0.8rem;">No datasets currently in inventory. Complete a flight to gather L0/L1B telemetry!</p>`;
+      DOM.dataInventoryList.innerHTML = `<p style="grid-column: 1/-1; color: var(--text-muted); font-size: 0.8rem;">No datasets currently in inventory. Complete a flight to gather L0/L1B telemetry.</p>`;
       DOM.processingControls.style.display = 'none';
       DOM.processingRecipe.innerHTML = `<p>Select a data package from your inventory above to view available refinement recipes.</p>`;
       return;
@@ -2549,10 +2918,16 @@
     }
 
     playBeep(1100);
-    if (!sandbox) state.budget -= curLevelInfo.refineCost;
+    if (!sandbox) {
+      state.budget -= curLevelInfo.refineCost;
+      recordBudgetSpent(curLevelInfo.refineCost);
+    }
     const nextKey = curLevelInfo.next;
     item.level = nextKey;
     item.estValue = DATA_LEVELS[nextKey].baseVal;
+    state.advStats.datasetsRefined = (state.advStats.datasetsRefined || 0) + 1;
+    saveAdvancementsState();
+    evaluateAdvancements();
 
     updatePermanentHud();
     renderInventoryList();
@@ -2590,13 +2965,19 @@
     }
 
     playBeep(1250);
-    if (!sandbox) state.budget -= combineCfg.cost;
+    if (!sandbox) {
+      state.budget -= combineCfg.cost;
+      recordBudgetSpent(combineCfg.cost);
+    }
 
     item.level = combineCfg.target;
     item.estValue = DATA_LEVELS[combineCfg.target].baseVal;
     if (!item.name.includes(partner.name)) {
       item.name = `${item.name} + ${partner.name}`;
     }
+    state.advStats.datasetsRefined = (state.advStats.datasetsRefined || 0) + 1;
+    saveAdvancementsState();
+    evaluateAdvancements();
 
     // Consume the 2nd dataset (2 datasets -> 1 combined dataset)
     state.dataInventory.splice(partnerIdx, 1);
@@ -2723,7 +3104,13 @@
     }
 
     playBeep(1320);
-    if (!isInfiniteBudget()) state.budget -= proj.fee;
+    if (!isInfiniteBudget()) {
+      state.budget -= proj.fee;
+      recordBudgetSpent(proj.fee);
+    }
+    state.advStats.l4Spliced = true;
+    saveAdvancementsState();
+    evaluateAdvancements();
 
     const firstItem = proj.items[0];
     const newL4 = {
@@ -2793,6 +3180,11 @@
     const payout = Math.round(item.estValue * baseBuyerMult * repMultiplier * decayMultiplier * trendMultiplier);
     if (!isInfiniteBudget()) {
       state.budget += payout;
+      if (payout > 0) {
+        state.advStats.totalEarned = (state.advStats.totalEarned || 0) + payout;
+        saveAdvancementsState();
+        evaluateAdvancements();
+      }
     }
     state.reputation = Math.max(0, Math.min(100, state.reputation + repDelta));
 
@@ -3365,8 +3757,8 @@
       });
     });
 
-    // Loans
-    DOM.btnLoanGrant.addEventListener('click', () => {
+    // Shared Bank / Loan Helpers
+    function claimEmergencyGrant() {
       playBeep(880);
       if (!isInfiniteBudget()) {
         state.budget += 150000;
@@ -3374,25 +3766,24 @@
         updatePermanentHud();
         showInPageNotice('NASA Emergency Grant approved: +$150,000 added to budget. (-8 Reputation)');
       } else {
-        showInPageNotice('Sandbox Mode already has ∞ Budget & ∞ Reputation!');
+        showInPageNotice('Sandbox Mode already has ∞ Budget & ∞ Reputation.');
       }
-    });
+    }
 
-    DOM.btnLoanBank.addEventListener('click', () => {
+    function borrowBankLoan() {
       playBeep(880);
       state.budget += 250000;
       state.activeDebt += 275000;
       updatePermanentHud();
       showInPageNotice('Commercial Bank Loan approved: +$250,000 received. $275,000 debt added.');
-    });
+    }
 
-    DOM.btnPayDebt.addEventListener('click', () => {
+    function repayOutstandingDebt() {
       if (state.activeDebt <= 0) {
         showInPageNotice('You have no active debt.');
         return;
       }
       if (state.budget < state.activeDebt) {
-        // partial pay
         const pay = state.budget;
         state.budget = 0;
         state.activeDebt -= pay;
@@ -3402,10 +3793,55 @@
         state.budget -= state.activeDebt;
         state.activeDebt = 0;
         playBeep(1200);
+        state.advStats.debtCleared = true;
+        saveAdvancementsState();
+        evaluateAdvancements();
         showInPageNotice('Debt fully paid off! Your credit standing is pristine.', 'DEBT CLEARED');
       }
       updatePermanentHud();
-    });
+    }
+
+    // Loans (Stage 7)
+    DOM.btnLoanGrant.addEventListener('click', claimEmergencyGrant);
+    DOM.btnLoanBank.addEventListener('click', borrowBankLoan);
+    DOM.btnPayDebt.addEventListener('click', repayOutstandingDebt);
+
+    // Bank Modal (Accessible Anytime from HUD)
+    const closeBankModal = () => {
+      if (!DOM.bankModal) return;
+      DOM.bankModal.classList.remove('active');
+      DOM.bankModal.style.display = 'none';
+    };
+    if (DOM.btnOpenBank && DOM.bankModal) {
+      DOM.btnOpenBank.addEventListener('click', () => {
+        playBeep(700);
+        updatePermanentHud();
+        DOM.bankModal.classList.add('active');
+        DOM.bankModal.style.display = 'flex';
+      });
+    }
+    if (DOM.bankModalClose) DOM.bankModalClose.addEventListener('click', closeBankModal);
+    if (DOM.bankModalDone) DOM.bankModalDone.addEventListener('click', closeBankModal);
+    if (DOM.btnModalLoanGrant) DOM.btnModalLoanGrant.addEventListener('click', claimEmergencyGrant);
+    if (DOM.btnModalLoanBank) DOM.btnModalLoanBank.addEventListener('click', borrowBankLoan);
+    if (DOM.btnModalPayDebt) DOM.btnModalPayDebt.addEventListener('click', repayOutstandingDebt);
+
+    // Advancements Modal (Accessible Anytime from HUD)
+    const closeAdvancementsModal = () => {
+      if (!DOM.advancementsModal) return;
+      DOM.advancementsModal.classList.remove('active');
+      DOM.advancementsModal.style.display = 'none';
+    };
+    if (DOM.btnOpenAdvancements && DOM.advancementsModal) {
+      DOM.btnOpenAdvancements.addEventListener('click', () => {
+        playBeep(700);
+        renderAdvancementsModal();
+        DOM.advancementsModal.classList.add('active');
+        DOM.advancementsModal.style.display = 'flex';
+      });
+    }
+    if (DOM.advancementsModalClose) DOM.advancementsModalClose.addEventListener('click', closeAdvancementsModal);
+    if (DOM.advancementsModalDone) DOM.advancementsModalDone.addEventListener('click', closeAdvancementsModal);
 
     DOM.btnNextMissionLoop.addEventListener('click', commenceNextMissionCycle);
 
@@ -3655,7 +4091,10 @@
     endGuidedTutorial(false);
     try {
       localStorage.removeItem('tm_text_size');
+      localStorage.removeItem(ADVANCEMENTS_STORAGE_KEY);
     } catch (e) {}
+    state.advStats = defaultAdvStats();
+    state.advUnlocked = {};
     document.documentElement.classList.remove('text-size-small', 'text-size-large');
     document.documentElement.classList.add('text-size-normal');
     const selSize = document.getElementById('select-text-size');
@@ -4348,6 +4787,7 @@
   }
 
   function init() {
+    loadAdvancementsState();
     state.currentTrend = MARKET_TREND_POOLS[0];
     setTickerText(state.currentTrend.text);
     updatePermanentHud();

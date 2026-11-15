@@ -391,7 +391,6 @@
         </div>
         <div class="hud-title-wrap">
           <h1 class="hud-title">THE MISSIONEERS <span class="badge" id="hud-mode-badge">SOLO</span></h1>
-          <p class="hud-subtitle">4-SEGMENT LIFECYCLE // L0–L4 DATA REFINERY // REAL NASA SENSORS</p>
         </div>
       </div>
 
@@ -404,7 +403,7 @@
             <span class="res-val" id="hud-budget">$1,200,000</span>
           </div>
         </div>
-        <div class="resource-box rep" title="Permanent Reputation: Smooth price curve &amp; unlocks Tier 2 sensors">
+        <div class="resource-box rep" title="Permanent Reputation: Unlocks Tier 2 sensors &amp; boosts payouts">
           <span class="res-icon"><svg class="tabler-icon tabler-filled ti-gold" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.243 7.34l-6.38 .925l-.113 .023a1 1 0 0 0 -.44 1.684l4.622 4.499l-1.09 6.355l-.013 .11a1 1 0 0 0 1.464 .944l5.706 -3l5.693 3l.1 .046a1 1 0 0 0 1.352 -1.1l-1.091 -6.355l4.624 -4.5l.078 -.085a1 1 0 0 0 -.633 -1.62l-6.38 -.926l-2.852 -5.78a1 1 0 0 0 -1.794 0l-2.853 5.78z" /></svg></span>
           <div class="res-meta">
             <span class="res-label">REPUTATION</span>
@@ -413,10 +412,18 @@
         </div>
       </div>
 
-      <!-- Global Controls: Data Vault, Help, Settings, Menu -->
+      <!-- Global Controls: Data Vault, Bank, Advancements, Help, Settings, Menu -->
       <div class="hud-controls">
         <button class="hud-btn vault-btn" id="btn-open-vault" title="View Stored Scientific Data &amp; Market Value">
           <span><svg class="inline-heading-icon tabler-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" /><path d="M12 12l8 -4.5" /><path d="M12 12l0 9" /><path d="M12 12l-8 -4.5" /></svg> DATA VAULT (<span id="vault-count-badge">0</span>)</span>
+        </button>
+
+        <button class="hud-btn" id="btn-open-bank" title="Open Bank (Grants, Loans &amp; Debt Repayment)">
+          <span><svg class="inline-heading-icon tabler-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21l18 0" /><path d="M3 10l18 0" /><path d="M5 6l7 -3l7 3" /><path d="M4 10l0 11" /><path d="M20 10l0 11" /><path d="M8 14l0 3" /><path d="M12 14l0 3" /><path d="M16 14l0 3" /></svg> BANK</span>
+        </button>
+
+        <button class="hud-btn" id="btn-open-advancements" title="View Advancements &amp; Tiers">
+          <span><svg class="inline-heading-icon tabler-icon tabler-filled ti-gold" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 3a1 1 0 0 1 .993 .883l.007 .117v2.17a3 3 0 1 1 0 5.659v.171a6.002 6.002 0 0 1 -5 5.917v2.083h3a1 1 0 0 1 .117 1.993l-.117 .007h-8a1 1 0 0 1 -.117 -1.993l.117 -.007h3v-2.083a6.002 6.002 0 0 1 -4.996 -5.692l-.004 -.225v-.171a3 3 0 0 1 -3.996 -2.653l-.004 -.176l.005 -.176a3 3 0 0 1 3.995 -2.654v-2.17a1 1 0 0 1 1 -1h10zm-12 5a1 1 0 1 0 0 2a1 1 0 0 0 0 -2zm14 0a1 1 0 1 0 0 2a1 1 0 0 0 0 -2z" /></svg> ADVANCEMENTS</span>
         </button>
 
         <button class="hud-btn qmark-btn" id="btn-open-help" title="Explain elements on this screen">
@@ -539,7 +546,7 @@
       <section class="stage-panel" id="stage-2">
         <div class="panel-header">
           <h2 id="stage2-domain-title">STAGE 2: DEFINE CONCEPT // INSTRUMENT TARGETS</h2>
-          <p>Select real NASA instruments. <strong>Hover over any instrument</strong> to inspect its scientific detector mechanism, mass, power, and official NASA mission heritage.</p>
+          <p>Select instruments. Click any instrument to inspect its scientific detector mechanism, mass, power, and NASA mission heritage.</p>
         </div>
 
         <div class="data-types-grid" id="data-types-container">
@@ -560,7 +567,7 @@
       <section class="stage-panel" id="stage-3">
         <div class="panel-header">
           <h2>STAGE 3: MISSION REQUIREMENTS SUMMARY</h2>
-          <p>The mission profile establishes physics boundaries. Biological missions to the ISS require quick flight and atmospheric heat shielding for physical sample return!</p>
+          <p>The mission profile sets your speed, weight, and power limits. Life Sciences missions to the ISS need quick flight and a heat shield for safe sample return.</p>
         </div>
 
         <div class="requirements-layout">
@@ -903,7 +910,7 @@
           <div class="refinery-col">
             <div class="panel-header compact">
               <h2>USER SEGMENT // DATA REFINERY (L0 &rarr; L4)</h2>
-              <p>Refine instrument observations through NASA scientific algorithms. High-tier datasets yield massive payouts, but over-refining basic data can be unprofitable!</p>
+              <p>Refine instrument observations. Higher-tier datasets earn bigger payouts.</p>
             </div>
 
             <!-- Collected Inventory -->
@@ -911,7 +918,6 @@
               <div class="inv-header-row">
                 <h3>MISSION DATA INVENTORY</h3>
                 <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
-                  <span class="inv-decay-hint" id="inv-decay-hint"><svg class="inline-heading-icon tabler-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5l10 -10" /></svg> Stored datasets retain 100% of their scientific value across cycles</span>
                   <div class="inv-view-toggle">
                     <button class="view-toggle-btn active" id="btn-inv-grid" type="button">GRID</button>
                     <button class="view-toggle-btn" id="btn-inv-list" type="button">LIST</button>
@@ -927,7 +933,7 @@
             <div class="processing-station" id="processing-station">
               <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
                 <h3 style="margin: 0;">DATA PROCESSING WORKBENCH</h3>
-                <button class="action-btn secondary mini-btn" id="btn-open-l4-forge" type="button" style="border-color: var(--color-gold); color: var(--color-gold);">
+                <button class="action-btn secondary mini-btn" id="btn-open-l4-forge" type="button" style="display: none; border-color: var(--color-gold); color: var(--color-gold);">
                   <svg class="inline-heading-icon tabler-icon tabler-filled ti-purple" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.828 14.828a4 4 0 1 0 -5.656 -5.656a4 4 0 0 0 5.656 5.656" /><path d="M9.172 20.485a4 4 0 1 0 -5.657 -5.657" fill="none" /><path d="M14.828 3.515a4 4 0 0 0 5.657 5.657" fill="none" /></svg> LEVEL 4 SPLICER
                 </button>
               </div>
@@ -953,7 +959,7 @@
           <div class="market-col">
             <div class="panel-header compact">
               <h2>DATA MARKET EXCHANGE</h2>
-              <p>Sell your processed scientific datasets. Reputation smoothly influences sell prices without sharp cliffs!</p>
+              <p>Sell your processed datasets to earn budget or Reputation.</p>
             </div>
 
             <div class="buyers-grid">
@@ -962,7 +968,7 @@
               <div class="buyer-card" id="buyer-institute">
                 <div class="buyer-badge scientific">SCIENTIFIC INSTITUTE</div>
                 <h4>National Science Foundation</h4>
-                <p class="buyer-desc">Peer-reviewed open science. Modest payout, but directly bolsters your academic standing and NASA reputation.</p>
+                <p class="buyer-desc">A reputable place to sell your data. Helps many people with their research and give a solid amount of money.</p>
                 <div class="buyer-perks">
                   <span><svg class="inline-vec-icon tabler-icon tabler-filled ti-emerald" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 3.34a10 10 0 1 1 -15 8.66l.005 -.324a10 10 0 0 1 14.995 -8.336zm-5 2.66a1 1 0 0 0 -1 1a3 3 0 1 0 0 6v2a1.024 1.024 0 0 1 -.866 -.398l-.068 -.101a1 1 0 0 0 -1.732 .998a3 3 0 0 0 2.505 1.5h.161a1 1 0 0 0 .883 .994l.117 .007a1 1 0 0 0 1 -1l.176 -.005a3 3 0 0 0 -.176 -5.995v-2c.358 -.012 .671 .14 .866 .398l.068 .101a1 1 0 0 0 1.732 -.998a3 3 0 0 0 -2.505 -1.501h-.161a1 1 0 0 0 -1 -1zm1 7a1 1 0 0 1 0 2v-2zm-2 -4v2a1 1 0 0 1 0 -2z" /></svg> Price: <strong>Standard (1.0x &plusmn; Rep)</strong></span>
                   <span class="text-emerald"><svg class="inline-vec-icon tabler-icon tabler-filled ti-gold" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.243 7.34l-6.38 .925l-.113 .023a1 1 0 0 0 -.44 1.684l4.622 4.499l-1.09 6.355l-.013 .11a1 1 0 0 0 1.464 .944l5.706 -3l5.693 3l.1 .046a1 1 0 0 0 1.352 -1.1l-1.091 -6.355l4.624 -4.5l.078 -.085a1 1 0 0 0 -.633 -1.62l-6.38 -.926l-2.852 -5.78a1 1 0 0 0 -1.794 0l-2.853 5.78z" /></svg> Reputation: <strong>+8 REP</strong></span>
@@ -976,7 +982,7 @@
               <div class="buyer-card" id="buyer-opensource">
                 <div class="buyer-badge opensource">OPEN SOURCE SCIENCE</div>
                 <h4>Global Public Domain</h4>
-                <p class="buyer-desc">Publish datasets freely to humanity. You receive $0 profit, but earn massive global renown and peak reputation.</p>
+                <p class="buyer-desc">Release open source for free. Helps possibly millions of people and advances technology for all.</p>
                 <div class="buyer-perks">
                   <span><svg class="inline-vec-icon tabler-icon tabler-filled ti-emerald" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 3.34a10 10 0 1 1 -15 8.66l.005 -.324a10 10 0 0 1 14.995 -8.336zm-5 2.66a1 1 0 0 0 -1 1a3 3 0 1 0 0 6v2a1.024 1.024 0 0 1 -.866 -.398l-.068 -.101a1 1 0 0 0 -1.732 .998a3 3 0 0 0 2.505 1.5h.161a1 1 0 0 0 .883 .994l.117 .007a1 1 0 0 0 1 -1l.176 -.005a3 3 0 0 0 -.176 -5.995v-2c.358 -.012 .671 .14 .866 .398l.068 .101a1 1 0 0 0 1.732 -.998a3 3 0 0 0 -2.505 -1.501h-.161a1 1 0 0 0 -1 -1zm1 7a1 1 0 0 1 0 2v-2zm-2 -4v2a1 1 0 0 1 0 -2z" /></svg> Price: <strong>$0 (Free)</strong></span>
                   <span class="text-cyan"><svg class="inline-vec-icon tabler-icon tabler-filled ti-gold" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.243 7.34l-6.38 .925l-.113 .023a1 1 0 0 0 -.44 1.684l4.622 4.499l-1.09 6.355l-.013 .11a1 1 0 0 0 1.464 .944l5.706 -3l5.693 3l.1 .046a1 1 0 0 0 1.352 -1.1l-1.091 -6.355l4.624 -4.5l.078 -.085a1 1 0 0 0 -.633 -1.62l-6.38 -.926l-2.852 -5.78a1 1 0 0 0 -1.794 0l-2.853 5.78z" /></svg> Reputation: <strong>+20 REP</strong></span>
@@ -990,7 +996,7 @@
               <div class="buyer-card" id="buyer-shady">
                 <div class="buyer-badge shady">SHADY CLASSIFIED AGENCY</div>
                 <h4>Black-Budget Defense Contractor</h4>
-                <p class="buyer-desc">Classified defense buyout. Pays massive cash for raw and refined telemetry, but damages your reputation.</p>
+                <p class="buyer-desc">Top-secret shady government department. They really want that sweet, sweet data.</p>
                 <div class="buyer-perks">
                   <span class="text-emerald"><svg class="inline-vec-icon tabler-icon tabler-filled ti-emerald" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 3.34a10 10 0 1 1 -15 8.66l.005 -.324a10 10 0 0 1 14.995 -8.336zm-5 2.66a1 1 0 0 0 -1 1a3 3 0 1 0 0 6v2a1.024 1.024 0 0 1 -.866 -.398l-.068 -.101a1 1 0 0 0 -1.732 .998a3 3 0 0 0 2.505 1.5h.161a1 1 0 0 0 .883 .994l.117 .007a1 1 0 0 0 1 -1l.176 -.005a3 3 0 0 0 -.176 -5.995v-2c.358 -.012 .671 .14 .866 .398l.068 .101a1 1 0 0 0 1.732 -.998a3 3 0 0 0 -2.505 -1.501h-.161a1 1 0 0 0 -1 -1zm1 7a1 1 0 0 1 0 2v-2zm-2 -4v2a1 1 0 0 1 0 -2z" /></svg> Price: <strong>Extravagant (2.5x)</strong></span>
                   <span class="text-crimson"><svg class="inline-vec-icon tabler-icon tabler-filled ti-gold" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.243 7.34l-6.38 .925l-.113 .023a1 1 0 0 0 -.44 1.684l4.622 4.499l-1.09 6.355l-.013 .11a1 1 0 0 0 1.464 .944l5.706 -3l5.693 3l.1 .046a1 1 0 0 0 1.352 -1.1l-1.091 -6.355l4.624 -4.5l.078 -.085a1 1 0 0 0 -.633 -1.62l-6.38 -.926l-2.852 -5.78a1 1 0 0 0 -1.794 0l-2.853 5.78z" /></svg> Reputation: <strong>-15 REP</strong></span>
@@ -1002,9 +1008,9 @@
 
             </div>
 
-            <!-- Loan Center (With Payback Options) -->
+            <!-- Bank (With Payback Options) -->
             <div class="bank-box">
-              <h3>FINANCIAL DEBT &amp; LOAN CENTER</h3>
+              <h3>BANK</h3>
               <p>Active Outstanding Debt: <strong id="debt-amount-text" class="text-crimson">$0</strong></p>
               <div class="loan-cards-grid">
                 <div class="loan-opt">
@@ -1326,6 +1332,62 @@
       </div>
     </div>
   </div>
+
+  <!-- GLOBAL BANK MODAL -->
+  <div class="modal-overlay" id="bank-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><svg class="inline-heading-icon tabler-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21l18 0" /><path d="M3 10l18 0" /><path d="M5 6l7 -3l7 3" /><path d="M4 10l0 11" /><path d="M20 10l0 11" /><path d="M8 14l0 3" /><path d="M12 14l0 3" /><path d="M16 14l0 3" /></svg> BANK</h3>
+        <button class="modal-close" id="bank-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 0.75rem;">Need extra funds or want to pay off debt? Access the Bank anytime.</p>
+        <p style="margin-bottom: 0.85rem;">Active Outstanding Debt: <strong id="modal-debt-amount-text" class="text-crimson">$0</strong></p>
+        <div class="loan-cards-grid">
+          <div class="loan-opt">
+            <span>NASA Emergency Grant</span>
+            <small>+$150,000 (Costs -8 Reputation)</small>
+            <button class="action-btn secondary mini-btn" id="btn-modal-loan-grant">CLAIM GRANT</button>
+          </div>
+          <div class="loan-opt">
+            <span>Commercial Bank Loan</span>
+            <small>+$250,000 (Repay $275,000)</small>
+            <button class="action-btn secondary mini-btn" id="btn-modal-loan-bank">BORROW $250K</button>
+          </div>
+          <div class="loan-opt">
+            <span>Pay Outstanding Debt</span>
+            <small>Deduct from permanent budget</small>
+            <button class="action-btn primary mini-btn" id="btn-modal-pay-debt">REPAY DEBT</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn primary" id="bank-modal-done">CLOSE BANK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADVANCEMENTS MODAL -->
+  <div class="modal-overlay" id="advancements-modal">
+    <div class="modal-card wide">
+      <div class="modal-header">
+        <h3><svg class="inline-heading-icon tabler-icon tabler-filled ti-gold" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 3a1 1 0 0 1 .993 .883l.007 .117v2.17a3 3 0 1 1 0 5.659v.171a6.002 6.002 0 0 1 -5 5.917v2.083h3a1 1 0 0 1 .117 1.993l-.117 .007h-8a1 1 0 0 1 -.117 -1.993l.117 -.007h3v-2.083a6.002 6.002 0 0 1 -4.996 -5.692l-.004 -.225v-.171a3 3 0 0 1 -3.996 -2.653l-.004 -.176l.005 -.176a3 3 0 0 1 3.995 -2.654v-2.17a1 1 0 0 1 1 -1h10zm-12 5a1 1 0 1 0 0 2a1 1 0 0 0 0 -2zm14 0a1 1 0 1 0 0 2a1 1 0 0 0 0 -2z" /></svg> ADVANCEMENTS</h3>
+        <button class="modal-close" id="advancements-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="advancements-summary" style="color: var(--text-muted); margin-bottom: 0.85rem;">Track your milestones across Bronze, Silver, Gold, and special single advancements.</p>
+        <div class="advancements-grid" id="advancements-grid">
+          <!-- Populated by app.js -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn primary" id="advancements-modal-done">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADVANCEMENT UNLOCK TOAST -->
+  <div class="advancement-toast" id="advancement-toast" aria-live="polite"></div>
 
   <!-- IN-PAGE MISSION CONTROL NOTICE MODAL -->
   <div id="game-notice-modal" class="modal-overlay" style="display: none;">
