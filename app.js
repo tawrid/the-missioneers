@@ -6,6 +6,31 @@
 (function() {
   'use strict';
 
+  const tablerLine = (paths, extraClass = '') => `<svg class="inline-vec-icon tabler-icon ${extraClass}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+  const tablerFill = (paths, colorClass = '') => `<svg class="inline-vec-icon tabler-icon tabler-filled ${colorClass}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${paths}</svg>`;
+  const tablerHybridFill = (paths, colorClass = '') => `<svg class="inline-vec-icon tabler-icon tabler-filled ${colorClass}" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+
+  const ICONS = {
+    rocket: tablerHybridFill('<path d="M4 13a8 8 0 0 1 7 7a6 6 0 0 0 3 -5a9 9 0 0 0 6 -8a3 3 0 0 0 -3 -3a9 9 0 0 0 -8 6a6 6 0 0 0 -5 3" /><path d="M7 14a6 6 0 0 0 -3 6a6 6 0 0 0 6 -3" fill="none" /><path d="M14 9a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" fill="#0f172a" />', 'ti-cyan'),
+    satellite: tablerHybridFill('<path d="M3.707 6.293l2.586 -2.586a1 1 0 0 1 1.414 0l5.586 5.586a1 1 0 0 1 0 1.414l-2.586 2.586a1 1 0 0 1 -1.414 0l-5.586 -5.586a1 1 0 0 1 0 -1.414" /><path d="M6 10l-3 3l3 3l3 -3" fill="none" /><path d="M10 6l3 -3l3 3l-3 3" fill="none" /><path d="M12 12l1.5 1.5" fill="none" /><path d="M14.5 17a2.5 2.5 0 0 0 2.5 -2.5" fill="none" /><path d="M15 21a6 6 0 0 0 6 -6" fill="none" />', 'ti-cyan'),
+    dish: tablerLine('<path d="M20 4v8" /><path d="M16 4.5v7" /><path d="M12 5v16" /><path d="M8 5.5v5" /><path d="M4 6v4" /><path d="M20 8h-16" />'),
+    microscope: tablerHybridFill('<path d="M5 21h14" fill="none" /><path d="M6 18h2" fill="none" /><path d="M7 18v3" fill="none" /><path d="M9 11l3 3l6 -6l-3 -3l-6 6" /><path d="M10.5 12.5l-1.5 1.5" fill="none" /><path d="M17 3l3 3" fill="none" /><path d="M12 21a6 6 0 0 0 3.715 -10.712" fill="none" />', 'ti-cyan'),
+    check: tablerLine('<path d="M5 12l5 5l10 -10" />'),
+    cross: tablerLine('<path d="M18 6l-12 12" /><path d="M6 6l12 12" />'),
+    spinner: tablerLine('<path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />'),
+    hourglass: tablerLine('<path d="M6.5 7h11" /><path d="M6.5 17h11" /><path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1" /><path d="M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1" />'),
+    alert: tablerFill('<path d="M12 1.67c.955 0 1.845 .467 2.39 1.247l.105 .16l8.114 13.548a2.914 2.914 0 0 1 -2.307 4.363l-.195 .008h-16.225a2.914 2.914 0 0 1 -2.582 -4.2l.099 -.185l8.11 -13.538a2.914 2.914 0 0 1 2.491 -1.403zm.01 13.33l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -7a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z" />', 'ti-crimson'),
+    shield: tablerFill('<path d="M11.998 2l.118 .007l.059 .008l.061 .013l.111 .034a.993 .993 0 0 1 .217 .112l.104 .082l.255 .218a11 11 0 0 0 7.189 2.537l.342 -.01a1 1 0 0 1 1.005 .717a13 13 0 0 1 -9.208 16.25a1 1 0 0 1 -.502 0a13 13 0 0 1 -9.209 -16.25a1 1 0 0 1 1.005 -.717a11 11 0 0 0 7.531 -2.527l.263 -.225l.096 -.075a.993 .993 0 0 1 .217 -.112l.112 -.034a.97 .97 0 0 1 .119 -.021l.115 -.007zm3.71 7.293a1 1 0 0 0 -1.415 0l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.32 1.497l2 2l.094 .083a1 1 0 0 0 1.32 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z" />', 'ti-emerald'),
+    flame: tablerFill('<path d="M10 2c0 -.88 1.056 -1.331 1.692 -.722c1.958 1.876 3.096 5.995 1.75 9.12l-.08 .174l.012 .003c.625 .133 1.203 -.43 2.303 -2.173l.14 -.224a1 1 0 0 1 1.582 -.153c1.334 1.435 2.601 4.377 2.601 6.27c0 4.265 -3.591 7.705 -8 7.705s-8 -3.44 -8 -7.706c0 -2.252 1.022 -4.716 2.632 -6.301l.605 -.589c.241 -.236 .434 -.43 .618 -.624c1.43 -1.512 2.145 -2.924 2.145 -4.78" />', 'ti-orange'),
+    lock: tablerFill('<path d="M12 2a5 5 0 0 1 5 5v3a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3v-3a5 5 0 0 1 5 -5m0 12a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2m0 -10a3 3 0 0 0 -3 3v3h6v-3a3 3 0 0 0 -3 -3" />', 'ti-amber'),
+    unlock: tablerLine('<path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2l0 -6" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M8 11v-5a4 4 0 0 1 8 0" />'),
+    dna: tablerHybridFill('<path d="M14.828 14.828a4 4 0 1 0 -5.656 -5.656a4 4 0 0 0 5.656 5.656" /><path d="M9.172 20.485a4 4 0 1 0 -5.657 -5.657" fill="none" /><path d="M14.828 3.515a4 4 0 0 0 5.657 5.657" fill="none" />', 'ti-purple'),
+    link: tablerLine('<path d="M9 15l6 -6" /><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" /><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" />'),
+    trophy: tablerFill('<path d="M17 3a1 1 0 0 1 .993 .883l.007 .117v2.17a3 3 0 1 1 0 5.659v.171a6.002 6.002 0 0 1 -5 5.917v2.083h3a1 1 0 0 1 .117 1.993l-.117 .007h-8a1 1 0 0 1 -.117 -1.993l.117 -.007h3v-2.083a6.002 6.002 0 0 1 -4.996 -5.692l-.004 -.225v-.171a3 3 0 0 1 -3.996 -2.653l-.003 -.176l.005 -.176a3 3 0 0 1 3.995 -2.654l-.001 -2.17a1 1 0 0 1 1 -1h10zm-12 5a1 1 0 1 0 0 2a1 1 0 0 0 0 -2m14 0a1 1 0 1 0 0 2a1 1 0 0 0 0 -2" />', 'ti-gold'),
+    cash: tablerFill('<path d="M17 3.34a10 10 0 1 1 -15 8.66l.005 -.324a10 10 0 0 1 14.995 -8.336zm-5 2.66a1 1 0 0 0 -1 1a3 3 0 1 0 0 6v2a1.024 1.024 0 0 1 -.866 -.398l-.068 -.101a1 1 0 0 0 -1.732 .998a3 3 0 0 0 2.505 1.5h.161a1 1 0 0 0 .883 .994l.117 .007a1 1 0 0 0 1 -1l.176 -.005a3 3 0 0 0 -.176 -5.995v-2c.358 -.012 .671 .14 .866 .398l.068 .101a1 1 0 0 0 1.732 -.998a3 3 0 0 0 -2.505 -1.501h-.161a1 1 0 0 0 -1 -1zm1 7a1 1 0 0 1 0 2v-2zm-2 -4v2a1 1 0 0 1 0 -2z" />', 'ti-emerald'),
+    star: tablerFill('<path d="M8.243 7.34l-6.38 .925l-.113 .023a1 1 0 0 0 -.44 1.684l4.622 4.499l-1.09 6.355l-.013 .11a1 1 0 0 0 1.464 .944l5.706 -3l5.693 3l.1 .046a1 1 0 0 0 1.352 -1.1l-1.091 -6.355l4.624 -4.5l.078 -.085a1 1 0 0 0 -.633 -1.62l-6.38 -.926l-2.852 -5.78a1 1 0 0 0 -1.794 0l-2.853 5.78z" />', 'ti-gold')
+  };
+
   // ========================================================================
   // 1. DATASETS: 5 MISSION DOMAINS & ALL 26 EXACT NASA INSTRUMENTS
   // ========================================================================
@@ -14,7 +39,7 @@
     {
       id: 'earth',
       name: 'Earth Science',
-      icon: '🌍',
+      icon: '<svg width="42" height="42" viewBox="0 0 24 24" fill="currentColor" class="tabler-icon tabler-filled ti-cyan" aria-hidden="true"><path d="M21.165 16a10 10 0 0 1 -8.434 5.973a1 1 0 0 0 .617 -.444a18 18 0 0 0 2.28 -5.528z" /><path d="M8.372 16a18 18 0 0 0 2.28 5.53a1 1 0 0 0 .616 .443a10 10 0 0 1 -8.433 -5.973z" /><path d="M13.57 16a16 16 0 0 1 -1.57 3.884a16 16 0 0 1 -1.57 -3.884" /><path d="M8.034 10a18 18 0 0 0 0 4h-5.832a10 10 0 0 1 -.002 -4z" /><path d="M13.952 10a16 16 0 0 1 0 4h-3.904a16 16 0 0 1 0 -4z" /><path d="M21.8 10a10.05 10.05 0 0 1 -.002 4h-5.832c.149 -1.329 .149 -2.67 0 -4z" /><path d="M11.267 2.027a1 1 0 0 0 -.615 .444a18 18 0 0 0 -2.28 5.529h-5.54a10.01 10.01 0 0 1 8.334 -5.967z" /><path d="M12 4.116a16 16 0 0 1 1.57 3.885h-3.14c.34 -1.317 .85 -2.6 1.53 -3.817z" /><path d="M12.733 2.026a10.01 10.01 0 0 1 8.435 5.974h-5.54a18 18 0 0 0 -2.28 -5.53a1 1 0 0 0 -.517 -.414z" /></svg>',
       desc: 'NASA Land, Atmosphere Near Real-Time Capability for Earth Observation (LANCE).',
       baseDeltaV: 7.6,
       transitDurationSec: 10,
@@ -67,7 +92,7 @@
     {
       id: 'planetary',
       name: 'Planetary Science',
-      icon: '🪐',
+      icon: '<svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="tabler-icon tabler-filled ti-orange" aria-hidden="true"><path d="M5 12a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" fill="currentColor" /><path d="M18.816 13.58c2.292 2.138 3.546 4 3.092 4.9c-.745 1.46 -5.783 -.259 -11.255 -3.838c-5.47 -3.579 -9.304 -7.664 -8.56 -9.123c.464 -.91 2.926 -.444 5.803 .805" stroke="#fde68a" stroke-width="2" /></svg>',
       desc: 'NASA Planetary Data System (PDS) robotic exploration of moons, asteroids, and Mars.',
       baseDeltaV: 13.8,
       transitDurationSec: 28,
@@ -114,7 +139,7 @@
     {
       id: 'helio',
       name: 'Heliophysics',
-      icon: '☀️',
+      icon: '<svg width="42" height="42" viewBox="0 0 24 24" fill="currentColor" class="tabler-icon tabler-filled ti-gold" aria-hidden="true"><path d="M12 19a1 1 0 0 1 .993 .883l.007 .117v1a1 1 0 0 1 -1.993 .117l-.007 -.117v-1a1 1 0 0 1 1 -1z" /><path d="M18.313 16.91l.094 .083l.7 .7a1 1 0 0 1 -1.32 1.497l-.094 -.083l-.7 -.7a1 1 0 0 1 1.218 -1.567l.102 .07z" /><path d="M7.007 16.993a1 1 0 0 1 .083 1.32l-.083 .094l-.7 .7a1 1 0 0 1 -1.497 -1.32l.083 -.094l.7 -.7a1 1 0 0 1 1.414 0z" /><path d="M4 11a1 1 0 0 1 .117 1.993l-.117 .007h-1a1 1 0 0 1 -.117 -1.993l.117 -.007h1z" /><path d="M21 11a1 1 0 0 1 .117 1.993l-.117 .007h-1a1 1 0 0 1 -.117 -1.993l.117 -.007h1z" /><path d="M6.213 4.81l.094 .083l.7 .7a1 1 0 0 1 -1.32 1.497l-.094 -.083l-.7 -.7a1 1 0 0 1 1.217 -1.567l.102 .07z" /><path d="M19.107 4.893a1 1 0 0 1 .083 1.32l-.083 .094l-.7 .7a1 1 0 0 1 -1.497 -1.32l.083 -.094l.7 -.7a1 1 0 0 1 1.414 0z" /><path d="M12 2a1 1 0 0 1 .993 .883l.007 .117v1a1 1 0 0 1 -1.993 .117l-.007 -.117v-1a1 1 0 0 1 1 -1z" /><path d="M12 7a5 5 0 1 1 -4.995 5.217l-.005 -.217l.005 -.217a5 5 0 0 1 4.995 -4.783z" /></svg>',
       desc: 'Sun-Earth L1 space-weather monitors (ACE, SOHO, IMAP) warning Earth of solar storms.',
       baseDeltaV: 11.2,
       transitDurationSec: 16,
@@ -149,7 +174,7 @@
     {
       id: 'astro',
       name: 'Astrophysics',
-      icon: '🔭',
+      icon: '<svg width="42" height="42" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="tabler-icon tabler-filled ti-purple" aria-hidden="true"><path d="M6 21l6 -5l6 5" fill="none" stroke-width="2" /><path d="M12 13v8" fill="none" stroke-width="2" /><path d="M3.294 13.678l.166 .281c.52 .88 1.624 1.265 2.605 .91l14.242 -5.165a1.023 1.023 0 0 0 .565 -1.456l-2.62 -4.705a1.087 1.087 0 0 0 -1.447 -.42l-.056 .032l-12.694 7.618c-1.02 .613 -1.357 1.897 -.76 2.905l-.001 0" /><path d="M14 5l3 5.5" stroke="#f3e8ff" stroke-width="1.6" /></svg>',
       desc: 'Target of Opportunity (ToO) transient observatories and deep-space space telescopes.',
       baseDeltaV: 11.8,
       transitDurationSec: 22,
@@ -190,7 +215,7 @@
     {
       id: 'life',
       name: 'Space Life Sciences & Human Research',
-      icon: '🧬',
+      icon: '<svg width="42" height="42" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="tabler-icon tabler-filled ti-emerald" aria-hidden="true"><path d="M14.828 14.828a4 4 0 1 0 -5.656 -5.656a4 4 0 0 0 5.656 5.656" /><path d="M9.172 20.485a4 4 0 1 0 -5.657 -5.657" fill="none" /><path d="M14.828 3.515a4 4 0 0 0 5.657 5.657" fill="none" /></svg>',
       desc: 'NASA Open Science Data Repository (OSDR) ISS orbital biology and astronaut health.',
       baseDeltaV: 9.3,
       transitDurationSec: 6,
@@ -279,35 +304,35 @@
   // Dynamic Market Trends (rotates each cycle, scrolls as news headline)
   const MARKET_TREND_POOLS = [
     {
-      text: '🔥 [EARTH SCIENCE] Wildfire & Climate Alert: Thermal Energy (CERES/AIRS), Atmosphere (MOPITT/TEMPO) & Biosphere (MODIS/VIIRS) in peak demand (+70% Sell Value)',
+      text: '[EARTH SCIENCE] Wildfire & Climate Alert: Thermal Energy (CERES/AIRS), Atmosphere (MOPITT/TEMPO) & Biosphere (MODIS/VIIRS) in peak demand (+70% Sell Value)',
       domain: 'earth',
       domainName: 'Earth Science',
       trendingInstIds: ['thermal_energy', 'atmosphere', 'biosphere'],
       boost: 1.7
     },
     {
-      text: '🔥 [HELIOPHYSICS] Solar Maximum Approaching: Plasma (SWEPAM/WIND), Cosmic Rays (CRIS/EPAM) & Magnetic/Electric Fields surging (+80% Sell Value)',
+      text: '[HELIOPHYSICS] Solar Maximum Approaching: Plasma (SWEPAM/WIND), Cosmic Rays (CRIS/EPAM) & Magnetic/Electric Fields surging (+80% Sell Value)',
       domain: 'helio',
       domainName: 'Heliophysics',
       trendingInstIds: ['plasma', 'cosmic_rays', 'mag_elec_fields'],
       boost: 1.8
     },
     {
-      text: '🔥 [ASTROPHYSICS] Exoplanet Transit Breakthrough: Light (JWST/NIRSpec), Chemical Composition & Time/Ray Bursts surging (+75% Sell Value)',
+      text: '[ASTROPHYSICS] Exoplanet Transit Breakthrough: Light (JWST/NIRSpec), Chemical Composition & Time/Ray Bursts surging (+75% Sell Value)',
       domain: 'astro',
       domainName: 'Astrophysics',
       trendingInstIds: ['light', 'chemical_comp', 'ray_bursts'],
       boost: 1.75
     },
     {
-      text: '🔥 [PLANETARY SCIENCE] Mars Sample Return Priority: Minerals (CRISM/MRO), Atmosphere (SAM) & Topography telemetry in high demand (+65% Sell Value)',
+      text: '[PLANETARY SCIENCE] Mars Sample Return Priority: Minerals (CRISM/MRO), Atmosphere (SAM) & Topography telemetry in high demand (+65% Sell Value)',
       domain: 'planetary',
       domainName: 'Planetary Science',
       trendingInstIds: ['minerals', 'atmosphere', 'topography'],
       boost: 1.65
     },
     {
-      text: '🔥 [LIFE SCIENCES] ISS Commercial Biotech Boom: DNA (MinION), Microbiomes & Spaceflight Environment data in peak demand (+85% Sell Value)',
+      text: '[LIFE SCIENCES] ISS Commercial Biotech Boom: DNA (MinION), Microbiomes & Spaceflight Environment data in peak demand (+85% Sell Value)',
       domain: 'life',
       domainName: 'Life Sciences',
       trendingInstIds: ['dna', 'microbiomes', 'spaceflight_env'],
@@ -877,8 +902,9 @@
   }
 
   function setTickerText(text) {
-    if (DOM.tickerText) DOM.tickerText.textContent = text;
-    if (DOM.tickerTextDup) DOM.tickerTextDup.textContent = text;
+    const html = `${ICONS.flame} ${text}`;
+    if (DOM.tickerText) DOM.tickerText.innerHTML = html;
+    if (DOM.tickerTextDup) DOM.tickerTextDup.innerHTML = html;
   }
 
   function getReputationPriceMultiplier() {
@@ -1031,7 +1057,7 @@
         Array.isArray(state.currentTrend.trendingInstIds) &&
         state.currentTrend.trendingInstIds.includes(instGroup.id)
       );
-      const trendingTagHtml = isTrendingInst ? `<span class="inst-trending-tag">🔥 TRENDING</span>` : '';
+      const trendingTagHtml = isTrendingInst ? `<span class="inst-trending-tag">${ICONS.flame} TRENDING</span>` : '';
       const t2Locked = state.reputation < 35 && !isInfiniteBudget();
 
       const card = document.createElement('div');
@@ -1047,7 +1073,7 @@
           <div class="tier-toggle-group">
             <button class="tier-btn ${currentTier === 1 ? 'active' : ''}" data-tier="1">T1</button>
             <button class="tier-btn ${currentTier === 2 ? 'active' : ''}" data-tier="2" ${t2Locked ? 'title="Requires 35+ Reputation"' : ''}>
-              T2 ${t2Locked ? '🔒' : ''}
+              T2 ${t2Locked ? ICONS.lock : ''}
             </button>
           </div>
         </div>
@@ -1055,7 +1081,7 @@
         <!-- Click Explanation Trigger -->
         <div class="inst-hover-wrap">
           <div class="inst-hover-trigger">
-            <span>ℹ️ Click for Scientific Detector Mechanism &amp; NASA link</span>
+            <span>${tablerLine('<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" />')} Click for Scientific Detector Mechanism &amp; NASA link</span>
           </div>
           <div class="inst-tooltip">
             <h5>${activeData.name} — ${activeData.fullName}</h5>
@@ -1072,7 +1098,7 @@
         </div>
 
         <button class="btn-select-target ${isSelected ? 'active' : ''}">
-          ${isSelected ? `✅ ${activeData.name} EQUIPPED` : `+ EQUIP ${activeData.name}`}
+          ${isSelected ? `${ICONS.check} ${activeData.name} EQUIPPED` : `+ EQUIP ${activeData.name}`}
         </button>
       `;
 
@@ -1231,9 +1257,9 @@
 
     // Render Re-entry Heat Shield checkbox state
     DOM.chkHeatShield.checked = state.selections.heatShieldInstalled;
-    DOM.heatShieldStatusText.textContent = state.selections.heatShieldInstalled
-      ? '✅ PICA-X Thermal Heat Shield Installed (Mass: +120 kg, Cost: $45,000)'
-      : '❌ Heat Shield Not Installed (High Re-entry Destruction Risk)';
+    DOM.heatShieldStatusText.innerHTML = state.selections.heatShieldInstalled
+      ? `${ICONS.check} PICA-X Thermal Heat Shield Installed (Mass: +120 kg, Cost: $45,000)`
+      : `${ICONS.cross} Heat Shield Not Installed (High Re-entry Destruction Risk)`;
     DOM.heatShieldStatusText.className = state.selections.heatShieldInstalled ? 'text-emerald' : 'text-crimson';
 
     DOM.segmentOptionsContainer.innerHTML = '';
@@ -1297,7 +1323,7 @@
 
     const configs = {
       launch: {
-        title: '🚀 CUSTOM LAUNCH VEHICLE ARCHITECTURE (NO PRESETS)',
+        title: `${ICONS.rocket} CUSTOM LAUNCH VEHICLE ARCHITECTURE (NO PRESETS)`,
         badge: 'ADVANCED SLIDERS',
         sliders: [
           { key: 'launchPayloadMax', label: 'Max Payload Mass Capacity', min: 500, max: 25000, step: 250, unit: 'kg', hint: 'Higher payload thrust increases booster procurement cost.' },
@@ -1310,7 +1336,7 @@
         }
       },
       space: {
-        title: '🛰️ CUSTOM SPACECRAFT BUS ARCHITECTURE (NO PRESETS)',
+        title: `${ICONS.satellite} CUSTOM SPACECRAFT BUS ARCHITECTURE (NO PRESETS)`,
         badge: 'ADVANCED SLIDERS',
         sliders: [
           { key: 'spaceVolumeMax', label: 'Internal Fairing / Bus Volume', min: 2.0, max: 25.0, step: 0.5, unit: 'm³', hint: 'Each instrument requires 1.1 m³. Larger chassis adds dry mass & cost.' },
@@ -1325,7 +1351,7 @@
         }
       },
       ground: {
-        title: '📡 CUSTOM GROUND & TELEMETRY NETWORK (NO PRESETS)',
+        title: `${ICONS.dish} CUSTOM GROUND & TELEMETRY NETWORK (NO PRESETS)`,
         badge: 'ADVANCED SLIDERS',
         sliders: [
           { key: 'groundBandwidth', label: 'Downlink Receiver Bandwidth', min: 20, max: 500, step: 10, unit: 'Mbps', hint: '85+ Mbps guarantees zero packet drop during science downlink.' },
@@ -1545,9 +1571,9 @@
     const costPct = sandbox ? 15 : (state.budget > 0 ? Math.min(100, Math.round((totalCost / state.budget) * 100)) : 0);
     DOM.barCost.style.width = `${costPct}%`;
     DOM.barCost.className = `progress-bar ${overBudget ? 'danger' : ''}`;
-    DOM.hintCost.textContent = sandbox
-      ? '✅ SANDBOX MODE: Unlimited R&D Funding'
-      : (overBudget ? '⚠️ INSUFFICIENT PERMANENT FUNDS!' : `Balance remaining: $${(state.budget - totalCost).toLocaleString()}`);
+    DOM.hintCost.innerHTML = sandbox
+      ? `${ICONS.check} SANDBOX MODE: Unlimited R&amp;D Funding`
+      : (overBudget ? `${ICONS.alert} INSUFFICIENT PERMANENT FUNDS!` : `Balance remaining: $${(state.budget - totalCost).toLocaleString()}`);
 
     // Mass
     DOM.valMass.textContent = `${totalMass.toLocaleString()} / ${maxMass.toLocaleString()} kg`;
@@ -1575,7 +1601,7 @@
 
     // Bandwidth
     DOM.valBandwidth.textContent = `${bandwidth} Mbps`;
-    DOM.hintBandwidth.textContent = bandwidth >= 85 ? '✅ High bandwidth: Fast downlink, zero buffer loss' : '⚠️ Low bandwidth: Downlink takes longer; buffer packet drop risk';
+    DOM.hintBandwidth.innerHTML = bandwidth >= 85 ? `${ICONS.check} High bandwidth: Fast downlink, zero buffer loss` : `${ICONS.alert} Low bandwidth: Downlink takes longer; buffer packet drop risk`;
 
     // Reliabilities
     DOM.relLaunch.textContent = `${relLaunch}%`;
@@ -1690,7 +1716,7 @@
     DOM.invRemaining.textContent = sandbox ? '∞ SANDBOX' : `$${(state.budget - state.tempResources.totalCost).toLocaleString()}`;
 
     if (alreadyDiagnosed) {
-      DOM.btnRunTests.textContent = '✅ DIAGNOSTIC SIMULATION COMPLETED (+10% RELIABILITY ACTIVE)';
+      DOM.btnRunTests.innerHTML = `${ICONS.check} DIAGNOSTIC SIMULATION COMPLETED (+10% RELIABILITY ACTIVE)`;
       DOM.btnRunTests.disabled = true;
       const tests = [
         { id: 'test-launch', name: 'Launch Segment: Structural Integrity & Clearance', pass: state.tempResources.mass <= state.tempResources.maxMass, fix: 'Go back to Stage 4 and pick a heavier Launch Rocket or reduce Bus Sizing.' },
@@ -1700,22 +1726,22 @@
         { id: 'test-ground', name: 'Ground Link: Handshake Protocol', pass: true, fix: '' }
       ];
       DOM.testList.innerHTML = tests.map(t =>
-        `<li id="${t.id}" class="${t.pass ? 'passed' : 'failed'}">${t.pass ? '✅' : '❌'} ${t.name}: ${t.pass ? 'PASSED VERIFICATION' : `FAILED — ${t.fix}`}</li>`
+        `<li id="${t.id}" class="${t.pass ? 'passed' : 'failed'}">${t.pass ? ICONS.check : ICONS.cross} ${t.name}: ${t.pass ? 'PASSED VERIFICATION' : `FAILED — ${t.fix}`}</li>`
       ).join('');
       return;
     }
 
-    DOM.btnRunTests.textContent = sandbox
-      ? '🔬 RUN FULL DIAGNOSTIC SIMULATION (FREE IN SANDBOX | +10% RELIABILITY)'
-      : `🔬 RUN FULL DIAGNOSTIC SIMULATION (-$${DIAGNOSTIC_COST.toLocaleString()} | +10% RELIABILITY)`;
+    DOM.btnRunTests.innerHTML = sandbox
+      ? `${ICONS.microscope} RUN FULL DIAGNOSTIC SIMULATION (FREE IN SANDBOX | +10% RELIABILITY)`
+      : `${ICONS.microscope} RUN FULL DIAGNOSTIC SIMULATION (-$${DIAGNOSTIC_COST.toLocaleString()} | +10% RELIABILITY)`;
     DOM.btnRunTests.disabled = !sandbox && state.budget < diagFee;
 
     DOM.testList.innerHTML = `
-      <li id="test-launch">⏳ Launch Segment: Structural loads &amp; fairing volume check...</li>
-      <li id="test-prop">⏳ Propulsion System: Specific impulse &amp; delta-v burn check...</li>
-      <li id="test-power">⏳ Electrical Bus: Sensor load vs. generation check...</li>
-      <li id="test-sensors">⏳ Scientific Instruments: Sensor calibration &amp; optics...</li>
-      <li id="test-ground">⏳ Ground Receiver: Telemetry link &amp; bandwidth check...</li>
+      <li id="test-launch">${ICONS.hourglass} Launch Segment: Structural loads &amp; fairing volume check...</li>
+      <li id="test-prop">${ICONS.hourglass} Propulsion System: Specific impulse &amp; delta-v burn check...</li>
+      <li id="test-power">${ICONS.hourglass} Electrical Bus: Sensor load vs. generation check...</li>
+      <li id="test-sensors">${ICONS.hourglass} Scientific Instruments: Sensor calibration &amp; optics...</li>
+      <li id="test-ground">${ICONS.hourglass} Ground Receiver: Telemetry link &amp; bandwidth check...</li>
     `;
   }
 
@@ -1739,7 +1765,7 @@
 
     playDiagnosticSpinupSound();
     DOM.btnRunTests.disabled = true;
-    DOM.btnRunTests.textContent = '🛰️ RUNNING FULL DIAGNOSTIC SIMULATION...';
+    DOM.btnRunTests.innerHTML = `${ICONS.satellite} RUNNING FULL DIAGNOSTIC SIMULATION...`;
 
     const tests = [
       { id: 'test-launch', name: 'Launch Segment: Structural Integrity & Clearance', pass: state.tempResources.mass <= state.tempResources.maxMass, fix: 'Go back to Stage 4 and pick a heavier Launch Rocket or reduce Bus Sizing.' },
@@ -1760,7 +1786,7 @@
       setTimeout(() => {
         const el = document.getElementById(t.id);
         if (el) {
-          el.textContent = `🔄 SCANNING — ${t.name}...`;
+          el.innerHTML = `${ICONS.spinner} SCANNING — ${t.name}...`;
         }
         playBeep(1180 + i * 70, 0.05);
       }, scanAt);
@@ -1769,7 +1795,7 @@
         const el = document.getElementById(t.id);
         if (el) {
           el.className = t.pass ? 'passed' : 'failed';
-          el.textContent = `${t.pass ? '✅' : '❌'} ${t.name}: ${t.pass ? 'PASSED VERIFICATION' : `FAILED — ${t.fix}`}`;
+          el.innerHTML = `${t.pass ? ICONS.check : ICONS.cross} ${t.name}: ${t.pass ? 'PASSED VERIFICATION' : `FAILED — ${t.fix}`}`;
         }
         playDiagnosticStepSound(i, t.pass);
 
@@ -1779,7 +1805,7 @@
             // Grant +10% Reliability bonus and +5 Reputation!
             state.tempResources.diagnosticsBonus = 10;
             state.reputation = Math.min(100, state.reputation + 5);
-            DOM.btnRunTests.textContent = '✅ DIAGNOSTICS VERIFIED (+10% RELIABILITY)';
+            DOM.btnRunTests.innerHTML = `${ICONS.check} DIAGNOSTICS VERIFIED (+10% RELIABILITY)`;
             updatePermanentHud();
             calculateTempResources();
             playDiagnosticFinaleSound();
@@ -1859,13 +1885,18 @@
     }
   }
 
-  function logFlightMessage(msg, isAlert = false) {
+  function logFlightMessage(msg, isAlert = false, iconKey = null) {
     const el = document.createElement('div');
     el.className = 'event-message';
     const ts = document.createElement('span');
     ts.className = 'timestamp';
     ts.textContent = `[T+${Math.round(flightProgress * state.selectedDomain.transitDurationSec)}s ${isAlert ? 'ALERT' : 'INFO'}]`;
     el.appendChild(ts);
+    if (iconKey && ICONS[iconKey]) {
+      const iconWrap = document.createElement('span');
+      iconWrap.innerHTML = ` ${ICONS[iconKey]}`;
+      el.appendChild(iconWrap);
+    }
     el.appendChild(document.createTextNode(` ${msg}`));
     DOM.flightTerminal.appendChild(el);
     DOM.flightTerminal.scrollTop = DOM.flightTerminal.scrollHeight;
@@ -1885,7 +1916,7 @@
       state.flight.segment = 'space';
       DOM.flightSegmentName.textContent = 'SPACE SEGMENT';
       DOM.flightPhaseName.textContent = 'STAGE SEPARATION & FAIRING JETTISON';
-      logFlightMessage('🛰️ Main stage separation confirmed. Spacecraft bus deployed solar panels.');
+      logFlightMessage('Main stage separation confirmed. Spacecraft bus deployed solar panels.', false, 'satellite');
       triggerTimedAnomaly('launch');
     }, tLaunch);
 
@@ -1894,7 +1925,7 @@
       setTimeout(() => {
         if (!state.flight.running || state.flight.anomalyActive) return;
         if (Math.random() < diff.extraAnomalyChance) {
-          logFlightMessage('⚠️ Deep-space solar flare interference detected!', true);
+          logFlightMessage('Deep-space solar flare interference detected!', true, 'alert');
           triggerTimedAnomaly('space');
         }
       }, tExtra);
@@ -1904,7 +1935,7 @@
     setTimeout(() => {
       if (!state.flight.running) return;
       DOM.flightPhaseName.textContent = 'SCIENCE INSTRUMENT CALIBRATION';
-      logFlightMessage('🔬 Space Segment: Instruments online. Gathering multi-spectral telemetry.');
+      logFlightMessage('Space Segment: Instruments online. Gathering multi-spectral telemetry.', false, 'microscope');
       state.flight.dataAccumulatedMB += 550;
       DOM.flightDataCounter.textContent = `${state.flight.dataAccumulatedMB} MB`;
       triggerTimedAnomaly('space');
@@ -1920,7 +1951,7 @@
       // Bandwidth affects downlink speed and buffer capacity
       const bw = state.tempResources.bandwidth;
       if (bw < 30) {
-        logFlightMessage('⚠️ Low Bandwidth warning: Telemetry buffer bottlenecked at ground receiver.', true);
+        logFlightMessage('Low Bandwidth warning: Telemetry buffer bottlenecked at ground receiver.', true, 'alert');
         state.flight.dataAccumulatedMB = Math.round(state.flight.dataAccumulatedMB * 0.7); // data lost from buffer overflow!
       } else {
         state.flight.dataAccumulatedMB += 850;
@@ -1937,16 +1968,16 @@
       // Check Biological Sample Return Heat Shield
       if (state.selectedDomain.requiresHeatShield && !state.selections.heatShieldInstalled) {
         playAlarm();
-        logFlightMessage('🚨 RE-ENTRY CATASTROPHE: No heat shield installed! Re-entry temperatures reached 1600°C and incinerated all biological samples.', true);
+        logFlightMessage('RE-ENTRY CATASTROPHE: No heat shield installed! Re-entry temperatures reached 1600°C and incinerated all biological samples.', true, 'alert');
         state.flight.dataAccumulatedMB = 0;
-        showInPageNotice('🚨 MISSION FAILURE: Atmospheric Re-entry burned up your biological samples because no Heat Shield was installed!');
+        showInPageNotice('MISSION FAILURE: Atmospheric Re-entry burned up your biological samples because no Heat Shield was installed!', 'MISSION FAILURE');
       } else if (state.selectedDomain.requiresHeatShield && state.selections.heatShieldInstalled) {
-        logFlightMessage('🛡️ RE-ENTRY SUCCESS: PICA-X heat shield protected the biological sample return capsule during splashdown!');
+        logFlightMessage('RE-ENTRY SUCCESS: PICA-X heat shield protected the biological sample return capsule during splashdown!', false, 'shield');
       }
 
       state.flight.segment = 'done';
       DOM.flightPhaseName.textContent = 'MISSION FLIGHT OPERATIONS COMPLETE';
-      logFlightMessage('🎉 MISSION COMPLETED: Downlinked telemetry verified. Proceed to User Segment.');
+      logFlightMessage('MISSION COMPLETED: Downlinked telemetry verified. Proceed to User Segment.', false, 'trophy');
       DOM.btnCompleteFlight.style.display = 'block';
     }, tEnd);
   }
@@ -1958,28 +1989,28 @@
     // Saboteur mode logic
     const isSabotaged = (state.gameMode === 'sabotage') && (state.saboteurRole === seg);
     if (!isSabotaged && Math.random() > diff.anomalyChance) {
-      logFlightMessage(`✅ ${seg.toUpperCase()} segment nominal — no anomaly triggered.`);
+      logFlightMessage(`${seg.toUpperCase()} segment nominal — no anomaly triggered.`, false, 'check');
       return;
     }
 
     let anomaly = null;
     if (seg === 'launch') {
       anomaly = {
-        title: isSabotaged ? '🚨 VALVE PRESSURE SURGE (SABOTAGE DETECTED!)' : '⚠️ MECHANICAL VALVE PRESSURE SURGE',
+        title: isSabotaged ? 'VALVE PRESSURE SURGE (SABOTAGE DETECTED!)' : 'MECHANICAL VALVE PRESSURE SURGE',
         seg: 'launch',
         desc: 'Rocket propellant chamber pressure oscillating rapidly. Launch station must stabilize regulator valve immediately!',
         minigameType: 'pressure'
       };
     } else if (seg === 'space') {
       anomaly = {
-        title: isSabotaged ? '🚨 SENSOR SENSITIVITY SPIKE (SABOTAGE DETECTED!)' : '⚠️ SENSOR OPTICAL DETUNE',
+        title: isSabotaged ? 'SENSOR SENSITIVITY SPIKE (SABOTAGE DETECTED!)' : 'SENSOR OPTICAL DETUNE',
         seg: 'space',
         desc: 'Spacecraft star-tracker drift causing sensor optical detune. Space station must tune the frequency slider immediately!',
         minigameType: 'frequency'
       };
     } else if (seg === 'ground') {
       anomaly = {
-        title: isSabotaged ? '🚨 BUFFER OVERFLOW (SABOTAGE DETECTED!)' : '⚠️ GROUND STATION AZIMUTH DRIFT',
+        title: isSabotaged ? 'BUFFER OVERFLOW (SABOTAGE DETECTED!)' : 'GROUND STATION AZIMUTH DRIFT',
         seg: 'ground',
         desc: 'Tracking dish slewing off-axis. Packet loss detected! Ground station must lock tracking angle immediately!',
         minigameType: 'dish'
@@ -1990,7 +2021,7 @@
     state.flight.activeAnomalyData = anomaly;
     state.flight.anomalyUrgentSeconds = 15;
 
-    DOM.anomalySegmentBadge.textContent = anomaly.title;
+    DOM.anomalySegmentBadge.innerHTML = `${ICONS.alert} ${anomaly.title}`;
     DOM.anomalySummary.textContent = anomaly.desc;
     DOM.anomalyCountdownText.textContent = `URGENT: ${state.flight.anomalyUrgentSeconds}s`;
     DOM.anomalyTimerBar.style.width = '100%';
@@ -2009,7 +2040,7 @@
       if (state.flight.anomalyUrgentSeconds % 3 === 0 && diff.anomalyDrain > 0 && !isInfiniteBudget()) {
         state.budget = Math.max(0, state.budget - diff.anomalyDrain);
         updatePermanentHud();
-        logFlightMessage(`⚠️ Telemetry anomaly leaking fuel & funds: -$${diff.anomalyDrain.toLocaleString()} lost to drift.`, true);
+        logFlightMessage(`Telemetry anomaly leaking fuel & funds: -$${diff.anomalyDrain.toLocaleString()} lost to drift.`, true, 'alert');
       }
 
       if (state.flight.anomalyUrgentSeconds <= 0) {
@@ -2031,16 +2062,16 @@
       const penalty = 300000;
       state.budget = Math.max(0, state.budget - penalty);
       updatePermanentHud();
-      showInPageNotice(`🚨 UNADDRESSED LAUNCH FAILURE!\nPropellant valve rupture resulted in catastrophic vehicle explosion. You lost -$${penalty.toLocaleString()} in salvage fees and the mission immediately failed.`);
+      showInPageNotice(`UNADDRESSED LAUNCH FAILURE!\nPropellant valve rupture resulted in catastrophic vehicle explosion. You lost -$${penalty.toLocaleString()} in salvage fees and the mission immediately failed.`, 'LAUNCH FAILURE');
       goToStage(7);
     } else if (anomaly.seg === 'space') {
       state.flight.spaceIntegrity = 0;
       state.flight.dataAccumulatedMB = 0;
-      showInPageNotice(`⚠️ UNADDRESSED SPACE FAILURE!\nSensors suffered electrical burnout. Zero data collected.`);
+      showInPageNotice(`UNADDRESSED SPACE FAILURE!\nSensors suffered electrical burnout. Zero data collected.`, 'SPACE SEGMENT FAILURE');
     } else if (anomaly.seg === 'ground') {
       state.flight.groundIntegrity = 0;
       state.flight.dataAccumulatedMB = 0;
-      showInPageNotice(`⚠️ UNADDRESSED GROUND FAILURE!\nTracking dish drifted completely out of line of sight. All data lost.`);
+      showInPageNotice(`UNADDRESSED GROUND FAILURE!\nTracking dish drifted completely out of line of sight. All data lost.`, 'GROUND SEGMENT FAILURE');
     }
   }
 
@@ -2217,7 +2248,7 @@
 
     if (success) {
       playBeep(1200);
-      logFlightMessage(`✅ ANOMALY RESOLVED: ${anomaly.seg.toUpperCase()} station stabilized the issue!`);
+      logFlightMessage(`ANOMALY RESOLVED: ${anomaly.seg.toUpperCase()} station stabilized the issue!`, false, 'check');
       DOM.anomalyAlertBox.style.display = 'none';
       state.flight.anomalyActive = false;
     } else {
@@ -2275,9 +2306,9 @@
     }
 
     if (DOM.invDecayHint) {
-      DOM.invDecayHint.textContent = state.difficulty === 'hard'
-        ? '⚠️ HARD MODE: Unsold non-L4 datasets decay 15%/cycle (L4 & Splicer components ignore decay)'
-        : '✅ Stored datasets retain 100% of their scientific value across cycles';
+      DOM.invDecayHint.innerHTML = state.difficulty === 'hard'
+        ? `${ICONS.alert} HARD MODE: Unsold non-L4 datasets decay 15%/cycle (L4 &amp; Splicer components ignore decay)`
+        : `${ICONS.check} Stored datasets retain 100% of their scientific value across cycles`;
     }
 
     renderInventoryList();
@@ -2303,7 +2334,7 @@
 
       // Check dynamic trend boost
       const isTrending = state.currentTrend && state.currentTrend.domain === item.domain;
-      const trendBadge = isTrending ? `<span class="trend-badge">🔥 TRENDING (+${Math.round((state.currentTrend.boost - 1) * 100)}%)</span>` : '';
+      const trendBadge = isTrending ? `<span class="trend-badge">${ICONS.flame} TRENDING (+${Math.round((state.currentTrend.boost - 1) * 100)}%)</span>` : '';
 
       const decayMultiplier = getItemDecayMultiplier(item);
       const decayBadge = (state.difficulty === 'hard' && item.level !== 'L4' && (item.cyclesOld || 0) > 0)
@@ -2355,7 +2386,7 @@
       DOM.processingRecipe.innerHTML = `
         <h4>REFINEMENT PIPELINE: L3A &rarr; L4 (ANCIENT SYNTHESIS FORGE)</h4>
         <p><strong>Current:</strong> ${curLevelInfo.name} ($${curLevelInfo.baseVal.toLocaleString()})</p>
-        <p style="font-size: 0.78rem; color: var(--color-gold); margin-top: 0.35rem;">🧬 Use the <strong>L4 ANCIENT SYNTHESIS FORGE</strong> button above to combine this L3A dataset with any number of loose L2+ datasets! More data stuffed in = exponentially higher L4 value.</p>
+        <p style="font-size: 0.78rem; color: var(--color-gold); margin-top: 0.35rem;">${ICONS.dna} Use the <strong>L4 ANCIENT SYNTHESIS FORGE</strong> button above to combine this L3A dataset with any number of loose L2+ datasets! More data stuffed in = exponentially higher L4 value.</p>
       `;
       DOM.processingControls.style.display = 'none';
       return;
@@ -2372,12 +2403,12 @@
 
     let warningHtml = '';
     if (isUnprofitable) {
-      warningHtml = `<p style="color: var(--color-crimson); font-size: 0.72rem; margin-top: 0.3rem;">⚠️ UNPROFITABLE SINGLE REFINEMENT: Lab cost ($${curLevelInfo.refineCost.toLocaleString()}) exceeds single-value gain ($${valueGain.toLocaleString()})! Profitable when combined into L3/L4.</p>`;
+      warningHtml = `<p style="color: var(--color-crimson); font-size: 0.72rem; margin-top: 0.3rem;">${ICONS.alert} UNPROFITABLE SINGLE REFINEMENT: Lab cost ($${curLevelInfo.refineCost.toLocaleString()}) exceeds single-value gain ($${valueGain.toLocaleString()})! Profitable when combined into L3/L4.</p>`;
     }
 
     let recipeSpecial = '';
     if (combineCfg) {
-      recipeSpecial = `<p style="font-size: 0.72rem; color: var(--color-cyan);">🔗 ${combineCfg.label}</p>`;
+      recipeSpecial = `<p style="font-size: 0.72rem; color: var(--color-cyan);">${ICONS.link} ${combineCfg.label}</p>`;
     }
 
     DOM.processingRecipe.innerHTML = `
@@ -2605,7 +2636,7 @@
 
     // Update stats & button
     if (proj.valid) {
-      DOM.l4ReqStatus.textContent = '✅ Ready to Splice L4 Master Dataset';
+      DOM.l4ReqStatus.innerHTML = `${ICONS.check} Ready to Splice L4 Master Dataset`;
       DOM.l4ReqStatus.className = 'text-emerald';
     } else {
       DOM.l4ReqStatus.textContent = !proj.hasL3A ? 'Need at least 1× L3A dataset' : 'Need at least 2 total L2+ datasets';
@@ -2660,7 +2691,7 @@
     updatePermanentHud();
     renderInventoryList();
     renderRefineryWorkbench(newL4);
-    showInPageNotice(`🧬 L4 MASTER DATASET FORGED!\nSynthesized ${proj.items.length} datasets into 1 L4 Master Dataset worth $${proj.projectedVal.toLocaleString()} (immune to cycle degradation)!`);
+    showInPageNotice(`L4 MASTER DATASET FORGED!\nSynthesized ${proj.items.length} datasets into 1 L4 Master Dataset worth $${proj.projectedVal.toLocaleString()} (immune to cycle degradation)!`, 'L4 SPLICING COMPLETE');
   }
 
   function sellDataToBuyer(buyerType) {
@@ -2704,8 +2735,8 @@
     state.reputation = Math.max(0, Math.min(100, state.reputation + repDelta));
 
     playBeep(payout > 0 ? 1200 : 800);
-    const flagshipNote = state.reputation >= 100 ? '\n🏆 100-Reputation Flagship Partner Bonus Active (+25% Payout & +$150k/Cycle)!' : '';
-    showInPageNotice(`Data sold to ${buyerType.toUpperCase()}!\n💰 Cash Earned: $${payout.toLocaleString()}\n⭐ Reputation Change: ${repDelta >= 0 ? '+' : ''}${repDelta}${flagshipNote}`);
+    const flagshipNote = state.reputation >= 100 ? '\n100-Reputation Flagship Partner Bonus Active (+25% Payout & +$150k/Cycle)!' : '';
+    showInPageNotice(`Data sold to ${buyerType.toUpperCase()}!\nCash Earned: $${payout.toLocaleString()}\nReputation Change: ${repDelta >= 0 ? '+' : ''}${repDelta}${flagshipNote}`, 'DATA SALE COMPLETE');
 
     state.dataInventory.splice(state.selectedInventoryIdx, 1);
     state.selectedInventoryIdx = null;
@@ -2761,7 +2792,7 @@
     playQuindarTone();
     state.missionCycle++;
 
-    let cycleMessages = [`🚀 Mission Cycle ${state.missionCycle} Started!`];
+    let cycleMessages = [`Mission Cycle ${state.missionCycle} Started!`];
 
     // Hard difficulty only: non-L4 datasets degrade by 15%/cycle (L4 never degrades!)
     if (state.difficulty === 'hard') {
@@ -2773,7 +2804,7 @@
         }
       });
       if (decayedCount > 0) {
-        cycleMessages.push(`⚠️ HARD MODE: ${decayedCount} non-L4 dataset(s) decayed by 15% (L4 datasets immune).`);
+        cycleMessages.push(`HARD MODE: ${decayedCount} non-L4 dataset(s) decayed by 15% (L4 datasets immune).`);
       }
     }
 
@@ -2781,14 +2812,14 @@
     if (state.reputation >= 100 && !isInfiniteBudget()) {
       const grantBonus = 150000;
       state.budget += grantBonus;
-      cycleMessages.push(`🏆 100-Reputation NASA Flagship Grant: +$${grantBonus.toLocaleString()} awarded!`);
+      cycleMessages.push(`100-Reputation NASA Flagship Grant: +$${grantBonus.toLocaleString()} awarded!`);
     }
 
     // Debt interest: 5% interest on unpaid debt
     if (state.activeDebt > 0) {
       const interest = Math.round(state.activeDebt * 0.05);
       state.activeDebt += interest;
-      cycleMessages.push(`⚠️ Unpaid debt accrued 5% interest (+$${interest.toLocaleString()}). Total debt: $${state.activeDebt.toLocaleString()}.`);
+      cycleMessages.push(`Unpaid debt accrued 5% interest (+$${interest.toLocaleString()}). Total debt: $${state.activeDebt.toLocaleString()}.`);
     }
 
     showInPageNotice(cycleMessages.join('\n'));
@@ -2864,7 +2895,7 @@
       DOM.saboteurStatusPill.style.display = 'inline-block';
       const roles = ['launch', 'space', 'ground'];
       state.saboteurRole = roles[Math.floor(Math.random() * roles.length)];
-      showInPageNotice('🕵️ SABOTEUR IMPOSTOR MODE ENGAGED!\nOne station is an undercover saboteur introducing hidden malfunctions. Your crew must solve urgent minigames to prevent bankruptcy!');
+      showInPageNotice('SABOTEUR IMPOSTOR MODE ENGAGED!\nOne station is an undercover saboteur introducing hidden malfunctions. Your crew must solve urgent minigames to prevent bankruptcy!', 'SABOTEUR MODE');
       goToStage(1);
     });
 
@@ -2950,13 +2981,13 @@
         try {
           parsedUrl = new URL(rawUrl);
         } catch {
-          DOM.settingsLmStatus.textContent = '⚠️ Invalid LM Studio URL format.';
+          DOM.settingsLmStatus.innerHTML = `${ICONS.alert} Invalid LM Studio URL format.`;
           DOM.settingsLmStatus.className = 'text-amber';
           return;
         }
         const allowedHosts = new Set(['localhost', '127.0.0.1', '[::1]']);
         if (!['http:', 'https:'].includes(parsedUrl.protocol) || !allowedHosts.has(parsedUrl.hostname)) {
-          DOM.settingsLmStatus.textContent = '⚠️ Only local http(s)://localhost or 127.0.0.1 endpoints are permitted.';
+          DOM.settingsLmStatus.innerHTML = `${ICONS.alert} Only local http(s)://localhost or 127.0.0.1 endpoints are permitted.`;
           DOM.settingsLmStatus.className = 'text-amber';
           return;
         }
@@ -2966,15 +2997,15 @@
           if (resp.ok) {
             const data = await resp.json();
             const modelCount = data.data ? data.data.length : 1;
-            DOM.settingsLmStatus.textContent = `✅ Connected! Found ${modelCount} active model(s).`;
+            DOM.settingsLmStatus.innerHTML = `${ICONS.check} Connected! Found ${modelCount} active model(s).`;
             DOM.settingsLmStatus.className = 'text-emerald';
             playBeep(1200);
           } else {
-            DOM.settingsLmStatus.textContent = `⚠️ Connected, but models endpoint returned ${resp.status}. Built-in fallback ready.`;
+            DOM.settingsLmStatus.innerHTML = `${ICONS.alert} Connected, but models endpoint returned ${resp.status}. Built-in fallback ready.`;
             DOM.settingsLmStatus.className = 'text-amber';
           }
         } catch (err) {
-          DOM.settingsLmStatus.textContent = 'ℹ️ LM Studio offline or CORS blocked. Built-in procedural AI fallback will handle all events.';
+          DOM.settingsLmStatus.innerHTML = 'LM Studio offline or CORS blocked. Built-in procedural AI fallback will handle all events.';
           DOM.settingsLmStatus.className = 'text-muted';
         }
       });
@@ -3068,7 +3099,7 @@
         state.trendLocked = !state.trendLocked;
         DOM.trendsTicker.classList.toggle('locked', state.trendLocked);
         if (DOM.tickerLockBadge) {
-          DOM.tickerLockBadge.textContent = state.trendLocked ? '🔒 LOCKED' : '🔓 LIVE';
+          DOM.tickerLockBadge.innerHTML = state.trendLocked ? `${ICONS.lock} LOCKED` : `${ICONS.unlock} LIVE`;
         }
       });
     }
@@ -3216,7 +3247,7 @@
         state.budget -= state.activeDebt;
         state.activeDebt = 0;
         playBeep(1200);
-        showInPageNotice('🎉 Debt fully paid off! Your credit standing is pristine.');
+        showInPageNotice('Debt fully paid off! Your credit standing is pristine.', 'DEBT CLEARED');
       }
       updatePermanentHud();
     });

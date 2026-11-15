@@ -27,208 +27,222 @@
     </div>
 
     <div class="cutscene-stage" id="cutscene-stage">
-      <!-- Scene 0: Orbital Target Selection (Consistent Geometric Style) -->
+      <!-- Scene 0: Orbital Target Selection (Tabler Filled + Recolored Icons) -->
       <div class="cutscene-scene" data-scene="0" data-caption="STAGE 1 — Choose your science destination: Sun, Earth, Planets, or Deep Space.">
         <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-          <ellipse cx="600" cy="315" rx="430" ry="175" fill="none" stroke="rgba(186,230,253,0.28)" stroke-width="2" stroke-dasharray="10 8"/>
-          <ellipse cx="600" cy="315" rx="250" ry="102" fill="none" stroke="rgba(251,191,36,0.3)" stroke-width="2"/>
+          <ellipse cx="600" cy="310" rx="430" ry="170" fill="none" stroke="rgba(248,250,252,0.22)" stroke-width="2" stroke-dasharray="10 8"/>
+          <ellipse cx="600" cy="310" rx="250" ry="100" fill="none" stroke="rgba(248,250,252,0.28)" stroke-width="2"/>
 
-          <!-- Sun (clean flat + geometric rays) -->
-          <g transform="translate(225, 315)">
-            <circle cx="0" cy="0" r="46" fill="#fbbf24" stroke="#fef08a" stroke-width="3"/>
-            <g stroke="#fef08a" stroke-width="3.5" stroke-linecap="round">
-              <line x1="0" y1="-64" x2="0" y2="-54"/>
-              <line x1="0" y1="54" x2="0" y2="64"/>
-              <line x1="-64" y1="0" x2="-54" y2="0"/>
-              <line x1="54" y1="0" x2="64" y2="0"/>
-              <line x1="-45" y1="-45" x2="-38" y2="-38"/>
-              <line x1="38" y1="38" x2="45" y2="45"/>
-              <line x1="45" y1="-45" x2="38" y2="-38"/>
-              <line x1="-38" y1="38" x2="-45" y2="45"/>
+          <!-- Sun (Tabler filled/sun.svg, Gold) -->
+          <g transform="translate(225, 310) scale(5.6) translate(-12, -12)" fill="#fbbf24">
+            <path d="M12 19a1 1 0 0 1 .993 .883l.007 .117v1a1 1 0 0 1 -1.993 .117l-.007 -.117v-1a1 1 0 0 1 1 -1z" />
+            <path d="M18.313 16.91l.094 .083l.7 .7a1 1 0 0 1 -1.32 1.497l-.094 -.083l-.7 -.7a1 1 0 0 1 1.218 -1.567l.102 .07z" />
+            <path d="M7.007 16.993a1 1 0 0 1 .083 1.32l-.083 .094l-.7 .7a1 1 0 0 1 -1.497 -1.32l.083 -.094l.7 -.7a1 1 0 0 1 1.414 0z" />
+            <path d="M4 11a1 1 0 0 1 .117 1.993l-.117 .007h-1a1 1 0 0 1 -.117 -1.993l.117 -.007h1z" />
+            <path d="M21 11a1 1 0 0 1 .117 1.993l-.117 .007h-1a1 1 0 0 1 -.117 -1.993l.117 -.007h1z" />
+            <path d="M6.213 4.81l.094 .083l.7 .7a1 1 0 0 1 -1.32 1.497l-.094 -.083l-.7 -.7a1 1 0 0 1 1.217 -1.567l.102 .07z" />
+            <path d="M19.107 4.893a1 1 0 0 1 .083 1.32l-.083 .094l-.7 .7a1 1 0 0 1 -1.497 -1.32l.083 -.094l.7 -.7a1 1 0 0 1 1.414 0z" />
+            <path d="M12 2a1 1 0 0 1 .993 .883l.007 .117v1a1 1 0 0 1 -1.993 .117l-.007 -.117v-1a1 1 0 0 1 1 -1z" />
+            <path d="M12 7a5 5 0 1 1 -4.995 5.217l-.005 -.217l.005 -.217a5 5 0 0 1 4.995 -4.783z" />
+          </g>
+
+          <!-- Earth (Tabler filled/world.svg, Cyan + Target Reticle) -->
+          <g transform="translate(600, 310)">
+            <g class="cs-earth-body" transform="scale(5.8) translate(-12, -12)" fill="#38bdf8">
+              <path d="M21.165 16a10 10 0 0 1 -8.434 5.973a1 1 0 0 0 .617 -.444a18 18 0 0 0 2.28 -5.528z" />
+              <path d="M8.372 16a18 18 0 0 0 2.28 5.53a1 1 0 0 0 .616 .443a10 10 0 0 1 -8.433 -5.973z" />
+              <path d="M13.57 16a16 16 0 0 1 -1.57 3.884a16 16 0 0 1 -1.57 -3.884" />
+              <path d="M8.034 10a18 18 0 0 0 0 4h-5.832a10 10 0 0 1 -.002 -4z" />
+              <path d="M13.952 10a16 16 0 0 1 0 4h-3.904a16 16 0 0 1 0 -4z" />
+              <path d="M21.8 10a10.05 10.05 0 0 1 -.002 4h-5.832c.149 -1.329 .149 -2.67 0 -4z" />
+              <path d="M11.267 2.027a1 1 0 0 0 -.615 .444a18 18 0 0 0 -2.28 5.529h-5.54a10.01 10.01 0 0 1 8.334 -5.967z" />
+              <path d="M12 4.116a16 16 0 0 1 1.57 3.885h-3.14c.34 -1.317 .85 -2.6 1.53 -3.817z" />
+              <path d="M12.733 2.026a10.01 10.01 0 0 1 8.435 5.974h-5.54a18 18 0 0 0 -2.28 -5.53a1 1 0 0 0 -.517 -.414z" />
+            </g>
+            <g class="cs-reticle" stroke="#7dd3fc" stroke-width="2.5" fill="none">
+              <circle cx="0" cy="0" r="84" stroke-dasharray="18 10"/>
+              <line x1="-108" y1="0" x2="-76" y2="0"/>
+              <line x1="76" y1="0" x2="108" y2="0"/>
+              <line x1="0" y1="-108" x2="0" y2="-76"/>
+              <line x1="0" y1="76" x2="0" y2="108"/>
             </g>
           </g>
 
-          <!-- Earth (clean flat + geometric continents + target reticle) -->
-          <g transform="translate(600, 315)">
-            <g class="cs-earth-body">
-              <circle cx="0" cy="0" r="56" fill="#0284c7" stroke="#bae6fd" stroke-width="3"/>
-              <path d="M-24,-28 Q-6,-18 -14,0 Q-26,12 -10,30" fill="none" stroke="#34d399" stroke-width="8" stroke-linecap="round"/>
-              <path d="M14,-22 Q30,-8 22,12 Q12,24 24,34" fill="none" stroke="#34d399" stroke-width="7" stroke-linecap="round"/>
-            </g>
-            <g class="cs-reticle">
-              <circle cx="0" cy="0" r="84" fill="none" stroke="#7dd3fc" stroke-width="2.5" stroke-dasharray="18 10"/>
-              <line x1="-110" y1="0" x2="-78" y2="0" stroke="#7dd3fc" stroke-width="2.5"/>
-              <line x1="78" y1="0" x2="110" y2="0" stroke="#7dd3fc" stroke-width="2.5"/>
-              <line x1="0" y1="-110" x2="0" y2="-78" stroke="#7dd3fc" stroke-width="2.5"/>
-              <line x1="0" y1="78" x2="0" y2="110" stroke="#7dd3fc" stroke-width="2.5"/>
-            </g>
-          </g>
-
-          <!-- Ringed Planet (consistent flat + clean stroke) -->
+          <!-- Ringed Planet (Tabler planet.svg, Filled Orange + Gold Ring) -->
           <g transform="translate(965, 295)">
-            <g class="cs-planet-ringed">
-              <circle cx="0" cy="0" r="38" fill="#64748b" stroke="#e2e8f0" stroke-width="3"/>
-              <ellipse cx="0" cy="0" rx="76" ry="20" fill="none" stroke="#e2e8f0" stroke-width="4" transform="rotate(-18)"/>
+            <g class="cs-planet-ringed" transform="scale(5.8) translate(-12, -12)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" fill="#fb923c" stroke="#fb923c" stroke-width="1.5"/>
+              <path d="M18.816 13.58c2.292 2.138 3.546 4 3.092 4.9c-.745 1.46 -5.783 -.259 -11.255 -3.838c-5.47 -3.579 -9.304 -7.664 -8.56 -9.123c.464 -.91 2.926 -.444 5.803 .805" stroke="#fde68a" stroke-width="1.8"/>
             </g>
           </g>
         </svg>
       </div>
 
-      <!-- Scene 1: Scientific Sensors (Camera/Lens, Telescope, Radar Sensor) -->
+      <!-- Scene 1: Scientific Sensors (Tabler Telescope, Microscope, Antenna) -->
       <div class="cutscene-scene" data-scene="1" data-caption="STAGE 2 — Equip scientific sensors (cameras, telescopes, spectrometers) to collect data.">
         <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-          <path d="M140,520 Q600,440 1060,520" fill="none" stroke="rgba(186,230,253,0.4)" stroke-width="3"/>
+          <path d="M140,515 Q600,440 1060,515" fill="none" stroke="rgba(248,250,252,0.3)" stroke-width="2.5"/>
 
-          <!-- Left Sensor: Telescope -->
+          <!-- Left Sensor: Tabler Telescope (Filled Purple) -->
           <g transform="translate(300, 275)">
-            <g class="cs-sensor-left" stroke="#bae6fd" stroke-width="3.5" fill="#1e384f" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="-46" y="-26" width="84" height="26" rx="4" transform="rotate(-22)"/>
-              <rect x="30" y="-23" width="16" height="20" rx="2" transform="rotate(-22)"/>
-              <line x1="0" y1="0" x2="-26" y2="54"/>
-              <line x1="0" y1="0" x2="26" y2="54"/>
-              <line x1="0" y1="0" x2="0" y2="54"/>
+            <g class="cs-sensor-left" transform="scale(5.4) translate(-12, -12)" fill="#c084fc" stroke="#c084fc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 21l6 -5l6 5" fill="none" stroke-width="2"/>
+              <path d="M12 13v8" fill="none" stroke-width="2"/>
+              <path d="M3.294 13.678l.166 .281c.52 .88 1.624 1.265 2.605 .91l14.242 -5.165a1.023 1.023 0 0 0 .565 -1.456l-2.62 -4.705a1.087 1.087 0 0 0 -1.447 -.42l-.056 .032l-12.694 7.618c-1.02 .613 -1.357 1.897 -.76 2.905l-.001 0"/>
+              <path d="M14 5l3 5.5" stroke="#f3e8ff" stroke-width="1.6"/>
             </g>
           </g>
 
-          <!-- Center Sensor: Optical Camera / Detector with Signal Waves -->
-          <g transform="translate(600, 260)">
-            <g class="cs-bus-core" stroke="#7dd3fc" stroke-width="3.5" fill="#1e384f" stroke-linecap="round">
-              <rect x="-54" y="-36" width="108" height="72" rx="12"/>
-              <circle cx="0" cy="0" r="20" fill="#0284c7" stroke="#ffffff" stroke-width="3"/>
-              <path d="M-30,52 Q0,70 30,52" fill="none" stroke="#38bdf8" stroke-width="3.5"/>
-              <path d="M-48,70 Q0,96 48,70" fill="none" stroke="#38bdf8" stroke-width="3"/>
+          <!-- Center Sensor: Tabler Microscope (Filled Cyan + Scan Cone) -->
+          <g transform="translate(600, 255)">
+            <g class="cs-bus-core" transform="scale(5.4) translate(-12, -12)" fill="#38bdf8" stroke="#38bdf8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 21h14" fill="none"/>
+              <path d="M6 18h2" fill="none"/>
+              <path d="M7 18v3" fill="none"/>
+              <path d="M9 11l3 3l6 -6l-3 -3l-6 6"/>
+              <path d="M10.5 12.5l-1.5 1.5" fill="none"/>
+              <path d="M17 3l3 3" fill="none"/>
+              <path d="M12 21a6 6 0 0 0 3.715 -10.712" fill="none"/>
             </g>
-            <polygon class="cs-scan-cone" points="-20,90 20,90 140,220 -140,220" fill="rgba(125, 211, 252, 0.12)" stroke="rgba(125, 211, 252, 0.45)" stroke-width="1.5" stroke-dasharray="6 6"/>
+            <polygon class="cs-scan-cone" points="-20,90 20,90 135,215 -135,215" fill="rgba(125, 211, 252, 0.08)" stroke="rgba(248, 250, 252, 0.35)" stroke-width="1.5" stroke-dasharray="6 6"/>
           </g>
 
-          <!-- Right Sensor: Spectrometer Dish -->
+          <!-- Right Sensor: Tabler Antenna (Outline) -->
           <g transform="translate(900, 275)">
-            <g class="cs-sensor-right" stroke="#fbbf24" stroke-width="3.5" fill="none" stroke-linecap="round">
-              <path d="M-40,-20 A46,46 0 0,0 24,44" fill="#1e384f"/>
-              <line x1="-8" y1="12" x2="18" y2="-14"/>
-              <circle cx="22" cy="-18" r="5" fill="#fbbf24"/>
-              <path d="M12,-40 A28,28 0 0,1 40,-12"/>
-              <path d="M22,-54 A44,44 0 0,1 54,-22"/>
-              <line x1="-18" y1="44" x2="18" y2="44"/>
+            <g class="cs-sensor-right" transform="scale(5.4) translate(-12, -12)" stroke="#f8fafc" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 4v8"/>
+              <path d="M16 4.5v7"/>
+              <path d="M12 5v16"/>
+              <path d="M8 5.5v5"/>
+              <path d="M4 6v4"/>
+              <path d="M20 8h-16"/>
             </g>
           </g>
         </svg>
       </div>
 
-      <!-- Scene 2: 3-Segment Engineering Link (Streamlined Rocket + Satellite + Ground Dish) -->
+      <!-- Scene 2: 3-Segment Engineering Link (Tabler Rocket + Satellite + Antenna) -->
       <div class="cutscene-scene" data-scene="2" data-caption="STAGE 3 &amp; 4 — Design your Rocket, Satellite Bus, and Ground Dish within limits.">
         <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-          <!-- Launch Segment: Streamlined Rocket -->
-          <g transform="translate(270, 315)">
+          <!-- Launch Segment: Tabler Rocket (Filled Orange) -->
+          <g transform="translate(270, 310)">
             <g class="cs-seg-1">
-              <circle cx="0" cy="0" r="96" fill="#1e384f" stroke="#fbbf24" stroke-width="3"/>
-              <path d="M0,-58 C24,-34 24,14 14,36 L-14,36 C-24,14 -24,-34 0,-58 Z" fill="#f8fafc" stroke="#fbbf24" stroke-width="2.5"/>
-              <circle cx="0" cy="-14" r="9" fill="#0284c7"/>
-              <path d="M-16,12 L-34,36 L-14,32 Z" fill="#fbbf24"/>
-              <path d="M16,12 L34,36 L14,32 Z" fill="#fbbf24"/>
-              <path d="M-8,36 L0,56 L8,36 Z" fill="#f97316"/>
+              <circle cx="0" cy="0" r="96" fill="none" stroke="#fbbf24" stroke-width="2.5"/>
+              <g transform="scale(5.0) translate(-12, -12)" fill="#fb923c" stroke="#fb923c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 13a8 8 0 0 1 7 7a6 6 0 0 0 3 -5a9 9 0 0 0 6 -8a3 3 0 0 0 -3 -3a9 9 0 0 0 -8 6a6 6 0 0 0 -5 3"/>
+                <path d="M7 14a6 6 0 0 0 -3 6a6 6 0 0 0 6 -3" fill="none" stroke="#fbbf24"/>
+                <path d="M14 9a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" fill="#0f172a" stroke="none"/>
+              </g>
             </g>
           </g>
-          <line class="cs-link-1" x1="376" y1="315" x2="494" y2="315" stroke="#7dd3fc" stroke-width="3" stroke-dasharray="10 8"/>
+          <line class="cs-link-1" x1="376" y1="310" x2="494" y2="310" stroke="#7dd3fc" stroke-width="3" stroke-dasharray="10 8"/>
 
-          <!-- Space Segment: Satellite Bus -->
-          <g transform="translate(600, 315)">
+          <!-- Space Segment: Tabler Satellite (Filled Cyan) -->
+          <g transform="translate(600, 310)">
             <g class="cs-seg-2">
-              <circle cx="0" cy="0" r="96" fill="#1e384f" stroke="#7dd3fc" stroke-width="3"/>
-              <rect x="-72" y="-16" width="38" height="32" rx="2" fill="#0284c7" stroke="#bae6fd" stroke-width="2"/>
-              <rect x="34" y="-16" width="38" height="32" rx="2" fill="#0284c7" stroke="#bae6fd" stroke-width="2"/>
-              <rect x="-26" y="-28" width="52" height="56" rx="6" fill="#334155" stroke="#ffffff" stroke-width="2.5"/>
-              <circle cx="0" cy="-4" r="10" fill="#7dd3fc"/>
+              <circle cx="0" cy="0" r="96" fill="none" stroke="#7dd3fc" stroke-width="2.5"/>
+              <g transform="scale(5.0) translate(-12, -12)" fill="#38bdf8" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3.707 6.293l2.586 -2.586a1 1 0 0 1 1.414 0l5.586 5.586a1 1 0 0 1 0 1.414l-2.586 2.586a1 1 0 0 1 -1.414 0l-5.586 -5.586a1 1 0 0 1 0 -1.414"/>
+                <path d="M6 10l-3 3l3 3l3 -3" fill="none"/>
+                <path d="M10 6l3 -3l3 3l-3 3" fill="none"/>
+                <path d="M12 12l1.5 1.5" fill="none"/>
+                <path d="M14.5 17a2.5 2.5 0 0 0 2.5 -2.5" fill="none"/>
+                <path d="M15 21a6 6 0 0 0 6 -6" fill="none"/>
+              </g>
             </g>
           </g>
-          <line class="cs-link-2" x1="706" y1="315" x2="824" y2="315" stroke="#34d399" stroke-width="3" stroke-dasharray="10 8"/>
+          <line class="cs-link-2" x1="706" y1="310" x2="824" y2="310" stroke="#34d399" stroke-width="3" stroke-dasharray="10 8"/>
 
-          <!-- Ground Segment: Ground Dish -->
-          <g transform="translate(930, 315)">
-            <g class="cs-seg-3" stroke="#34d399" stroke-width="3.5" fill="none" stroke-linecap="round">
-              <circle cx="0" cy="0" r="96" fill="#1e384f" stroke="#34d399" stroke-width="3"/>
-              <path d="M-40,-16 A46,46 0 0,0 22,40" fill="#0f2332"/>
-              <line x1="-8" y1="12" x2="18" y2="-14"/>
-              <circle cx="22" cy="-18" r="5" fill="#34d399"/>
-              <path d="M12,-36 A24,24 0 0,1 36,-12"/>
-              <line x1="-22" y1="48" x2="22" y2="48"/>
+          <!-- Ground Segment: Tabler Antenna (Outline Emerald) -->
+          <g transform="translate(930, 310)">
+            <g class="cs-seg-3">
+              <circle cx="0" cy="0" r="96" fill="none" stroke="#34d399" stroke-width="2.5"/>
+              <g transform="scale(5.0) translate(-12, -12)" stroke="#34d399" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 4v8"/>
+                <path d="M16 4.5v7"/>
+                <path d="M12 5v16"/>
+                <path d="M8 5.5v5"/>
+                <path d="M4 6v4"/>
+                <path d="M20 8h-16"/>
+              </g>
             </g>
           </g>
         </svg>
       </div>
 
-      <!-- Scene 3: Stage 5 Build & Verify Launch (Same Streamlined Rocket) -->
+      <!-- Scene 3: Stage 5 Build & Verify Launch (Tabler Rocket) -->
       <div class="cutscene-scene" data-scene="3" data-caption="STAGE 5 — Run safety diagnostics to boost reliability, then launch into orbit.">
         <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-          <path d="M100,565 Q600,455 1100,565" fill="none" stroke="#38bdf8" stroke-width="4" opacity="0.65"/>
-          <path class="cs-traj-arc" d="M360,470 Q580,200 940,145" fill="none" stroke="#7dd3fc" stroke-width="3.5" stroke-dasharray="12 8"/>
-          <circle cx="940" cy="145" r="11" fill="#34d399"/>
-          <g transform="translate(360, 445) rotate(24)">
-            <g class="cs-rocket-ship">
-              <path d="M0,-62 C26,-36 26,16 15,40 L-15,40 C-26,16 -26,-36 0,-62 Z" fill="#f8fafc" stroke="#38bdf8" stroke-width="2.5"/>
-              <circle cx="0" cy="-14" r="10" fill="#0284c7"/>
-              <path d="M-17,14 L-36,40 L-15,36 Z" fill="#ef4444"/>
-              <path d="M17,14 L36,40 L15,36 Z" fill="#ef4444"/>
-              <polygon class="cs-plume" points="-12,40 0,104 12,40" fill="#f59e0b"/>
-              <polygon class="cs-plume-inner" points="-5,40 0,76 5,40" fill="#fef08a"/>
+          <path d="M100,565 Q600,455 1100,565" fill="none" stroke="rgba(248,250,252,0.4)" stroke-width="3"/>
+          <path class="cs-traj-arc" d="M360,470 Q580,200 940,145" fill="none" stroke="#7dd3fc" stroke-width="3" stroke-dasharray="12 8"/>
+          <circle cx="940" cy="145" r="11" fill="none" stroke="#34d399" stroke-width="3.5"/>
+          <g transform="translate(360, 445)">
+            <g class="cs-rocket-ship" transform="scale(6.2) translate(-12, -12)" fill="#38bdf8" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 13a8 8 0 0 1 7 7a6 6 0 0 0 3 -5a9 9 0 0 0 6 -8a3 3 0 0 0 -3 -3a9 9 0 0 0 -8 6a6 6 0 0 0 -5 3"/>
+              <path d="M7 14a6 6 0 0 0 -3 6a6 6 0 0 0 6 -3" fill="#fbbf24" stroke="#fbbf24"/>
+              <path d="M14 9a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" fill="#0f172a" stroke="none"/>
             </g>
           </g>
         </svg>
       </div>
 
-      <!-- Scene 4: Stage 6 Live Flight & Anomaly Stabilization -->
+      <!-- Scene 4: Stage 6 Live Flight & Anomaly Stabilization (Tabler Satellite + Antenna) -->
       <div class="cutscene-scene" data-scene="4" data-caption="STAGE 6 — Monitor live flight telemetry and solve anomalies before they cause damage!">
         <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
           <g transform="translate(390, 245)">
             <g class="cs-sat-anomaly">
-              <circle class="cs-anomaly-ring" cx="0" cy="0" r="112" fill="none" stroke="#fbbf24" stroke-width="3" stroke-dasharray="10 8"/>
-              <circle class="cs-shield-wave" cx="0" cy="0" r="88" fill="none" stroke="#34d399" stroke-width="3.5"/>
-              <rect x="-78" y="-14" width="42" height="28" fill="#0284c7" stroke="#bae6fd" stroke-width="2"/>
-              <rect x="36" y="-14" width="42" height="28" fill="#0284c7" stroke="#bae6fd" stroke-width="2"/>
-              <rect x="-28" y="-28" width="56" height="56" rx="6" fill="#1e384f" stroke="#ffffff" stroke-width="2.5"/>
-              <circle cx="0" cy="0" r="10" fill="#7dd3fc"/>
+              <circle class="cs-anomaly-ring" cx="0" cy="0" r="112" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-dasharray="10 8"/>
+              <circle class="cs-shield-wave" cx="0" cy="0" r="88" fill="none" stroke="#34d399" stroke-width="3"/>
+              <g transform="scale(5.4) translate(-12, -12)" fill="#38bdf8" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3.707 6.293l2.586 -2.586a1 1 0 0 1 1.414 0l5.586 5.586a1 1 0 0 1 0 1.414l-2.586 2.586a1 1 0 0 1 -1.414 0l-5.586 -5.586a1 1 0 0 1 0 -1.414"/>
+                <path d="M6 10l-3 3l3 3l3 -3" fill="none"/>
+                <path d="M10 6l3 -3l3 3l-3 3" fill="none"/>
+                <path d="M12 12l1.5 1.5" fill="none"/>
+                <path d="M14.5 17a2.5 2.5 0 0 0 2.5 -2.5" fill="none"/>
+                <path d="M15 21a6 6 0 0 0 6 -6" fill="none"/>
+              </g>
             </g>
           </g>
-          <path class="cs-downlink-wave" d="M475,305 Q645,385 795,435" fill="none" stroke="#7dd3fc" stroke-width="4" stroke-dasharray="14 10"/>
-          <g transform="translate(860, 445)" stroke="#34d399" stroke-width="4" fill="none" stroke-linecap="round">
-            <path d="M-44,-18 A50,50 0 0,0 24,42" fill="#1e384f"/>
-            <line x1="-10" y1="12" x2="20" y2="-18"/>
-            <circle cx="24" cy="-22" r="5.5" fill="#34d399"/>
-            <line x1="-26" y1="50" x2="26" y2="50"/>
+          <path class="cs-downlink-wave" d="M475,305 Q645,385 795,435" fill="none" stroke="#7dd3fc" stroke-width="3.5" stroke-dasharray="14 10"/>
+          <g transform="translate(860, 445) scale(5.4) translate(-12, -12)" stroke="#f8fafc" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 4v8"/>
+            <path d="M16 4.5v7"/>
+            <path d="M12 5v16"/>
+            <path d="M8 5.5v5"/>
+            <path d="M4 6v4"/>
+            <path d="M20 8h-16"/>
           </g>
         </svg>
       </div>
 
-      <!-- Scene 5: Stage 7 Data Refinery & Money Payout -->
+      <!-- Scene 5: Stage 7 Data Refinery & Money Payout (Tabler Filled Coin) -->
       <div class="cutscene-scene" data-scene="5" data-caption="STAGE 7 — Refine data (L0 to L4) and sell to buyers to earn budget and reputation.">
         <svg class="cs-svg" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
           <path d="M270,225 Q410,255 540,315" fill="none" stroke="#7dd3fc" stroke-width="3" stroke-dasharray="8 6"/>
           <path d="M270,415 Q410,385 540,315" fill="none" stroke="#7dd3fc" stroke-width="3" stroke-dasharray="8 6"/>
           <g transform="translate(245, 220)">
             <g class="cs-node-l0">
-              <circle cx="0" cy="0" r="42" fill="#1e384f" stroke="#cbd5e1" stroke-width="3"/>
+              <circle cx="0" cy="0" r="42" fill="none" stroke="#f8fafc" stroke-width="3"/>
               <text x="0" y="7" fill="#f8fafc" font-size="20" font-family="monospace" text-anchor="middle" font-weight="bold">L0</text>
             </g>
           </g>
           <g transform="translate(245, 420)">
             <g class="cs-node-l2">
-              <circle cx="0" cy="0" r="42" fill="#1e384f" stroke="#7dd3fc" stroke-width="3"/>
+              <circle cx="0" cy="0" r="42" fill="none" stroke="#7dd3fc" stroke-width="3"/>
               <text x="0" y="7" fill="#7dd3fc" font-size="20" font-family="monospace" text-anchor="middle" font-weight="bold">L2</text>
             </g>
           </g>
           <g transform="translate(600, 315)">
             <g class="cs-node-l4">
-              <polygon points="0,-68 60,-30 60,30 0,68 -60,30 -60,-30" fill="#1e384f" stroke="#fbbf24" stroke-width="4"/>
+              <polygon points="0,-68 60,-30 60,30 0,68 -60,30 -60,-30" fill="none" stroke="#fbbf24" stroke-width="3.5"/>
               <text x="0" y="9" fill="#fbbf24" font-size="28" font-family="monospace" text-anchor="middle" font-weight="bold">L4</text>
             </g>
           </g>
-          <line x1="672" y1="315" x2="810" y2="315" stroke="#34d399" stroke-width="4" stroke-dasharray="10 6"/>
-          <!-- Money Payout Icon -->
+          <line x1="672" y1="315" x2="810" y2="315" stroke="#34d399" stroke-width="3.5" stroke-dasharray="10 6"/>
+          <!-- Tabler filled/coin.svg (Emerald) -->
           <g transform="translate(915, 315)">
-            <g class="cs-value-bars">
-              <rect x="-74" y="-44" width="148" height="88" rx="8" fill="#14532d" stroke="#34d399" stroke-width="4"/>
-              <circle cx="0" cy="0" r="30" fill="#166534" stroke="#86efac" stroke-width="2.5"/>
-              <text x="0" y="13" fill="#fef08a" font-size="40" font-family="Inter, sans-serif" font-weight="800" text-anchor="middle">$</text>
+            <g class="cs-value-bars" transform="scale(5.4) translate(-12, -12)" fill="#34d399">
+              <path d="M17 3.34a10 10 0 1 1 -15 8.66l.005 -.324a10 10 0 0 1 14.995 -8.336zm-5 2.66a1 1 0 0 0 -1 1a3 3 0 1 0 0 6v2a1.024 1.024 0 0 1 -.866 -.398l-.068 -.101a1 1 0 0 0 -1.732 .998a3 3 0 0 0 2.505 1.5h.161a1 1 0 0 0 .883 .994l.117 .007a1 1 0 0 0 1 -1l.176 -.005a3 3 0 0 0 -.176 -5.995v-2c.358 -.012 .671 .14 .866 .398l.068 .101a1 1 0 0 0 1.732 -.998a3 3 0 0 0 -2.505 -1.501h-.161a1 1 0 0 0 -1 -1zm1 7a1 1 0 0 1 0 2v-2zm-2 -4v2a1 1 0 0 1 0 -2z" />
             </g>
           </g>
         </svg>
@@ -384,14 +398,14 @@
       <!-- Permanent Resources: Budget & Reputation -->
       <div class="perm-resources">
         <div class="resource-box budget" title="Permanent Budget for buying rockets, instruments &amp; upgrades">
-          <span class="res-icon">💰</span>
+          <span class="res-icon"><svg class="tabler-icon tabler-filled ti-emerald" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 3.34a10 10 0 1 1 -15 8.66l.005 -.324a10 10 0 0 1 14.995 -8.336zm-5 2.66a1 1 0 0 0 -1 1a3 3 0 1 0 0 6v2a1.024 1.024 0 0 1 -.866 -.398l-.068 -.101a1 1 0 0 0 -1.732 .998a3 3 0 0 0 2.505 1.5h.161a1 1 0 0 0 .883 .994l.117 .007a1 1 0 0 0 1 -1l.176 -.005a3 3 0 0 0 -.176 -5.995v-2c.358 -.012 .671 .14 .866 .398l.068 .101a1 1 0 0 0 1.732 -.998a3 3 0 0 0 -2.505 -1.501h-.161a1 1 0 0 0 -1 -1zm1 7a1 1 0 0 1 0 2v-2zm-2 -4v2a1 1 0 0 1 0 -2z" /></svg></span>
           <div class="res-meta">
             <span class="res-label">BUDGET</span>
             <span class="res-val" id="hud-budget">$1,200,000</span>
           </div>
         </div>
         <div class="resource-box rep" title="Permanent Reputation: Smooth price curve &amp; unlocks Tier 2 sensors">
-          <span class="res-icon">⭐</span>
+          <span class="res-icon"><svg class="tabler-icon tabler-filled ti-gold" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.243 7.34l-6.38 .925l-.113 .023a1 1 0 0 0 -.44 1.684l4.622 4.499l-1.09 6.355l-.013 .11a1 1 0 0 0 1.464 .944l5.706 -3l5.693 3l.1 .046a1 1 0 0 0 1.352 -1.1l-1.091 -6.355l4.624 -4.5l.078 -.085a1 1 0 0 0 -.633 -1.62l-6.38 -.926l-2.852 -5.78a1 1 0 0 0 -1.794 0l-2.853 5.78z" /></svg></span>
           <div class="res-meta">
             <span class="res-label">REPUTATION</span>
             <span class="res-val" id="hud-rep">50 / 100</span>
@@ -402,19 +416,19 @@
       <!-- Global Controls: Data Vault, Help, Settings, Menu -->
       <div class="hud-controls">
         <button class="hud-btn vault-btn" id="btn-open-vault" title="View Stored Scientific Data &amp; Market Value">
-          <span>📦 DATA VAULT (<span id="vault-count-badge">0</span>)</span>
+          <span><svg class="inline-heading-icon tabler-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" /><path d="M12 12l8 -4.5" /><path d="M12 12l0 9" /><path d="M12 12l-8 -4.5" /></svg> DATA VAULT (<span id="vault-count-badge">0</span>)</span>
         </button>
 
         <button class="hud-btn qmark-btn" id="btn-open-help" title="Explain elements on this screen">
           <span>?</span>
         </button>
 
-        <button class="hud-btn" id="btn-open-settings" title="Open Settings (Audio, Sliders, AI)">
-          <span>⚙️ SETTINGS</span>
+        <button class="hud-btn" id="btn-open-settings" title="Open Settings (Audio, Text Size, Design Mode)">
+          <span><svg class="inline-heading-icon tabler-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg> SETTINGS</span>
         </button>
 
         <button class="hud-btn" id="btn-return-menu" title="Return to Main Menu">
-          <span>🏠 MENU</span>
+          <span><svg class="inline-heading-icon tabler-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l-2 0l9 -9l9 9l-2 0" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg> MENU</span>
         </button>
       </div>
     </header>
@@ -423,30 +437,30 @@
     <div class="roles-bar" id="roles-bar" style="display: none;">
       <span class="roles-bar-label">CREW STATION:</span>
       <button class="role-tab active" data-role="launch" id="tab-role-launch">
-        🚀 LAUNCH STATION (Rocket &amp; Mechanical)
+        <svg class="inline-heading-icon tabler-icon tabler-filled ti-cyan" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13a8 8 0 0 1 7 7a6 6 0 0 0 3 -5a9 9 0 0 0 6 -8a3 3 0 0 0 -3 -3a9 9 0 0 0 -8 6a6 6 0 0 0 -5 3" /><path d="M7 14a6 6 0 0 0 -3 6a6 6 0 0 0 6 -3" fill="none" /><path d="M14 9a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" fill="#0f172a" /></svg> LAUNCH STATION (Rocket &amp; Mechanical)
       </button>
       <button class="role-tab" data-role="space" id="tab-role-space">
-        🛰️ SPACE STATION (Sensors &amp; Bus)
+        <svg class="inline-heading-icon tabler-icon tabler-filled ti-cyan" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.707 6.293l2.586 -2.586a1 1 0 0 1 1.414 0l5.586 5.586a1 1 0 0 1 0 1.414l-2.586 2.586a1 1 0 0 1 -1.414 0l-5.586 -5.586a1 1 0 0 1 0 -1.414" /><path d="M6 10l-3 3l3 3l3 -3" fill="none" /><path d="M10 6l3 -3l3 3l-3 3" fill="none" /><path d="M12 12l1.5 1.5" fill="none" /><path d="M14.5 17a2.5 2.5 0 0 0 2.5 -2.5" fill="none" /><path d="M15 21a6 6 0 0 0 6 -6" fill="none" /></svg> SPACE STATION (Sensors &amp; Bus)
       </button>
       <button class="role-tab" data-role="ground" id="tab-role-ground">
-        📡 GROUND STATION (Comms &amp; Tracking)
+        <svg class="inline-heading-icon tabler-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4v8" /><path d="M16 4.5v7" /><path d="M12 5v16" /><path d="M8 5.5v5" /><path d="M4 6v4" /><path d="M20 8h-16" /></svg> GROUND STATION (Comms &amp; Tracking)
       </button>
       <button class="role-tab" data-role="user" id="tab-role-user">
-        💼 USER STATION (Refinery &amp; Market)
+        <svg class="inline-heading-icon tabler-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2l0 -9" /><path d="M8 7v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2" /><path d="M12 12l0 .01" /><path d="M3 13a20 20 0 0 0 18 0" /></svg> USER STATION (Refinery &amp; Market)
       </button>
-      <span class="saboteur-indicator" id="saboteur-status-pill" style="display: none;">🕵️ SABOTEUR ACTIVE</span>
+      <span class="saboteur-indicator" id="saboteur-status-pill" style="display: none;"><svg class="inline-heading-icon tabler-icon tabler-filled ti-crimson" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1.67c.955 0 1.845 .467 2.39 1.247l.105 .16l8.114 13.548a2.914 2.914 0 0 1 -2.307 4.363l-.195 .008h-16.225a2.914 2.914 0 0 1 -2.582 -4.2l.099 -.185l8.11 -13.538a2.914 2.914 0 0 1 2.491 -1.403zm.01 13.33l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -7a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z" /></svg> SABOTEUR ACTIVE</span>
     </div>
 
     <!-- Market Trends Ticker Bar (Seamless Recurring Headline, Click to Lock) -->
     <div class="trends-ticker" id="trends-ticker" title="Click to lock/unlock current market trend">
-      <span class="ticker-label">🔥 GLOBAL DATA DEMAND TREND:</span>
+      <span class="ticker-label"><svg class="inline-heading-icon tabler-icon tabler-filled ti-orange" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10 2c0 -.88 1.056 -1.331 1.692 -.722c1.958 1.876 3.096 5.995 1.75 9.12l-.08 .174l.012 .003c.625 .133 1.203 -.43 2.303 -2.173l.14 -.224a1 1 0 0 1 1.582 -.153c1.334 1.435 2.601 4.377 2.601 6.27c0 4.265 -3.591 7.705 -8 7.705s-8 -3.44 -8 -7.706c0 -2.252 1.022 -4.716 2.632 -6.301l.605 -.589c.241 -.236 .434 -.43 .618 -.624c1.43 -1.512 2.145 -2.924 2.145 -4.78" /></svg> GLOBAL DATA DEMAND TREND:</span>
       <div class="ticker-marquee-wrap">
         <div class="ticker-track" id="ticker-track">
-          <span class="ticker-text" id="ticker-text">Loading current NASA planetary &amp; Earth science market trends...</span>
-          <span class="ticker-text" id="ticker-text-dup" aria-hidden="true">Loading current NASA planetary &amp; Earth science market trends...</span>
+          <span class="ticker-text" id="ticker-text">Loading current planetary &amp; Earth science market trends...</span>
+          <span class="ticker-text" id="ticker-text-dup" aria-hidden="true">Loading current planetary &amp; Earth science market trends...</span>
         </div>
       </div>
-      <span class="ticker-lock-badge" id="ticker-lock-badge">🔓 LIVE</span>
+      <span class="ticker-lock-badge" id="ticker-lock-badge"><svg class="inline-heading-icon tabler-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2l0 -6" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M8 11v-5a4 4 0 0 1 8 0" /></svg> LIVE</span>
     </div>
 
     <!-- NASA Mission Lifecycle Process Stepper -->
@@ -500,7 +514,7 @@
         </div>
 
         <div class="mission-name-bar">
-          <label for="input-mission-name">🚀 MISSION DESIGNATION:</label>
+          <label for="input-mission-name"><svg class="inline-heading-icon tabler-icon tabler-filled ti-cyan" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13a8 8 0 0 1 7 7a6 6 0 0 0 3 -5a9 9 0 0 0 6 -8a3 3 0 0 0 -3 -3a9 9 0 0 0 -8 6a6 6 0 0 0 -5 3" /><path d="M7 14a6 6 0 0 0 -3 6a6 6 0 0 0 6 -3" fill="none" /><path d="M14 9a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" fill="#0f172a" /></svg> MISSION DESIGNATION:</label>
           <input type="text" id="input-mission-name" value="ARTEMIS-1" maxlength="32" placeholder="Enter custom mission name...">
         </div>
 
@@ -759,14 +773,14 @@
             <div class="verify-card">
               <h3>SYSTEMS CHECKOUT TEST BENCH</h3>
               <ul class="test-list" id="test-list">
-                <li id="test-launch">⏳ Launch Segment: Structural loads &amp; fairing volume check...</li>
-                <li id="test-prop">⏳ Propulsion System: Specific impulse &amp; delta-v burn check...</li>
-                <li id="test-power">⏳ Electrical Bus: Sensor load vs. generation check...</li>
-                <li id="test-sensors">⏳ Scientific Instruments: Sensor calibration &amp; optics...</li>
-                <li id="test-ground">⏳ Ground Receiver: Telemetry link &amp; bandwidth check...</li>
+                <li id="test-launch"><svg class="inline-heading-icon tabler-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7h11" /><path d="M6.5 17h11" /><path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1" /><path d="M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1" /></svg> Launch Segment: Structural loads &amp; fairing volume check...</li>
+                <li id="test-prop"><svg class="inline-heading-icon tabler-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7h11" /><path d="M6.5 17h11" /><path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1" /><path d="M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1" /></svg> Propulsion System: Specific impulse &amp; delta-v burn check...</li>
+                <li id="test-power"><svg class="inline-heading-icon tabler-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7h11" /><path d="M6.5 17h11" /><path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1" /><path d="M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1" /></svg> Electrical Bus: Sensor load vs. generation check...</li>
+                <li id="test-sensors"><svg class="inline-heading-icon tabler-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7h11" /><path d="M6.5 17h11" /><path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1" /><path d="M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1" /></svg> Scientific Instruments: Sensor calibration &amp; optics...</li>
+                <li id="test-ground"><svg class="inline-heading-icon tabler-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7h11" /><path d="M6.5 17h11" /><path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1" /><path d="M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1" /></svg> Ground Receiver: Telemetry link &amp; bandwidth check...</li>
               </ul>
               <button class="action-btn primary" id="btn-run-tests" style="margin-top: 1rem;">
-                🔬 RUN FULL DIAGNOSTIC SIMULATION (-$35,000 | +10% RELIABILITY)
+                <svg class="inline-heading-icon tabler-icon tabler-filled ti-cyan" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21h14" fill="none" /><path d="M6 18h2" fill="none" /><path d="M7 18v3" fill="none" /><path d="M9 11l3 3l6 -6l-3 -3l-6 6" /><path d="M10.5 12.5l-1.5 1.5" fill="none" /><path d="M17 3l3 3" fill="none" /><path d="M12 21a6 6 0 0 0 3.715 -10.712" fill="none" /></svg> RUN FULL DIAGNOSTIC SIMULATION (-$35,000 | +10% RELIABILITY)
               </button>
             </div>
 
@@ -785,7 +799,7 @@
                 <strong id="inv-remaining" class="text-emerald">$850,000</strong>
               </div>
               <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.8rem;">
-                ⚠️ Failure Warning: Unaddressed in-flight anomalies will rapidly drain cash and destroy the spacecraft.
+                <svg class="inline-heading-icon tabler-icon tabler-filled ti-crimson" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1.67c.955 0 1.845 .467 2.39 1.247l.105 .16l8.114 13.548a2.914 2.914 0 0 1 -2.307 4.363l-.195 .008h-16.225a2.914 2.914 0 0 1 -2.582 -4.2l.099 -.185l8.11 -13.538a2.914 2.914 0 0 1 2.491 -1.403zm.01 13.33l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -7a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z" /></svg> Failure Warning: Unaddressed in-flight anomalies will rapidly drain cash and destroy the spacecraft.
               </p>
             </div>
           </div>
@@ -853,7 +867,7 @@
             <!-- Timed Anomaly Alert Box -->
             <div class="anomaly-alert-box" id="anomaly-alert-box" style="display: none;">
               <div class="anomaly-header">
-                <h4 id="anomaly-segment-badge"><svg class="inline-heading-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> ANOMALY DETECTED!</h4>
+                <h4 id="anomaly-segment-badge"><svg class="inline-heading-icon tabler-icon tabler-filled ti-crimson" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1.67c.955 0 1.845 .467 2.39 1.247l.105 .16l8.114 13.548a2.914 2.914 0 0 1 -2.307 4.363l-.195 .008h-16.225a2.914 2.914 0 0 1 -2.582 -4.2l.099 -.185l8.11 -13.538a2.914 2.914 0 0 1 2.491 -1.403zm.01 13.33l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -7a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z" /></svg> ANOMALY DETECTED!</h4>
                 <span class="anomaly-countdown" id="anomaly-countdown-text">URGENT: 15s</span>
               </div>
               <div class="anomaly-timer-bar-wrap">
@@ -893,10 +907,10 @@
               <div class="inv-header-row">
                 <h3>MISSION DATA INVENTORY</h3>
                 <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
-                  <span class="inv-decay-hint" id="inv-decay-hint">✅ Stored datasets retain 100% of their scientific value across cycles</span>
+                  <span class="inv-decay-hint" id="inv-decay-hint"><svg class="inline-heading-icon tabler-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5l10 -10" /></svg> Stored datasets retain 100% of their scientific value across cycles</span>
                   <div class="inv-view-toggle">
-                    <button class="view-toggle-btn active" id="btn-inv-grid" type="button">⊞ GRID</button>
-                    <button class="view-toggle-btn" id="btn-inv-list" type="button">☰ LIST</button>
+                    <button class="view-toggle-btn active" id="btn-inv-grid" type="button">GRID</button>
+                    <button class="view-toggle-btn" id="btn-inv-list" type="button">LIST</button>
                   </div>
                 </div>
               </div>
@@ -908,9 +922,9 @@
             <!-- Data Processing Action Station -->
             <div class="processing-station" id="processing-station">
               <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
-                <h3 style="margin: 0;">NASA DATA PROCESSING WORKBENCH</h3>
+                <h3 style="margin: 0;">DATA PROCESSING WORKBENCH</h3>
                 <button class="action-btn secondary mini-btn" id="btn-open-l4-forge" type="button" style="border-color: var(--color-gold); color: var(--color-gold);">
-                  🧬 LEVEL 4 SPLICER
+                  <svg class="inline-heading-icon tabler-icon tabler-filled ti-purple" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.828 14.828a4 4 0 1 0 -5.656 -5.656a4 4 0 0 0 5.656 5.656" /><path d="M9.172 20.485a4 4 0 1 0 -5.657 -5.657" fill="none" /><path d="M14.828 3.515a4 4 0 0 0 5.657 5.657" fill="none" /></svg> LEVEL 4 SPLICER
                 </button>
               </div>
               <div class="processing-recipe" id="processing-recipe">
@@ -921,7 +935,7 @@
                   REFINE DATA (SPEND LAB TIME)
                 </button>
                 <div class="combine-panel" id="combine-panel" style="display: none;">
-                  <label for="combine-partner-select">🔗 SELECT 2ND DATASET TO COMBINE (2 &rarr; 1 SYNTHESIS):</label>
+                  <label for="combine-partner-select"><svg class="inline-heading-icon tabler-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 15l6 -6" /><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" /><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" /></svg> SELECT 2ND DATASET TO COMBINE (2 &rarr; 1 SYNTHESIS):</label>
                   <select class="combine-select" id="combine-partner-select"></select>
                   <button class="action-btn primary" id="btn-combine-data">
                     COMBINE 2 DATASETS
@@ -946,8 +960,8 @@
                 <h4>National Science Foundation</h4>
                 <p class="buyer-desc">Peer-reviewed open science. Modest payout, but directly bolsters your academic standing and NASA reputation.</p>
                 <div class="buyer-perks">
-                  <span>💰 Price: <strong>Standard (1.0x &plusmn; Rep)</strong></span>
-                  <span class="text-emerald">⭐ Reputation: <strong>+8 REP</strong></span>
+                  <span><svg class="inline-vec-icon tabler-icon tabler-filled ti-emerald" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 3.34a10 10 0 1 1 -15 8.66l.005 -.324a10 10 0 0 1 14.995 -8.336zm-5 2.66a1 1 0 0 0 -1 1a3 3 0 1 0 0 6v2a1.024 1.024 0 0 1 -.866 -.398l-.068 -.101a1 1 0 0 0 -1.732 .998a3 3 0 0 0 2.505 1.5h.161a1 1 0 0 0 .883 .994l.117 .007a1 1 0 0 0 1 -1l.176 -.005a3 3 0 0 0 -.176 -5.995v-2c.358 -.012 .671 .14 .866 .398l.068 .101a1 1 0 0 0 1.732 -.998a3 3 0 0 0 -2.505 -1.501h-.161a1 1 0 0 0 -1 -1zm1 7a1 1 0 0 1 0 2v-2zm-2 -4v2a1 1 0 0 1 0 -2z" /></svg> Price: <strong>Standard (1.0x &plusmn; Rep)</strong></span>
+                  <span class="text-emerald"><svg class="inline-vec-icon tabler-icon tabler-filled ti-gold" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.243 7.34l-6.38 .925l-.113 .023a1 1 0 0 0 -.44 1.684l4.622 4.499l-1.09 6.355l-.013 .11a1 1 0 0 0 1.464 .944l5.706 -3l5.693 3l.1 .046a1 1 0 0 0 1.352 -1.1l-1.091 -6.355l4.624 -4.5l.078 -.085a1 1 0 0 0 -.633 -1.62l-6.38 -.926l-2.852 -5.78a1 1 0 0 0 -1.794 0l-2.853 5.78z" /></svg> Reputation: <strong>+8 REP</strong></span>
                 </div>
                 <button class="action-btn secondary btn-sell-action" data-buyer="institute">
                   SELL TO INSTITUTE
@@ -960,8 +974,8 @@
                 <h4>Global Public Domain</h4>
                 <p class="buyer-desc">Publish datasets freely to humanity. You receive $0 profit, but earn massive global renown and peak reputation.</p>
                 <div class="buyer-perks">
-                  <span>💰 Price: <strong>$0 (Free)</strong></span>
-                  <span class="text-cyan">⭐ Reputation: <strong>+20 REP</strong></span>
+                  <span><svg class="inline-vec-icon tabler-icon tabler-filled ti-emerald" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 3.34a10 10 0 1 1 -15 8.66l.005 -.324a10 10 0 0 1 14.995 -8.336zm-5 2.66a1 1 0 0 0 -1 1a3 3 0 1 0 0 6v2a1.024 1.024 0 0 1 -.866 -.398l-.068 -.101a1 1 0 0 0 -1.732 .998a3 3 0 0 0 2.505 1.5h.161a1 1 0 0 0 .883 .994l.117 .007a1 1 0 0 0 1 -1l.176 -.005a3 3 0 0 0 -.176 -5.995v-2c.358 -.012 .671 .14 .866 .398l.068 .101a1 1 0 0 0 1.732 -.998a3 3 0 0 0 -2.505 -1.501h-.161a1 1 0 0 0 -1 -1zm1 7a1 1 0 0 1 0 2v-2zm-2 -4v2a1 1 0 0 1 0 -2z" /></svg> Price: <strong>$0 (Free)</strong></span>
+                  <span class="text-cyan"><svg class="inline-vec-icon tabler-icon tabler-filled ti-gold" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.243 7.34l-6.38 .925l-.113 .023a1 1 0 0 0 -.44 1.684l4.622 4.499l-1.09 6.355l-.013 .11a1 1 0 0 0 1.464 .944l5.706 -3l5.693 3l.1 .046a1 1 0 0 0 1.352 -1.1l-1.091 -6.355l4.624 -4.5l.078 -.085a1 1 0 0 0 -.633 -1.62l-6.38 -.926l-2.852 -5.78a1 1 0 0 0 -1.794 0l-2.853 5.78z" /></svg> Reputation: <strong>+20 REP</strong></span>
                 </div>
                 <button class="action-btn secondary btn-sell-action" data-buyer="opensource">
                   PUBLISH OPEN SOURCE
@@ -974,8 +988,8 @@
                 <h4>Black-Budget Defense Contractor</h4>
                 <p class="buyer-desc">Classified defense buyout. Pays massive cash for raw and refined telemetry, but damages your reputation.</p>
                 <div class="buyer-perks">
-                  <span class="text-emerald">💰 Price: <strong>Extravagant (2.5x)</strong></span>
-                  <span class="text-crimson">⭐ Reputation: <strong>-15 REP</strong></span>
+                  <span class="text-emerald"><svg class="inline-vec-icon tabler-icon tabler-filled ti-emerald" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 3.34a10 10 0 1 1 -15 8.66l.005 -.324a10 10 0 0 1 14.995 -8.336zm-5 2.66a1 1 0 0 0 -1 1a3 3 0 1 0 0 6v2a1.024 1.024 0 0 1 -.866 -.398l-.068 -.101a1 1 0 0 0 -1.732 .998a3 3 0 0 0 2.505 1.5h.161a1 1 0 0 0 .883 .994l.117 .007a1 1 0 0 0 1 -1l.176 -.005a3 3 0 0 0 -.176 -5.995v-2c.358 -.012 .671 .14 .866 .398l.068 .101a1 1 0 0 0 1.732 -.998a3 3 0 0 0 -2.505 -1.501h-.161a1 1 0 0 0 -1 -1zm1 7a1 1 0 0 1 0 2v-2zm-2 -4v2a1 1 0 0 1 0 -2z" /></svg> Price: <strong>Extravagant (2.5x)</strong></span>
+                  <span class="text-crimson"><svg class="inline-vec-icon tabler-icon tabler-filled ti-gold" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.243 7.34l-6.38 .925l-.113 .023a1 1 0 0 0 -.44 1.684l4.622 4.499l-1.09 6.355l-.013 .11a1 1 0 0 0 1.464 .944l5.706 -3l5.693 3l.1 .046a1 1 0 0 0 1.352 -1.1l-1.091 -6.355l4.624 -4.5l.078 -.085a1 1 0 0 0 -.633 -1.62l-6.38 -.926l-2.852 -5.78a1 1 0 0 0 -1.794 0l-2.853 5.78z" /></svg> Reputation: <strong>-15 REP</strong></span>
                 </div>
                 <button class="action-btn secondary btn-sell-action" data-buyer="shady">
                   SELL CLASSIFIED ($$$)
@@ -1007,7 +1021,7 @@
               </div>
               <div style="margin-top: 1rem;">
                 <button class="action-btn primary full-width" id="btn-next-mission-loop">
-                  🔄 COMMENCE NEXT MISSION CYCLE
+                  <svg class="inline-vec-icon tabler-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg> COMMENCE NEXT MISSION CYCLE
                 </button>
               </div>
             </div>
@@ -1028,7 +1042,7 @@
   <div class="modal-overlay" id="vault-modal">
     <div class="modal-card wide">
       <div class="modal-header">
-        <h3>📦 NASA SCIENTIFIC DATA VAULT</h3>
+        <h3><svg class="inline-vec-icon tabler-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" /><path d="M12 12l8 -4.5" /><path d="M12 12l0 9" /><path d="M12 12l-8 -4.5" /></svg> NASA SCIENTIFIC DATA VAULT</h3>
         <button class="modal-close" id="vault-modal-close">&times;</button>
       </div>
       <div class="modal-body">
@@ -1054,7 +1068,7 @@
         <!-- SFX Volume -->
         <div class="setting-item">
           <label for="slider-volume" style="display: flex; align-items: center; gap: 0.45rem;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+            <svg class="tabler-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8a5 5 0 0 1 0 8" /><path d="M17.7 5a9 9 0 0 1 0 14" /><path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5" /></svg>
             <span id="volume-val">80%</span>
           </label>
           <input type="range" id="slider-volume" min="0" max="100" value="80">
@@ -1221,7 +1235,7 @@
   <div class="modal-overlay" id="l4-forge-modal">
     <div class="modal-card wide">
       <div class="modal-header">
-        <h3>🧬 LEVEL 4 SPLICER // MULTI-SENSOR MASTER DATASET</h3>
+        <h3><svg class="tabler-icon tabler-filled ti-purple" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.828 14.828a4 4 0 1 0 -5.656 -5.656a4 4 0 0 0 5.656 5.656" /><path d="M9.172 20.485a4 4 0 1 0 -5.657 -5.657" fill="none" /><path d="M14.828 3.515a4 4 0 0 0 5.657 5.657" fill="none" /></svg> LEVEL 4 SPLICER // MULTI-SENSOR MASTER DATASET</h3>
         <button class="modal-close" id="l4-forge-close">&times;</button>
       </div>
       <div class="modal-body">
@@ -1232,7 +1246,7 @@
           <!-- LEFT: Splicer Chamber -->
           <div class="l4-chamber-col">
             <div class="l4-col-header">
-              <h4>⚗️ L4 SPLICER CHAMBER</h4>
+              <h4><svg class="tabler-icon tabler-filled ti-purple" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3l6 0" fill="none" /><path d="M10 9l4 0" fill="none" /><path d="M10 3v6l-4 11a.7 .7 0 0 0 .5 1h11a.7 .7 0 0 0 .5 -1l-4 -11v-6" /></svg> L4 SPLICER CHAMBER</h4>
               <span class="hud-tag" id="l4-chamber-count">0 ITEMS</span>
             </div>
             <div class="l4-chamber-list" id="l4-chamber-list">
@@ -1245,14 +1259,14 @@
               <div>Splicing Fee: <strong id="l4-forge-fee" class="text-amber">$180,000</strong></div>
             </div>
             <button class="action-btn primary" id="btn-forge-l4" disabled style="width: 100%; margin-top: 0.65rem;">
-              🧬 SPLICE L4 MASTER DATASET
+              <svg class="tabler-icon tabler-filled ti-purple" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.828 14.828a4 4 0 1 0 -5.656 -5.656a4 4 0 0 0 5.656 5.656" /><path d="M9.172 20.485a4 4 0 1 0 -5.657 -5.657" fill="none" /><path d="M14.828 3.515a4 4 0 0 0 5.657 5.657" fill="none" /></svg> SPLICE L4 MASTER DATASET
             </button>
           </div>
 
           <!-- RIGHT: Available L2+ Datasets -->
           <div class="l4-offerings-col">
             <div class="l4-col-header">
-              <h4>📦 AVAILABLE L2+ DATASETS (CLICK TO ADD)</h4>
+              <h4><svg class="tabler-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" /><path d="M12 12l8 -4.5" /><path d="M12 12l0 9" /><path d="M12 12l-8 -4.5" /></svg> AVAILABLE L2+ DATASETS (CLICK TO ADD)</h4>
             </div>
             <div class="l4-offerings-list" id="l4-offerings-list">
               <!-- Available L2+ items -->

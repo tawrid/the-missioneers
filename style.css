@@ -3369,3 +3369,25 @@ html.text-size-large {
 .inline-grant-btn:hover {
   background: #0369a1;
 }
+
+/* Tabler Icon Sizing & Recoloring */
+.tabler-icon,
+.inline-vec-icon {
+  display: inline-block;
+  vertical-align: -0.15em;
+  flex-shrink: 0;
+}
+
+.tabler-icon:not([width]),
+.inline-vec-icon:not([width]) {
+  width: 1.05em;
+  height: 1.05em;
+}
+
+.ti-gold { color: #fbbf24; }
+.ti-emerald { color: #34d399; }
+.ti-cyan { color: #38bdf8; }
+.ti-orange { color: #fb923c; }
+.ti-purple { color: #c084fc; }
+.ti-crimson { color: #f87171; }
+.ti-amber { color: #f59e0b; }
