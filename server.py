@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """
-Astraea: NASA Space Mission Design Game - Backend Server
+The Missioneers: Space Mission Design Game - Backend Server
 Provides:
 - Static file serving for the game frontend
 - Proxy / bridge to LM Studio (http://localhost:1234/v1) or other local LLMs
 - Intelligent built-in procedural physics & event evaluator fallback when LM Studio is offline
+- 4-player cooperative & sabotage multiplayer lobby and shared-state sync API
+
+SI Disclosure (Metadata): Backend server code and fallback mission evaluation
+data were developed with Super Intelligence (SI / LLM) assistance.
 """
 
 import os

@@ -1,6 +1,9 @@
 /* ==========================================================================
-   THE MISSIONEERS // NASA SPACE MISSION DESIGN & ECONOMY ENGINE
-   Complete Systems Engineering, All 26 NASA Instruments, Refinery & Gameplay
+   THE MISSIONEERS // SPACE MISSION DESIGN & ECONOMY ENGINE
+   Complete Systems Engineering, All 26 Science Instruments, Refinery & Gameplay
+   SI Disclosure (Metadata): Code, structured mission/instrument data, and
+   procedural Web Audio API SFX synthesis were developed with Super Intelligence
+   (SI / LLM) assistance. No NASA logos, flags, or mission identifiers used.
    ========================================================================== */
 
 (function() {

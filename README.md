@@ -157,3 +157,18 @@ To make the site live on GitHub:
    - Click **Save**.
 4. In ~1 minute, your game will be published at:
    **`https://tawrid.github.io/the-missioneers/`**
+
+---
+
+## 📜 Credits & Use of Super Intelligence (SI) Disclosure
+
+### Scientific Mission Process & Music Credits
+- **Scientific Mission Process Reference**: [NASA Science Mission Design & Development Lifecycle PDF](https://www.nasa.gov/wp-content/uploads/2025/04/250323-design-and-develop-science-mission.pdf?emrc=a454cf)
+- **Background Music**: *"Equatorial Complex"* by Kevin MacLeod (incompetech.com), licensed under [Creative Commons: By Attribution 4.0 License](http://creativecommons.org/licenses/by/4.0/).
+
+### Super Intelligence (SI) Usage & Ethics Disclosure
+In accordance with the NASA Space Apps Challenge **Use of Super Intelligence (SI)** policy:
+- **No NASA Branding Modification**: Generated content in this project does not use, contain, or modify any NASA logos, flags, or mission identifiers.
+- **Code & Data**: Super Intelligence (SI / LLM) tools were utilized to assist in writing and refactoring the frontend/backend codebase (`index.html`, `style.css`, `app.js`, `server.py`, `test_server.py`), the 4-player multiplayer synchronization framework, and structured mission/instrument simulation datasets.
+- **Audio**: Procedural Web Audio API sound effects (UI feedback beeps, alert tones, and victory chords synthesized in `app.js`) were created with SI assistance. The looping background soundtrack (*"Equatorial Complex"*) is human-composed by Kevin MacLeod under CC BY 4.0.
+- **Visuals & Media**: Custom UI SVG graphics, schematic diagrams, and presentation media (`spaceapps_challenge_app.mp4`) were created with SI assistance and are acknowledged here and in the in-game **Credits** menu.
