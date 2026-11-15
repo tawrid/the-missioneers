@@ -16,6 +16,18 @@ Play the game immediately in your browser without any installation:
 
 ---
 
+## 🎬 Presentation
+
+Watch the NASA Space Apps Challenge project presentation:
+
+<video src="spaceapps_challenge_app.mp4" controls width="100%">
+  <a href="spaceapps_challenge_app.mp4">Watch Presentation Video (spaceapps_challenge_app.mp4)</a>
+</video>
+
+> 📽️ **[Download / Watch Presentation (`spaceapps_challenge_app.mp4`)](spaceapps_challenge_app.mp4)**
+
+---
+
 ## 🛰️ Game Architecture & Lifecycle
 
 The game implements the complete NASA Systems Engineering Lifecycle across 7 progressive stages:
