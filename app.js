@@ -13,7 +13,7 @@
   const ICONS = {
     rocket: tablerHybridFill('<path d="M4 13a8 8 0 0 1 7 7a6 6 0 0 0 3 -5a9 9 0 0 0 6 -8a3 3 0 0 0 -3 -3a9 9 0 0 0 -8 6a6 6 0 0 0 -5 3" /><path d="M7 14a6 6 0 0 0 -3 6a6 6 0 0 0 6 -3" fill="none" /><path d="M14 9a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" fill="#0f172a" />', 'ti-cyan'),
     satellite: tablerHybridFill('<path d="M3.707 6.293l2.586 -2.586a1 1 0 0 1 1.414 0l5.586 5.586a1 1 0 0 1 0 1.414l-2.586 2.586a1 1 0 0 1 -1.414 0l-5.586 -5.586a1 1 0 0 1 0 -1.414" /><path d="M6 10l-3 3l3 3l3 -3" fill="none" /><path d="M10 6l3 -3l3 3l-3 3" fill="none" /><path d="M12 12l1.5 1.5" fill="none" /><path d="M14.5 17a2.5 2.5 0 0 0 2.5 -2.5" fill="none" /><path d="M15 21a6 6 0 0 0 6 -6" fill="none" />', 'ti-cyan'),
-    dish: tablerLine('<path d="M20 4v8" /><path d="M16 4.5v7" /><path d="M12 5v16" /><path d="M8 5.5v5" /><path d="M4 6v4" /><path d="M20 8h-16" />'),
+    dish: tablerLine('<path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M16.616 13.924a5 5 0 1 0 -9.23 0" /><path d="M20.307 15.469a9 9 0 1 0 -16.615 0" /><path d="M9 21l3 -9l3 9" /><path d="M10 19h4" />'),
     microscope: tablerHybridFill('<path d="M5 21h14" fill="none" /><path d="M6 18h2" fill="none" /><path d="M7 18v3" fill="none" /><path d="M9 11l3 3l6 -6l-3 -3l-6 6" /><path d="M10.5 12.5l-1.5 1.5" fill="none" /><path d="M17 3l3 3" fill="none" /><path d="M12 21a6 6 0 0 0 3.715 -10.712" fill="none" />', 'ti-cyan'),
     check: tablerLine('<path d="M5 12l5 5l10 -10" />'),
     cross: tablerLine('<path d="M18 6l-12 12" /><path d="M6 6l12 12" />'),
@@ -647,7 +647,32 @@
       maxRepReached: false,
       debtCleared: false
     },
-    advUnlocked: {}
+    advUnlocked: {},
+
+    // Stage 4 View Mode & Saved Spacecraft Visual Blueprint (used in Stage 4 & Stage 6 Live Flight)
+    designViewMode: 'image',
+    visualDesign: {
+      rocketVariant: 0,
+      satelliteVariant: 0,
+      towerVariant: 0,
+      rocketScale: 1.0,
+      boosterCount: 2,
+      engineCount: 5,
+      fairingScale: 1.0,
+      fuelId: 'kerosene',
+      hasGridFins: true,
+      satScale: 1.0,
+      busBays: 2,
+      solarPanelsPerWing: 2,
+      hasRtg: false,
+      instrumentCount: 2,
+      hasHeatShield: false,
+      towerScale: 1.0,
+      relayDishCount: 2,
+      auxDishCount: 1,
+      highReliability: true,
+      bandwidthMbps: 85
+    }
   };
 
   // ========================================================================
@@ -928,7 +953,17 @@
     advancementsModalDone: document.getElementById('advancements-modal-done'),
     advancementsSummary: document.getElementById('advancements-summary'),
     advancementsGrid: document.getElementById('advancements-grid'),
-    advancementToast: document.getElementById('advancement-toast')
+    advancementToast: document.getElementById('advancement-toast'),
+
+    // Stage 4 Stats / Image View & Visual Blueprint
+    btnDesignViewImage: document.getElementById('btn-design-view-image'),
+    btnDesignViewStats: document.getElementById('btn-design-view-stats'),
+    designImageView: document.getElementById('design-image-view'),
+    designStatsView: document.getElementById('design-stats-view'),
+    designVisualSegTitle: document.getElementById('design-visual-seg-title'),
+    btnCycleVariant: document.getElementById('btn-cycle-variant'),
+    designVisualStage: document.getElementById('design-visual-stage'),
+    designVisualSpecs: document.getElementById('design-visual-specs')
   };
 
   let pendingNoticeCallback = null;
@@ -1364,6 +1399,7 @@
   function goToStage(stageNum) {
     closeScreenCoachOverlay();
     playQuindarTone();
+    const prevStage = state.stage;
     state.stage = stageNum;
 
     DOM.stages.forEach((s, idx) => {
@@ -1380,6 +1416,9 @@
     if (stageNum === 4) {
       // RESET TO LAUNCH SEGMENT ON CYCLE!
       activeDesignSegment = 'launch';
+      if (prevStage !== 5) {
+        randomizeDesignVariants();
+      }
       updateDesignSubtabs();
       renderStage4Design();
       calculateTempResources();
@@ -1637,6 +1676,7 @@
     if (DOM.btnPrevSegment) DOM.btnPrevSegment.style.display = activeDesignSegment !== 'launch' ? 'inline-flex' : 'none';
     if (DOM.btnNextSegment) DOM.btnNextSegment.style.display = activeDesignSegment !== 'ground' ? 'inline-flex' : 'none';
     if (DOM.btnNextStage4) DOM.btnNextStage4.style.display = activeDesignSegment === 'ground' ? 'inline-flex' : 'none';
+    renderDesignVisualViewport();
   }
 
   function renderStage4Design() {
@@ -2092,6 +2132,734 @@
     }
 
     DOM.btnNextStage4.disabled = !isValid;
+
+    syncVisualDesignFromStats();
+    renderDesignVisualViewport();
+  }
+
+  // ========================================================================
+  // 9B. SPACECRAFT & TOWER VISUAL BLUEPRINT ENGINE (3 VARIANTS EACH)
+  // ========================================================================
+
+  const ROCKET_VARIANT_NAMES = [
+    'Falcon Heavy Multi-Core',
+    'SLS Cryogenic Orange Core',
+    'Starship / Vulcan Stainless'
+  ];
+
+  const SATELLITE_VARIANT_NAMES = [
+    'Parabolic Deep-Space Bus',
+    'Orbital Lab & Docking Bus',
+    'Hexagonal Gold-MLI Observatory'
+  ];
+
+  const TOWER_VARIANT_NAMES = [
+    'Deep-Space Parabolic Pedestal',
+    'Red/White Lattice Relay Tower',
+    'Trussed Telemetry Control Mast'
+  ];
+
+  function randomizeDesignVariants() {
+    state.visualDesign.rocketVariant = Math.floor(Math.random() * 3);
+    state.visualDesign.satelliteVariant = Math.floor(Math.random() * 3);
+    state.visualDesign.towerVariant = Math.floor(Math.random() * 3);
+  }
+
+  function setDesignViewMode(mode) {
+    state.designViewMode = mode === 'stats' ? 'stats' : 'image';
+    if (DOM.designImageView) {
+      DOM.designImageView.style.display = state.designViewMode === 'image' ? 'flex' : 'none';
+    }
+    if (DOM.designStatsView) {
+      DOM.designStatsView.style.display = state.designViewMode === 'stats' ? 'block' : 'none';
+    }
+    if (DOM.btnDesignViewImage) {
+      DOM.btnDesignViewImage.classList.toggle('active', state.designViewMode === 'image');
+    }
+    if (DOM.btnDesignViewStats) {
+      DOM.btnDesignViewStats.classList.toggle('active', state.designViewMode === 'stats');
+    }
+  }
+
+  function syncVisualDesignFromStats() {
+    const tr = state.tempResources;
+    const sel = state.selections;
+    const vd = state.visualDesign;
+
+    const maxMass = tr.maxMass || 1500;
+    const vel = tr.velocity || 7.8;
+    const maxVol = tr.maxVolume || 4.0;
+    const maxPwr = tr.maxPower || 500;
+    const bw = tr.bandwidth || 85;
+
+    // Rocket physical parameters derived from chosen stats
+    vd.rocketScale = Math.max(0.78, Math.min(1.26, 0.76 + (maxMass / 9500) * 0.34 + ((vel - 7.0) / 10.0) * 0.14));
+    vd.boosterCount = maxMass >= 6200 ? 4 : (maxMass >= 2200 ? 2 : 0);
+    vd.engineCount = maxMass >= 6200 ? 9 : (maxMass >= 2200 ? 5 : 3);
+    vd.fairingScale = Math.max(0.88, Math.min(1.32, 0.85 + (maxVol / 14) * 0.38));
+    vd.fuelId = sel.selectedFuel || 'kerosene';
+    vd.hasGridFins = (tr.reliabilityLaunch || 90) >= 88;
+    vd.upperStageStretch = Math.max(0, Math.min(28, (vel - 7.5) * 4.2));
+
+    // Satellite physical parameters derived from chosen stats
+    vd.satScale = Math.max(0.82, Math.min(1.28, 0.80 + (maxVol / 14) * 0.38));
+    vd.busBays = maxVol >= 9.0 ? 3 : (maxVol >= 5.5 ? 2 : 1);
+    vd.solarPanelsPerWing = maxPwr >= 2000 ? 4 : (maxPwr >= 1150 ? 3 : (maxPwr >= 600 ? 2 : 1));
+    vd.hasRtg = maxPwr >= 1600;
+    vd.instrumentCount = Array.isArray(state.selectedInstruments) ? state.selectedInstruments.length : 1;
+    vd.hasHeatShield = !!sel.heatShieldInstalled;
+
+    // Ground communications tower parameters derived from chosen stats
+    vd.towerScale = Math.max(0.84, Math.min(1.26, 0.82 + (bw / 260) * 0.38));
+    vd.bandwidthMbps = bw;
+    vd.relayDishCount = bw >= 180 ? 4 : (bw >= 80 ? 2 : 1);
+    vd.auxDishCount = bw >= 180 ? 2 : (bw >= 90 ? 1 : 0);
+    vd.highReliability = (tr.reliabilityGround || 90) >= 93;
+  }
+
+  function getFuelVisualColors(fuelId) {
+    if (fuelId === 'methalox') {
+      return { stripe: '#0284c7', label: 'CH4/LOX', outerPlume: '#38bdf8', innerPlume: '#e0f2fe', coreGlow: '#818cf8' };
+    }
+    if (fuelId === 'hydrolox') {
+      return { stripe: '#f59e0b', label: 'LH2/LOX', outerPlume: '#67e8f9', innerPlume: '#ffffff', coreGlow: '#38bdf8' };
+    }
+    if (fuelId === 'hypergolic') {
+      return { stripe: '#10b981', label: 'NTO/UDMH', outerPlume: '#34d399', innerPlume: '#fef08a', coreGlow: '#10b981' };
+    }
+    return { stripe: '#dc2626', label: 'RP-1/LOX', outerPlume: '#f97316', innerPlume: '#fef08a', coreGlow: '#fbbf24' };
+  }
+
+  function buildRocketSvg(vd) {
+    const fuelVis = getFuelVisualColors(vd.fuelId);
+    const v = vd.rocketVariant % 3;
+    const s = vd.rocketScale || 1.0;
+    const fScale = vd.fairingScale || 1.0;
+    const stretch = vd.upperStageStretch || 0;
+
+    const coreW = 34;
+    const coreH = Math.round(138 + stretch);
+    const baseY = 232;
+    const topY = baseY - coreH;
+    const fairingH = Math.round(48 * fScale);
+    const fairingW = Math.round(38 * Math.min(1.18, fScale));
+
+    // Variant gradient palettes
+    let coreGradStops = `
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="28%" stop-color="#f8fafc"/>
+      <stop offset="55%" stop-color="#e2e8f0"/>
+      <stop offset="85%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#64748b"/>
+    `;
+    let fairingGradStops = coreGradStops;
+    let boosterGradStops = coreGradStops;
+
+    if (v === 1) {
+      // SLS Cryogenic Orange core with white boosters & upper stage
+      coreGradStops = `
+        <stop offset="0%" stop-color="#9a3412"/>
+        <stop offset="28%" stop-color="#fb923c"/>
+        <stop offset="55%" stop-color="#ea580c"/>
+        <stop offset="88%" stop-color="#9a3412"/>
+        <stop offset="100%" stop-color="#7c2d12"/>
+      `;
+    } else if (v === 2) {
+      // Starship / Vulcan polished metallic titanium-steel
+      coreGradStops = `
+        <stop offset="0%" stop-color="#334155"/>
+        <stop offset="25%" stop-color="#cbd5e1"/>
+        <stop offset="50%" stop-color="#f8fafc"/>
+        <stop offset="78%" stop-color="#64748b"/>
+        <stop offset="100%" stop-color="#1e293b"/>
+      `;
+      fairingGradStops = coreGradStops;
+    }
+
+    // Engine bells at bottom
+    const drawNozzles = (cx, y, count, widthSpan) => {
+      let out = '';
+      for (let i = 0; i < count; i++) {
+        const offset = count === 1 ? 0 : ((i / (count - 1)) - 0.5) * widthSpan;
+        const nx = cx + offset;
+        out += `
+          <path d="M${nx - 3.2},${y} L${nx + 3.2},${y} L${nx + 5},${y + 9} L${nx - 5},${y + 9} Z" fill="url(#nozzleGrad)" stroke="#334155" stroke-width="0.6"/>
+          <ellipse cx="${nx}" cy="${y + 15}" rx="3.8" ry="8" fill="${fuelVis.outerPlume}" opacity="0.75"/>
+          <ellipse cx="${nx}" cy="${y + 13}" rx="2.0" ry="5" fill="${fuelVis.innerPlume}" opacity="0.95"/>
+        `;
+      }
+      return out;
+    };
+
+    // Helper for side booster (matching MM9HXG reference: nose cone, grid fins, cross struts, swept black landing legs)
+    const drawSideBooster = (bx, bHeight, bWidth, isOuter = false) => {
+      const bTop = baseY - bHeight;
+      const hw = bWidth / 2;
+      const sign = bx < 200 ? -1 : 1;
+      return `
+        <!-- Strut linkages -->
+        <line x1="${200 + sign * (coreW / 2)}" y1="${bTop + 14}" x2="${bx - sign * hw}" y2="${bTop + 14}" stroke="#cbd5e1" stroke-width="2.5"/>
+        <line x1="${200 + sign * (coreW / 2)}" y1="${baseY - 22}" x2="${bx - sign * hw}" y2="${baseY - 22}" stroke="#cbd5e1" stroke-width="2.5"/>
+        <!-- Nose cone -->
+        <path d="M${bx - hw},${bTop} C${bx - hw},${bTop - 16} ${bx - 3},${bTop - 26} ${bx},${bTop - 28} C${bx + 3},${bTop - 26} ${bx + hw},${bTop - 16} ${bx + hw},${bTop} Z" fill="url(#boosterGrad)"/>
+        <!-- Booster cylinder -->
+        <rect x="${bx - hw}" y="${bTop}" width="${bWidth}" height="${bHeight}" fill="url(#boosterGrad)"/>
+        <line x1="${bx - hw}" y1="${bTop + 2}" x2="${bx + hw}" y2="${bTop + 2}" stroke="#64748b" stroke-width="1"/>
+        <rect x="${bx - hw}" y="${bTop + 18}" width="${bWidth}" height="3" fill="${fuelVis.stripe}" opacity="0.85"/>
+        ${vd.hasGridFins && !isOuter ? `
+          <rect x="${bx - hw + 1}" y="${bTop + 5}" width="4.5" height="6.5" rx="0.8" fill="#94a3b8" stroke="#475569" stroke-width="0.6"/>
+          <rect x="${bx + hw - 5.5}" y="${bTop + 5}" width="4.5" height="6.5" rx="0.8" fill="#94a3b8" stroke="#475569" stroke-width="0.6"/>
+        ` : ''}
+        <!-- Swept black landing-leg skirt (MM9HXG style) -->
+        <path d="M${bx - hw},${baseY - 34} L${bx - hw + 5},${baseY - 34} L${bx - 2},${baseY - 5} L${bx + 2},${baseY - 5} L${bx + hw - 5},${baseY - 34} L${bx + hw},${baseY - 34} L${bx + hw + 1.5},${baseY} L${bx - hw - 1.5},${baseY} Z" fill="url(#legSkirtGrad)"/>
+        ${drawNozzles(bx, baseY, 3, bWidth - 8)}
+      `;
+    };
+
+    let boostersSvg = '';
+    const bH = Math.round(coreH * 0.76);
+    if (vd.boosterCount >= 2) {
+      boostersSvg += drawSideBooster(200 - 34, bH, 24, false);
+      boostersSvg += drawSideBooster(200 + 34, bH, 24, false);
+    }
+    if (vd.boosterCount >= 4) {
+      boostersSvg += drawSideBooster(200 - 62, Math.round(bH * 0.84), 19, true);
+      boostersSvg += drawSideBooster(200 + 62, Math.round(bH * 0.84), 19, true);
+    }
+
+    const fHw = fairingW / 2;
+    const fBaseY = topY - 22;
+    const fTipY = fBaseY - fairingH;
+
+    return `
+      <svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="coreGrad" x1="0%" y1="0%" x2="100%" y2="0%">${coreGradStops}</linearGradient>
+          <linearGradient id="fairingGrad" x1="0%" y1="0%" x2="100%" y2="0%">${fairingGradStops}</linearGradient>
+          <linearGradient id="boosterGrad" x1="0%" y1="0%" x2="100%" y2="0%">${boosterGradStops}</linearGradient>
+          <linearGradient id="legSkirtGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#0f172a"/>
+            <stop offset="45%" stop-color="#334155"/>
+            <stop offset="100%" stop-color="#090d16"/>
+          </linearGradient>
+          <linearGradient id="nozzleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#475569"/>
+            <stop offset="50%" stop-color="#cbd5e1"/>
+            <stop offset="100%" stop-color="#1e293b"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Blueprint Grid & Launch Gantry Frame -->
+        <g stroke="rgba(125, 211, 252, 0.08)" stroke-width="1">
+          <line x1="0" y1="60" x2="400" y2="60"/><line x1="0" y1="120" x2="400" y2="120"/>
+          <line x1="0" y1="180" x2="400" y2="180"/><line x1="0" y1="240" x2="400" y2="240"/>
+          <line x1="80" y1="0" x2="80" y2="280"/><line x1="200" y1="0" x2="200" y2="280"/><line x1="320" y1="0" x2="320" y2="280"/>
+        </g>
+        <!-- Launch Pad Flame Trench -->
+        <rect x="70" y="246" width="260" height="8" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+        <path d="M110,254 L95,274 L305,274 L290,254 Z" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+
+        <g transform="translate(200, ${baseY}) scale(${s.toFixed(2)}) translate(-200, -${baseY})">
+          ${boostersSvg}
+
+          <!-- Central Core Stage -->
+          <rect x="${200 - coreW / 2}" y="${topY}" width="${coreW}" height="${coreH}" fill="url(#coreGrad)"/>
+          <!-- Upper Stage Cylinder -->
+          <rect x="${200 - coreW / 2 + 1}" y="${fBaseY}" width="${coreW - 2}" height="24" fill="url(#fairingGrad)"/>
+          <!-- Interstage Collar & Propellant Stripe -->
+          <rect x="${200 - coreW / 2}" y="${topY - 2}" width="${coreW}" height="5" fill="${v === 1 ? '#1e293b' : '#475569'}"/>
+          <rect x="${200 - coreW / 2}" y="${topY + 22}" width="${coreW}" height="4" fill="${fuelVis.stripe}"/>
+
+          <!-- Flag / Agency Decal on Center Core (MM9HXG detail) -->
+          <rect x="193" y="${topY + 34}" width="14" height="8" fill="#dc2626"/>
+          <rect x="193" y="${topY + 34}" width="14" height="1.6" fill="#ffffff"/>
+          <rect x="193" y="${topY + 37.2}" width="14" height="1.6" fill="#ffffff"/>
+          <rect x="193" y="${topY + 40.4}" width="14" height="1.6" fill="#ffffff"/>
+          <rect x="193" y="${topY + 34}" width="6.5" height="4.8" fill="#1d4ed8"/>
+
+          ${vd.hasGridFins ? `
+            <rect x="${200 - coreW / 2 + 2}" y="${topY + 6}" width="5.5" height="8" rx="1" fill="#94a3b8" stroke="#334155" stroke-width="0.7"/>
+            <rect x="${200 + coreW / 2 - 7.5}" y="${topY + 6}" width="5.5" height="8" rx="1" fill="#94a3b8" stroke="#334155" stroke-width="0.7"/>
+          ` : ''}
+
+          <!-- Bulbous Payload Fairing (MM9HXG style) -->
+          <path d="M${200 - coreW / 2 + 1},${fBaseY}
+                   L${200 - fHw},${fBaseY - 8}
+                   L${200 - fHw},${fBaseY - fairingH * 0.55}
+                   C${200 - fHw},${fTipY + 12} 195,${fTipY + 2} 200,${fTipY}
+                   C205,${fTipY + 2} ${200 + fHw},${fTipY + 12} ${200 + fHw},${fBaseY - fairingH * 0.55}
+                   L${200 + fHw},${fBaseY - 8}
+                   L${200 + coreW / 2 - 1},${fBaseY} Z"
+                fill="url(#fairingGrad)" stroke="#94a3b8" stroke-width="0.6"/>
+          <!-- Fairing center seam line -->
+          <line x1="200" y1="${fTipY + 2}" x2="200" y2="${fBaseY}" stroke="rgba(71, 85, 105, 0.45)" stroke-width="0.9" stroke-dasharray="3 2"/>
+
+          ${v === 2 ? `
+            <!-- Starship / Vulcan forward aero flaps -->
+            <polygon points="${200 - fHw},${fTipY + 16} ${200 - fHw - 9},${fTipY + 28} ${200 - fHw},${fTipY + 34}" fill="#334155"/>
+            <polygon points="${200 + fHw},${fTipY + 16} ${200 + fHw + 9},${fTipY + 28} ${200 + fHw},${fTipY + 34}" fill="#334155"/>
+          ` : ''}
+
+          <!-- Center Core Swept Black Landing-Leg Skirt (MM9HXG style) -->
+          <path d="M${200 - coreW / 2},${baseY - 40}
+                   L${200 - coreW / 2 + 6},${baseY - 40}
+                   L197,${baseY - 6} L203,${baseY - 6}
+                   L${200 + coreW / 2 - 6},${baseY - 40}
+                   L${200 + coreW / 2},${baseY - 40}
+                   L${200 + coreW / 2 + 2},${baseY}
+                   L${200 - coreW / 2 - 2},${baseY} Z"
+                fill="url(#legSkirtGrad)"/>
+
+          ${drawNozzles(200, baseY, vd.boosterCount === 0 ? vd.engineCount : 3, coreW - 8)}
+        </g>
+
+        <!-- Live Dimension Callouts -->
+        <text x="14" y="24" fill="#7dd3fc" font-family="monospace" font-size="10" font-weight="bold">PAYLOAD CAP: ${(state.tempResources.maxMass || 0).toLocaleString()} kg</text>
+        <text x="14" y="38" fill="#fbbf24" font-family="monospace" font-size="10">TOTAL ΔV: ${(state.tempResources.velocity || 0).toFixed(1)} km/s (${fuelVis.label})</text>
+        <text x="14" y="52" fill="#cbd5e1" font-family="monospace" font-size="10">BOOSTERS: ${vd.boosterCount === 0 ? 'SINGLE CORE' : `${vd.boosterCount}x STRAP-ON`}</text>
+      </svg>
+    `;
+  }
+
+  function buildSatelliteSvg(vd) {
+    const v = vd.satelliteVariant % 3;
+    const s = vd.satScale || 1.0;
+    const panels = vd.solarPanelsPerWing || 2;
+    const bays = vd.busBays || 2;
+    const instCount = vd.instrumentCount || 1;
+    const hasShield = vd.hasHeatShield;
+
+    // Render instrument sensor pods mounted on the bus
+    const buildSensorPods = (cx, cy) => {
+      let pods = '';
+      const count = Math.min(6, Math.max(1, instCount));
+      for (let i = 0; i < count; i++) {
+        const angle = (i / count) * Math.PI * 2;
+        const px = cx + Math.cos(angle) * 24;
+        const py = cy + Math.sin(angle) * 14;
+        pods += `
+          <g transform="translate(${px.toFixed(1)}, ${py.toFixed(1)})">
+            <rect x="-5" y="-4" width="10" height="8" rx="1.5" fill="#334155" stroke="#94a3b8" stroke-width="0.8"/>
+            <circle cx="0" cy="0" r="2.6" fill="${i % 2 === 0 ? '#38bdf8' : '#c084fc'}"/>
+          </g>
+        `;
+      }
+      return pods;
+    };
+
+    // Heat shield cap (when installed)
+    const buildHeatShieldCap = (x, y, rotDeg) => {
+      if (!hasShield) return '';
+      return `
+        <g transform="translate(${x}, ${y}) rotate(${rotDeg})">
+          <path d="M-8,-24 C10,-20 14,20 -8,24 C-2,12 -2,-12 -8,-24 Z" fill="#1e293b" stroke="#f97316" stroke-width="1.8"/>
+          <path d="M-4,-18 C6,-14 8,14 -4,18" fill="none" stroke="#475569" stroke-width="1" stroke-dasharray="3 2"/>
+        </g>
+      `;
+    };
+
+    if (v === 1) {
+      // Variant 1: Orbital Space Station / Docking Module (orbital-space-station-d-vector...webp)
+      const bodyW = 54 + bays * 16;
+      const bodyH = 44;
+      const panelW = 36;
+      const panelH = 22 + panels * 14;
+
+      // Grid lines on vertical dark solar wings
+      const drawDarkSolarWing = (yDir) => {
+        const startY = 140 + yDir * (bodyH / 2 + 8);
+        const topY = yDir < 0 ? startY - panelH : startY;
+        let grid = '';
+        for (let r = 1; r <= panels + 1; r++) {
+          const gy = topY + (r / (panels + 2)) * panelH;
+          grid += `<line x1="${200 - panelW / 2}" y1="${gy}" x2="${200 + panelW / 2}" y2="${gy}" stroke="#64748b" stroke-width="0.9"/>`;
+        }
+        return `
+          <rect x="197" y="${yDir < 0 ? startY : startY - 8}" width="6" height="8" fill="#cbd5e1"/>
+          <rect x="${200 - panelW / 2}" y="${topY}" width="${panelW}" height="${panelH}" fill="#27272a" stroke="#94a3b8" stroke-width="1.2"/>
+          <line x1="200" y1="${topY}" x2="200" y2="${topY + panelH}" stroke="#64748b" stroke-width="1"/>
+          ${grid}
+        `;
+      };
+
+      const sphereX = 200 - bodyW / 2 - 22;
+      const aftX = 200 + bodyW / 2;
+
+      return `
+        <svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="orbCylGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#94a3b8"/>
+              <stop offset="35%" stop-color="#ffffff"/>
+              <stop offset="65%" stop-color="#e2e8f0"/>
+              <stop offset="100%" stop-color="#475569"/>
+            </linearGradient>
+            <radialGradient id="orbSphereGrad" cx="38%" cy="35%" r="65%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="55%" stop-color="#cbd5e1"/>
+              <stop offset="100%" stop-color="#64748b"/>
+            </radialGradient>
+          </defs>
+          <!-- Starfield dots -->
+          <circle cx="48" cy="44" r="1.3" fill="#e2e8f0" opacity="0.6"/><circle cx="345" cy="52" r="1.5" fill="#7dd3fc" opacity="0.7"/>
+          <circle cx="72" cy="228" r="1.2" fill="#e2e8f0" opacity="0.5"/><circle cx="330" cy="215" r="1.4" fill="#fde68a" opacity="0.6"/>
+
+          <g transform="translate(200, 140) scale(${s.toFixed(2)}) translate(-200, -140)">
+            ${drawDarkSolarWing(-1)}
+            ${drawDarkSolarWing(1)}
+
+            <!-- Ribbed Cylindrical Service Module -->
+            <rect x="${200 - bodyW / 2}" y="${140 - bodyH / 2}" width="${bodyW}" height="${bodyH}" fill="url(#orbCylGrad)" stroke="#475569" stroke-width="1"/>
+            <rect x="${200 - bodyW / 2}" y="${140 - bodyH / 2}" width="12" height="${bodyH}" fill="#94a3b8" stroke="#334155" stroke-width="1"/>
+            <rect x="${200 + bodyW / 2 - 12}" y="${140 - bodyH / 2}" width="12" height="${bodyH}" fill="#94a3b8" stroke="#334155" stroke-width="1"/>
+            <line x1="${200 - bodyW / 2 + 12}" y1="140" x2="${200 + bodyW / 2 - 12}" y2="140" stroke="#94a3b8" stroke-width="0.9"/>
+
+            <!-- Spherical Docking Hub on Left (reference image 5) -->
+            <rect x="${sphereX + 18}" y="130" width="10" height="20" fill="url(#orbCylGrad)" stroke="#64748b" stroke-width="0.8"/>
+            <rect x="${sphereX - 8}" y="110" width="16" height="5" fill="#cbd5e1" stroke="#64748b" stroke-width="0.8"/>
+            <rect x="${sphereX - 8}" y="165" width="16" height="5" fill="#cbd5e1" stroke="#64748b" stroke-width="0.8"/>
+            <rect x="${sphereX - 28}" y="131" width="5" height="18" fill="#cbd5e1" stroke="#64748b" stroke-width="0.8"/>
+            <circle cx="${sphereX}" cy="140" r="24" fill="url(#orbSphereGrad)" stroke="#64748b" stroke-width="1"/>
+            <!-- Viewport Window -->
+            <circle cx="${sphereX}" cy="140" r="7.5" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+            <circle cx="${sphereX}" cy="140" r="5" fill="#0ea5e9" opacity="0.85"/>
+
+            <!-- Aft Engine Module & Bell on Right -->
+            <rect x="${aftX}" y="128" width="14" height="24" fill="url(#orbCylGrad)" stroke="#64748b" stroke-width="0.8"/>
+            <polygon points="${aftX + 14},131 ${aftX + 26},128 ${aftX + 26},152 ${aftX + 14},149" fill="#cbd5e1" stroke="#64748b" stroke-width="0.8"/>
+            <polygon points="${aftX + 26},130 ${aftX + 35},133 ${aftX + 35},147 ${aftX + 26},150" fill="#1e293b"/>
+
+            ${vd.hasRtg ? `
+              <!-- RTG Nuclear Boom -->
+              <rect x="186" y="${140 - bodyH / 2 - 14}" width="28" height="8" rx="2" fill="#f59e0b" stroke="#78350f" stroke-width="1"/>
+            ` : ''}
+
+            ${buildSensorPods(200, 140)}
+            ${buildHeatShieldCap(sphereX - 28, 140, 180)}
+          </g>
+
+          <text x="14" y="24" fill="#7dd3fc" font-family="monospace" font-size="10" font-weight="bold">BUS VOL: ${(state.tempResources.maxVolume || 0).toFixed(1)} m³ (${bays} BAY${bays > 1 ? 'S' : ''})</text>
+          <text x="14" y="38" fill="#fbbf24" font-family="monospace" font-size="10">POWER: ${state.tempResources.maxPower || 0} W (${panels * 2} SOLAR PANELS${vd.hasRtg ? ' + RTG' : ''})</text>
+          <text x="14" y="52" fill="${hasShield ? '#34d399' : '#cbd5e1'}" font-family="monospace" font-size="10">SENSORS: ${instCount} EQUIPPED | SHIELD: ${hasShield ? 'PICA-X INSTALLED' : 'NONE'}</text>
+        </svg>
+      `;
+    }
+
+    // Variant 0 (Isometric Blue-Wing Satellite from images.jpeg) & Variant 2 (Gold-MLI Hexagonal Observatory)
+    const isGold = v === 2;
+    const busLen = 46 + bays * 14;
+    const busRad = 20 + bays * 2;
+    const panelLen = 28 + panels * 16;
+    const panelW = 36;
+
+    const buildBlueSolarWing = (dir) => {
+      // dir = -1 (left wing) or +1 (right wing)
+      let out = '';
+      const segLen = panelLen / panels;
+      for (let p = 0; p < panels; p++) {
+        const x0 = dir < 0 ? -(busRad + 8 + (p + 1) * segLen + p * 4) : (busRad + 8 + p * (segLen + 4));
+        const y0 = -panelW / 2;
+        out += `
+          <rect x="${x0.toFixed(1)}" y="${y0.toFixed(1)}" width="${segLen.toFixed(1)}" height="${panelW}" fill="${isGold ? '#0f766e' : '#1d4ed8'}" stroke="#e2e8f0" stroke-width="1"/>
+          <line x1="${(x0 + segLen * 0.33).toFixed(1)}" y1="${y0}" x2="${(x0 + segLen * 0.33).toFixed(1)}" y2="${y0 + panelW}" stroke="rgba(255,255,255,0.45)" stroke-width="0.7"/>
+          <line x1="${(x0 + segLen * 0.66).toFixed(1)}" y1="${y0}" x2="${(x0 + segLen * 0.66).toFixed(1)}" y2="${y0 + panelW}" stroke="rgba(255,255,255,0.45)" stroke-width="0.7"/>
+          <line x1="${x0}" y1="-6" x2="${x0 + segLen}" y2="-6" stroke="rgba(255,255,255,0.45)" stroke-width="0.7"/>
+          <line x1="${x0}" y1="6" x2="${x0 + segLen}" y2="6" stroke="rgba(255,255,255,0.45)" stroke-width="0.7"/>
+        `;
+      }
+      const strutEnd = dir * (busRad + 8 + panels * (segLen + 4));
+      return `
+        <line x1="${dir * busRad}" y1="-5" x2="${strutEnd.toFixed(1)}" y2="-5" stroke="#94a3b8" stroke-width="2"/>
+        <line x1="${dir * busRad}" y1="5" x2="${strutEnd.toFixed(1)}" y2="5" stroke="#94a3b8" stroke-width="2"/>
+        ${out}
+      `;
+    };
+
+    return `
+      <svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="satBusGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            ${isGold ? `
+              <stop offset="0%" stop-color="#92400e"/>
+              <stop offset="35%" stop-color="#fde68a"/>
+              <stop offset="65%" stop-color="#f59e0b"/>
+              <stop offset="100%" stop-color="#78350f"/>
+            ` : `
+              <stop offset="0%" stop-color="#64748b"/>
+              <stop offset="32%" stop-color="#f8fafc"/>
+              <stop offset="65%" stop-color="#cbd5e1"/>
+              <stop offset="100%" stop-color="#475569"/>
+            `}
+          </linearGradient>
+        </defs>
+
+        <!-- Starfield -->
+        <circle cx="52" cy="48" r="1.4" fill="#e2e8f0" opacity="0.65"/><circle cx="348" cy="60" r="1.5" fill="#7dd3fc" opacity="0.75"/>
+        <circle cx="68" cy="230" r="1.2" fill="#fde68a" opacity="0.55"/><circle cx="335" cy="222" r="1.4" fill="#e2e8f0" opacity="0.65"/>
+
+        <!-- Tilted Isometric Satellite matching images.jpeg -->
+        <g transform="translate(200, 142) scale(${s.toFixed(2)}) rotate(-36)">
+          ${buildBlueSolarWing(-1)}
+          ${buildBlueSolarWing(1)}
+
+          <!-- Forward Sensor / Telescope Module -->
+          <polygon points="-10,${-busLen / 2 - 28} 10,${-busLen / 2 - 28} 14,${-busLen / 2 - 18} -14,${-busLen / 2 - 18}" fill="url(#satBusGrad)" stroke="#475569" stroke-width="0.8"/>
+          <rect x="-13" y="${-busLen / 2 - 18}" width="26" height="18" rx="2" fill="url(#satBusGrad)" stroke="#64748b" stroke-width="0.8"/>
+          <rect x="-8" y="${-busLen / 2 - 6}" width="16" height="8" fill="#334155"/>
+
+          <!-- Main Cylindrical / Hexagonal Bus Chassis -->
+          <rect x="${-busRad}" y="${-busLen / 2}" width="${busRad * 2}" height="${busLen}" rx="5" fill="url(#satBusGrad)" stroke="#475569" stroke-width="1"/>
+          <line x1="${-busRad}" y1="0" x2="${busRad}" y2="0" stroke="rgba(51,65,85,0.5)" stroke-width="1"/>
+
+          ${vd.hasRtg ? `
+            <rect x="${busRad - 2}" y="-18" width="16" height="7" rx="1.5" fill="#f59e0b" stroke="#78350f" stroke-width="0.9"/>
+          ` : ''}
+
+          <!-- Equipped Scientific Instrument Hardpoints -->
+          ${buildSensorPods(0, -4)}
+
+          <!-- Aft Parabolic High-Gain Dish Antenna & Tripod Struts (images.jpeg detail) -->
+          <rect x="-7" y="${busLen / 2}" width="14" height="10" fill="#94a3b8"/>
+          <ellipse cx="0" cy="${busLen / 2 + 18}" rx="28" ry="9" fill="#e2e8f0" stroke="#64748b" stroke-width="1.2"/>
+          <ellipse cx="0" cy="${busLen / 2 + 20}" rx="24" ry="6.5" fill="#94a3b8"/>
+          <line x1="-14" y1="${busLen / 2 + 19}" x2="0" y2="${busLen / 2 + 37}" stroke="#cbd5e1" stroke-width="1.1"/>
+          <line x1="14" y1="${busLen / 2 + 19}" x2="0" y2="${busLen / 2 + 37}" stroke="#cbd5e1" stroke-width="1.1"/>
+          <line x1="0" y1="${busLen / 2 + 21}" x2="0" y2="${busLen / 2 + 37}" stroke="#cbd5e1" stroke-width="1.1"/>
+          <circle cx="0" cy="${busLen / 2 + 37}" r="2.2" fill="#f8fafc"/>
+
+          ${hasShield ? `
+            <!-- PICA-X Blunt Atmospheric Re-entry Heat Shield Cap on Forebody -->
+            <path d="M-24,${-busLen / 2 - 26} Q0,${-busLen / 2 - 44} 24,${-busLen / 2 - 26} L18,${-busLen / 2 - 20} L-18,${-busLen / 2 - 20} Z" fill="#1e293b" stroke="#f97316" stroke-width="1.8"/>
+          ` : ''}
+        </g>
+
+        <text x="14" y="24" fill="#7dd3fc" font-family="monospace" font-size="10" font-weight="bold">BUS VOL: ${(state.tempResources.maxVolume || 0).toFixed(1)} m³ (${bays} BAY${bays > 1 ? 'S' : ''})</text>
+        <text x="14" y="38" fill="#fbbf24" font-family="monospace" font-size="10">POWER: ${state.tempResources.maxPower || 0} W (${panels * 2} SOLAR PANELS${vd.hasRtg ? ' + RTG' : ''})</text>
+        <text x="14" y="52" fill="${hasShield ? '#34d399' : '#cbd5e1'}" font-family="monospace" font-size="10">SENSORS: ${instCount} EQUIPPED | SHIELD: ${hasShield ? 'PICA-X INSTALLED' : 'NONE'}</text>
+      </svg>
+    `;
+  }
+
+  function buildTowerSvg(vd) {
+    const v = vd.towerVariant % 3;
+    const s = vd.towerScale || 1.0;
+    const bw = vd.bandwidthMbps || 85;
+    const relayCount = vd.relayDishCount || 2;
+    const auxCount = vd.auxDishCount || 0;
+    const hiRel = vd.highReliability;
+    const waveRings = bw >= 180 ? 4 : (bw >= 90 ? 3 : 2);
+
+    // Helper for auxiliary flanking parabolic ground dish when bandwidth is high
+    const drawAuxDish = (ax, ay, scaleDir = 1) => `
+      <g transform="translate(${ax}, ${ay}) scale(${scaleDir}, 1)">
+        <rect x="-12" y="0" width="24" height="8" fill="#cbd5e1"/>
+        <rect x="-5" y="-22" width="10" height="22" fill="#94a3b8"/>
+        <g transform="translate(0, -24) rotate(-22)">
+          <path d="M-24,-6 C-18,10 18,10 24,-6 Z" fill="#cbd5e1" stroke="#64748b" stroke-width="1"/>
+          <ellipse cx="0" cy="-6" rx="24" ry="5" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+          <line x1="-14" y1="-6" x2="0" y2="-20" stroke="#e2e8f0" stroke-width="1.2"/>
+          <line x1="14" y1="-6" x2="0" y2="-20" stroke="#e2e8f0" stroke-width="1.2"/>
+          <line x1="0" y1="-6" x2="0" y2="-22" stroke="#dc2626" stroke-width="2"/>
+        </g>
+      </g>
+    `;
+
+    // Signal wave arcs radiating from top of tower/dish
+    const drawSignalWaves = (wx, wy) => {
+      let arcs = '';
+      for (let i = 1; i <= waveRings; i++) {
+        const r = i * 16;
+        arcs += `<path d="M${wx - r},${wy - r * 0.45} A${r},${r} 0 0,1 ${wx + r},${wy - r * 0.45}" fill="none" stroke="${i % 2 === 0 ? '#34d399' : '#38bdf8'}" stroke-width="1.8" stroke-dasharray="5 3" opacity="${(0.95 - i * 0.16).toFixed(2)}"/>`;
+      }
+      return arcs;
+    };
+
+    let mainTowerHtml = '';
+    if (v === 0) {
+      // Variant 0: Deep-Space Parabolic Dish on Pedestal (left of modern-telecommunication-towers-set-vector.jpg)
+      mainTowerHtml = `
+        ${drawSignalWaves(208, 76)}
+        <!-- Pedestal Base -->
+        <polygon points="156,250 244,250 236,236 164,236" fill="#cbd5e1" stroke="#64748b" stroke-width="1"/>
+        <rect x="160" y="228" width="80" height="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+        <!-- Safety Railing -->
+        <line x1="162" y1="222" x2="238" y2="222" stroke="#94a3b8" stroke-width="1"/>
+        <!-- Vertical Concrete/Steel Pedestal Column -->
+        <rect x="184" y="210" width="32" height="18" fill="#94a3b8"/>
+        <rect x="190" y="148" width="20" height="62" fill="#cbd5e1" stroke="#64748b" stroke-width="1"/>
+        <!-- Control Bay Box & Blue Window -->
+        <rect x="185" y="132" width="30" height="22" rx="2" fill="#e2e8f0" stroke="#64748b" stroke-width="1"/>
+        <rect x="193" y="140" width="14" height="10" fill="#38bdf8" stroke="#0284c7" stroke-width="1"/>
+        <line x1="178" y1="130" x2="178" y2="188" stroke="#94a3b8" stroke-width="2.5"/>
+        <line x1="222" y1="130" x2="222" y2="188" stroke="#94a3b8" stroke-width="2.5"/>
+
+        <!-- Giant Tilted Parabolic Reflector Dish -->
+        <g transform="translate(200, 114) rotate(16)">
+          <!-- Ribbed Dish Underbelly -->
+          <path d="M-74,-8 C-58,28 58,28 74,-8 Z" fill="#94a3b8" stroke="#475569" stroke-width="1.2"/>
+          <path d="M-64,2 L64,2 M-48,12 L48,12 M-35,-6 L-24,18 M0,-6 L0,20 M35,-6 L24,18" stroke="#475569" stroke-width="1.2" fill="none"/>
+          <!-- Dish Rim & Reflective Bowl -->
+          <ellipse cx="0" cy="-8" rx="74" ry="16" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2"/>
+          <ellipse cx="0" cy="-6" rx="64" ry="12" fill="#e2e8f0"/>
+          <!-- Central Red Feed Column & 4 Quadripod Struts -->
+          <line x1="0" y1="-6" x2="0" y2="-48" stroke="#dc2626" stroke-width="4"/>
+          <ellipse cx="0" cy="-38" rx="6" ry="2.5" fill="#dc2626"/>
+          <line x1="-58" y1="-8" x2="0" y2="-38" stroke="#f8fafc" stroke-width="1.8"/>
+          <line x1="58" y1="-8" x2="0" y2="-38" stroke="#f8fafc" stroke-width="1.8"/>
+          <line x1="-22" y1="4" x2="0" y2="-38" stroke="#cbd5e1" stroke-width="1.4"/>
+          <line x1="22" y1="4" x2="0" y2="-38" stroke="#cbd5e1" stroke-width="1.4"/>
+        </g>
+      `;
+    } else if (v === 1) {
+      // Variant 1: Red-and-White Lattice Observation & Relay Tower (center-right of reference sheet)
+      mainTowerHtml = `
+        ${drawSignalWaves(200, 34)}
+        <!-- Pedestal Base -->
+        <polygon points="154,250 246,250 238,240 162,240" fill="#cbd5e1" stroke="#64748b" stroke-width="1"/>
+        <!-- Central Red Cylinder Shaft -->
+        <rect x="191" y="128" width="18" height="112" fill="#dc2626" stroke="#991b1b" stroke-width="1"/>
+        <!-- White Steel Lattice Outer Frame -->
+        <line x1="170" y1="240" x2="184" y2="128" stroke="#e2e8f0" stroke-width="2.2"/>
+        <line x1="230" y1="240" x2="216" y2="128" stroke="#e2e8f0" stroke-width="2.2"/>
+        <path d="M170,240 L226,216 L174,192 L222,168 L178,144 L216,128
+                 M230,240 L174,216 L226,192 L178,168 L222,144 L184,128"
+              fill="none" stroke="#cbd5e1" stroke-width="1.3"/>
+        <!-- Circular Observation & Telemetry Cupola -->
+        <polygon points="178,128 222,128 232,114 168,114" fill="#dc2626" stroke="#991b1b" stroke-width="1"/>
+        <rect x="168" y="104" width="64" height="10" rx="3" fill="#e2e8f0" stroke="#64748b" stroke-width="1"/>
+        <!-- Panoramic Windows -->
+        <circle cx="178" cy="109" r="2.8" fill="#38bdf8"/><circle cx="187" cy="109" r="2.8" fill="#38bdf8"/>
+        <circle cx="196" cy="109" r="2.8" fill="#38bdf8"/><circle cx="205" cy="109" r="2.8" fill="#38bdf8"/>
+        <circle cx="214" cy="109" r="2.8" fill="#38bdf8"/><circle cx="223" cy="109" r="2.8" fill="#38bdf8"/>
+        <polygon points="166,104 234,104 222,95 178,95" fill="#dc2626"/>
+        <polygon points="182,95 218,95 212,88 188,88" fill="#cbd5e1"/>
+        <!-- Upper Lattice Mast & Spire -->
+        <rect x="195" y="54" width="10" height="34" fill="none" stroke="#e2e8f0" stroke-width="1.5"/>
+        <path d="M195,88 L205,76 L195,64 L205,54 M205,88 L195,76 L205,64 L195,54" fill="none" stroke="#cbd5e1" stroke-width="1.1"/>
+        <line x1="200" y1="54" x2="200" y2="24" stroke="#f8fafc" stroke-width="2"/>
+        <circle cx="200" cy="24" r="3" fill="#ef4444"/>
+        <!-- Side Microwave Relay Drums -->
+        <ellipse cx="168" cy="162" rx="4.5" ry="9" fill="#f8fafc" stroke="#64748b" stroke-width="1"/>
+        <ellipse cx="232" cy="162" rx="4.5" ry="9" fill="#f8fafc" stroke="#64748b" stroke-width="1"/>
+        ${relayCount >= 4 ? `
+          <ellipse cx="174" cy="196" rx="4.5" ry="9" fill="#f8fafc" stroke="#64748b" stroke-width="1"/>
+          <ellipse cx="226" cy="196" rx="4.5" ry="9" fill="#f8fafc" stroke="#64748b" stroke-width="1"/>
+        ` : ''}
+      `;
+    } else {
+      // Variant 2: Trussed Steel Mast with Elevated Telemetry Control Deck (center-left of reference sheet)
+      mainTowerHtml = `
+        ${drawSignalWaves(200, 34)}
+        <!-- Twin Red Vertical Support Columns -->
+        <rect x="188" y="138" width="7" height="112" fill="#dc2626"/>
+        <rect x="205" y="138" width="7" height="112" fill="#dc2626"/>
+        <!-- Wide A-Frame Steel Lattice Legs -->
+        <line x1="158" y1="250" x2="182" y2="138" stroke="#cbd5e1" stroke-width="2.2"/>
+        <line x1="242" y1="250" x2="218" y2="138" stroke="#cbd5e1" stroke-width="2.2"/>
+        <line x1="170" y1="205" x2="230" y2="205" stroke="#cbd5e1" stroke-width="1.5"/>
+        <line x1="177" y1="170" x2="223" y2="170" stroke="#cbd5e1" stroke-width="1.5"/>
+        <path d="M158,250 L230,205 L177,170 L218,138 M242,250 L170,205 L223,170 L182,138" fill="none" stroke="#94a3b8" stroke-width="1.2"/>
+
+        <!-- Elevated Telemetry Control Cabin (with blue glass monitor grid) -->
+        <rect x="162" y="110" width="76" height="28" fill="#cbd5e1" stroke="#475569" stroke-width="1.2"/>
+        <rect x="174" y="114" width="52" height="16" fill="#0f172a" stroke="#64748b" stroke-width="1"/>
+        <rect x="177" y="116" width="46" height="5" fill="#38bdf8"/>
+        <rect x="177" y="123" width="46" height="5" fill="#0ea5e9"/>
+        <!-- Side Parabolic Dish on Cabin Balcony -->
+        <ellipse cx="244" cy="108" rx="6" ry="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.2"/>
+        <line x1="244" y1="108" x2="253" y2="108" stroke="#64748b" stroke-width="1.5"/>
+        ${relayCount >= 2 ? `<ellipse cx="156" cy="108" rx="6" ry="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.2"/>` : ''}
+
+        <!-- Upper Steel Lattice Mast -->
+        <rect x="188" y="54" width="24" height="56" fill="none" stroke="#e2e8f0" stroke-width="1.8"/>
+        <path d="M188,110 L212,92 L188,74 L212,54 M212,110 L188,92 L212,74 L188,54" fill="none" stroke="#cbd5e1" stroke-width="1.3"/>
+        <line x1="200" y1="54" x2="200" y2="24" stroke="#f8fafc" stroke-width="2.2"/>
+        <circle cx="200" cy="24" r="3" fill="#34d399"/>
+      `;
+    }
+
+    return `
+      <svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+        <!-- Ground Station Horizon & Pad -->
+        <path d="M0,250 L400,250 L400,280 L0,280 Z" fill="#0f1e32"/>
+        <line x1="0" y1="250" x2="400" y2="250" stroke="#38bdf8" stroke-width="1.5" opacity="0.5"/>
+
+        <g transform="translate(200, 250) scale(${s.toFixed(2)}) translate(-200, -250)">
+          ${auxCount >= 1 ? drawAuxDish(88, 250, 1) : ''}
+          ${auxCount >= 2 ? drawAuxDish(312, 250, -1) : ''}
+          ${hiRel ? `
+            <!-- Redundant Cryo-Receiver Bunker -->
+            <rect x="122" y="234" width="28" height="16" rx="2" fill="#1e293b" stroke="#34d399" stroke-width="1"/>
+            <circle cx="130" cy="242" r="2.2" fill="#34d399"/><circle cx="142" cy="242" r="2.2" fill="#34d399"/>
+          ` : ''}
+          ${mainTowerHtml}
+        </g>
+
+        <text x="14" y="24" fill="#34d399" font-family="monospace" font-size="10" font-weight="bold">DOWNLINK BANDWIDTH: ${bw} Mbps</text>
+        <text x="14" y="38" fill="#7dd3fc" font-family="monospace" font-size="10">ARRAY CONFIG: MAIN TOWER${auxCount > 0 ? ` + ${auxCount} AUX DISH${auxCount > 1 ? 'ES' : ''}` : ''}</text>
+        <text x="14" y="52" fill="#cbd5e1" font-family="monospace" font-size="10">GROUND RELIABILITY: ${state.tempResources.reliabilityGround || 90}%</text>
+      </svg>
+    `;
+  }
+
+  function renderDesignVisualViewport() {
+    if (!DOM.designVisualStage) return;
+    syncVisualDesignFromStats();
+    const vd = state.visualDesign;
+    const tr = state.tempResources;
+
+    if (activeDesignSegment === 'launch') {
+      const vIdx = vd.rocketVariant % 3;
+      if (DOM.designVisualSegTitle) {
+        DOM.designVisualSegTitle.textContent = `LAUNCH VEHICLE // ${ROCKET_VARIANT_NAMES[vIdx].toUpperCase()}`;
+      }
+      if (DOM.btnCycleVariant) {
+        DOM.btnCycleVariant.textContent = `STYLE ${vIdx + 1} / 3`;
+      }
+      DOM.designVisualStage.innerHTML = buildRocketSvg(vd);
+      if (DOM.designVisualSpecs) {
+        DOM.designVisualSpecs.innerHTML = `
+          <div class="design-spec-pill"><span class="lbl">MASS / CAP</span><span class="val ${tr.mass > tr.maxMass ? 'text-crimson' : 'text-emerald'}">${tr.mass.toLocaleString()} / ${tr.maxMass.toLocaleString()} kg</span></div>
+          <div class="design-spec-pill"><span class="lbl">VELOCITY (ΔV)</span><span class="val ${tr.velocity < tr.reqVelocity ? 'text-crimson' : 'text-amber'}">${tr.velocity.toFixed(1)} / ${tr.reqVelocity.toFixed(1)} km/s</span></div>
+          <div class="design-spec-pill"><span class="lbl">RELIABILITY</span><span class="val text-cyan">${tr.reliabilityLaunch}%</span></div>
+          <div class="design-spec-pill"><span class="lbl">TOTAL COST</span><span class="val text-cyan">$${tr.totalCost.toLocaleString()}</span></div>
+        `;
+      }
+    } else if (activeDesignSegment === 'space') {
+      const vIdx = vd.satelliteVariant % 3;
+      if (DOM.designVisualSegTitle) {
+        DOM.designVisualSegTitle.textContent = `SPACECRAFT BUS // ${SATELLITE_VARIANT_NAMES[vIdx].toUpperCase()}`;
+      }
+      if (DOM.btnCycleVariant) {
+        DOM.btnCycleVariant.textContent = `STYLE ${vIdx + 1} / 3`;
+      }
+      DOM.designVisualStage.innerHTML = buildSatelliteSvg(vd);
+      if (DOM.designVisualSpecs) {
+        DOM.designVisualSpecs.innerHTML = `
+          <div class="design-spec-pill"><span class="lbl">POWER BUS</span><span class="val ${tr.power > tr.maxPower ? 'text-crimson' : 'text-amber'}">${tr.power} / ${tr.maxPower} W</span></div>
+          <div class="design-spec-pill"><span class="lbl">BUS VOLUME</span><span class="val ${tr.volume > tr.maxVolume ? 'text-crimson' : 'text-emerald'}">${tr.volume.toFixed(1)} / ${tr.maxVolume.toFixed(1)} m³</span></div>
+          <div class="design-spec-pill"><span class="lbl">RELIABILITY</span><span class="val text-cyan">${tr.reliabilitySpace}%</span></div>
+          <div class="design-spec-pill"><span class="lbl">HEAT SHIELD</span><span class="val ${vd.hasHeatShield ? 'text-emerald' : 'text-muted'}">${vd.hasHeatShield ? 'INSTALLED' : 'NONE'}</span></div>
+        `;
+      }
+    } else {
+      const vIdx = vd.towerVariant % 3;
+      if (DOM.designVisualSegTitle) {
+        DOM.designVisualSegTitle.textContent = `GROUND STATION // ${TOWER_VARIANT_NAMES[vIdx].toUpperCase()}`;
+      }
+      if (DOM.btnCycleVariant) {
+        DOM.btnCycleVariant.textContent = `STYLE ${vIdx + 1} / 3`;
+      }
+      DOM.designVisualStage.innerHTML = buildTowerSvg(vd);
+      if (DOM.designVisualSpecs) {
+        DOM.designVisualSpecs.innerHTML = `
+          <div class="design-spec-pill"><span class="lbl">BANDWIDTH</span><span class="val ${tr.bandwidth >= 85 ? 'text-emerald' : 'text-amber'}">${tr.bandwidth} Mbps</span></div>
+          <div class="design-spec-pill"><span class="lbl">GROUND REL</span><span class="val text-cyan">${tr.reliabilityGround}%</span></div>
+          <div class="design-spec-pill"><span class="lbl">TOTAL MASS</span><span class="val ${tr.mass > tr.maxMass ? 'text-crimson' : 'text-emerald'}">${tr.mass.toLocaleString()} / ${tr.maxMass.toLocaleString()} kg</span></div>
+          <div class="design-spec-pill"><span class="lbl">TOTAL COST</span><span class="val text-cyan">$${tr.totalCost.toLocaleString()}</span></div>
+        `;
+      }
+    }
   }
 
   // ========================================================================
@@ -2493,6 +3261,293 @@
     }
   }
 
+  function drawCanvasTower(ctx, tx, ty, vd, scale = 0.42) {
+    const v = (vd.towerVariant || 0) % 3;
+    const s = scale * (vd.towerScale || 1.0);
+    ctx.save();
+    ctx.translate(tx, ty);
+    ctx.scale(s, s);
+
+    // Base pad
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillRect(-18, -5, 36, 5);
+
+    if (v === 0) {
+      // Variant 0: Deep-Space Parabolic Dish Pedestal
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(-6, -34, 12, 29);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(-4, -30, 8, 5);
+      ctx.save();
+      ctx.translate(0, -38);
+      ctx.rotate(0.28);
+      ctx.beginPath();
+      ctx.arc(0, 0, 22, 0, Math.PI, false);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fill();
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, -18);
+      ctx.strokeStyle = '#dc2626';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.restore();
+    } else if (v === 1) {
+      // Variant 1: Red-and-White Lattice Relay Tower
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(-4, -52, 8, 47);
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(-12, -5);
+      ctx.lineTo(-6, -52);
+      ctx.moveTo(12, -5);
+      ctx.lineTo(6, -52);
+      ctx.stroke();
+      // Observation cupola
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(-13, -58, 26, 6);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(-11, -56, 22, 3);
+      // Spire
+      ctx.beginPath();
+      ctx.moveTo(0, -58);
+      ctx.lineTo(0, -76);
+      ctx.strokeStyle = '#f8fafc';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0, -76, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#ef4444';
+      ctx.fill();
+    } else {
+      // Variant 2: Trussed Mast with Elevated Control Cabin
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(-6, -48, 3, 43);
+      ctx.fillRect(3, -48, 3, 43);
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(-14, -5);
+      ctx.lineTo(-7, -48);
+      ctx.moveTo(14, -5);
+      ctx.lineTo(7, -48);
+      ctx.stroke();
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(-15, -58, 30, 10);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(-10, -56, 20, 6);
+      ctx.beginPath();
+      ctx.moveTo(0, -58);
+      ctx.lineTo(0, -76);
+      ctx.strokeStyle = '#f8fafc';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawCanvasRocket(ctx, x, y, angleRad, vd, thrustActive = true, onlyBooster = false) {
+    const v = (vd.rocketVariant || 0) % 3;
+    const s = 0.42 * (vd.rocketScale || 1.0);
+    const fuelVis = getFuelVisualColors(vd.fuelId);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angleRad + Math.PI / 2); // Rocket drawn nose-up (-Y), aligned with travel angle
+    ctx.scale(s, s);
+
+    const coreW = 20;
+    const coreH = 68;
+
+    // Side boosters
+    const drawMiniBooster = (bx) => {
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(bx - 5.5, -18, 11, 48);
+      ctx.beginPath();
+      ctx.moveTo(bx - 5.5, -18);
+      ctx.quadraticCurveTo(bx, -32, bx + 5.5, -18);
+      ctx.fill();
+      // Swept black landing skirt
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(bx - 6, 18, 12, 12);
+      if (thrustActive) {
+        const flicker = 0.85 + Math.random() * 0.35;
+        ctx.beginPath();
+        ctx.ellipse(bx, 38, 4, 10 * flicker, 0, 0, Math.PI * 2);
+        ctx.fillStyle = fuelVis.outerPlume;
+        ctx.fill();
+      }
+    };
+
+    if (vd.boosterCount >= 2) {
+      drawMiniBooster(-17);
+      drawMiniBooster(17);
+    }
+    if (vd.boosterCount >= 4) {
+      drawMiniBooster(-29);
+      drawMiniBooster(29);
+    }
+
+    // Core cylinder color based on variant
+    if (v === 1) ctx.fillStyle = '#ea580c';
+    else if (v === 2) ctx.fillStyle = '#94a3b8';
+    else ctx.fillStyle = '#f1f5f9';
+
+    ctx.fillRect(-coreW / 2, -28, coreW, coreH - 12);
+
+    // Fuel stripe & flag decal
+    ctx.fillStyle = fuelVis.stripe;
+    ctx.fillRect(-coreW / 2, -18, coreW, 3);
+    ctx.fillStyle = '#dc2626';
+    ctx.fillRect(-4, -10, 8, 5);
+    ctx.fillStyle = '#1d4ed8';
+    ctx.fillRect(-4, -10, 4, 3);
+
+    // Swept black landing-leg skirt at base
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.moveTo(-coreW / 2, 14);
+    ctx.lineTo(coreW / 2, 14);
+    ctx.lineTo(coreW / 2 + 2, 28);
+    ctx.lineTo(-coreW / 2 - 2, 28);
+    ctx.closePath();
+    ctx.fill();
+
+    if (!onlyBooster) {
+      // Bulbous Payload Fairing at top
+      const fScale = vd.fairingScale || 1.0;
+      const fW = 22 * Math.min(1.18, fScale);
+      const fH = 30 * fScale;
+      ctx.fillStyle = v === 2 ? '#cbd5e1' : '#f8fafc';
+      ctx.beginPath();
+      ctx.moveTo(-fW / 2, -28);
+      ctx.lineTo(-fW / 2, -28 - fH * 0.5);
+      ctx.quadraticCurveTo(0, -28 - fH * 1.15, fW / 2, -28 - fH * 0.5);
+      ctx.lineTo(fW / 2, -28);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Main Exhaust Plume
+    if (thrustActive) {
+      const flicker = 0.85 + Math.random() * 0.35;
+      ctx.beginPath();
+      ctx.ellipse(0, 42, 6.5, 16 * flicker, 0, 0, Math.PI * 2);
+      ctx.fillStyle = fuelVis.outerPlume;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(0, 37, 3.5, 9 * flicker, 0, 0, Math.PI * 2);
+      ctx.fillStyle = fuelVis.innerPlume;
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function drawCanvasSatellite(ctx, x, y, angleRad, vd, deployPct = 1.0, reEntryHeat = 0) {
+    const v = (vd.satelliteVariant || 0) % 3;
+    const s = 0.52 * (vd.satScale || 1.0);
+    const panels = vd.solarPanelsPerWing || 2;
+    const bays = vd.busBays || 2;
+    const unfold = Math.max(0.08, Math.min(1.0, deployPct));
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angleRad);
+    ctx.scale(s, s);
+
+    const wingSpan = (22 + panels * 12) * unfold;
+    const wingW = 16;
+
+    // Solar Array Wings (unfolding with deployPct)
+    ctx.fillStyle = v === 1 ? '#27272a' : (v === 2 ? '#0f766e' : '#1d4ed8');
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1.2;
+
+    // Top & Bottom Solar Wings (perpendicular to velocity vector)
+    ctx.fillRect(-wingW / 2, -14 - wingSpan, wingW, wingSpan);
+    ctx.strokeRect(-wingW / 2, -14 - wingSpan, wingW, wingSpan);
+    ctx.fillRect(-wingW / 2, 14, wingW, wingSpan);
+    ctx.strokeRect(-wingW / 2, 14, wingW, wingSpan);
+
+    // Solar panel cell grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+    ctx.lineWidth = 0.8;
+    for (let i = 1; i <= panels; i++) {
+      const py = 14 + (i / (panels + 0.5)) * wingSpan;
+      ctx.beginPath();
+      ctx.moveTo(-wingW / 2, -py);
+      ctx.lineTo(wingW / 2, -py);
+      ctx.moveTo(-wingW / 2, py);
+      ctx.lineTo(wingW / 2, py);
+      ctx.stroke();
+    }
+
+    // Spacecraft Bus Body
+    const busLen = 28 + bays * 8;
+    if (v === 1) {
+      // Variant 1: Orbital Lab + Spherical Docking Node
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(-busLen / 2, -12, busLen, 24);
+      ctx.beginPath();
+      ctx.arc(busLen / 2 + 8, 0, 11, 0, Math.PI * 2);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(busLen / 2 + 8, 0, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#0ea5e9';
+      ctx.fill();
+    } else {
+      // Variant 0 (Silver Parabolic Bus) or Variant 2 (Gold-MLI Bus)
+      ctx.fillStyle = v === 2 ? '#f59e0b' : '#e2e8f0';
+      ctx.fillRect(-busLen / 2, -11, busLen, 22);
+      ctx.strokeStyle = '#475569';
+      ctx.strokeRect(-busLen / 2, -11, busLen, 22);
+      // Aft Parabolic High-Gain Dish
+      ctx.beginPath();
+      ctx.ellipse(-busLen / 2 - 6, 0, 4, 13, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // Instrument Sensor Turrets
+    const instCount = Math.min(5, Math.max(1, vd.instrumentCount || 1));
+    for (let i = 0; i < instCount; i++) {
+      const ix = -busLen / 3 + (i / Math.max(1, instCount - 1)) * (busLen * 0.65);
+      ctx.beginPath();
+      ctx.arc(ix, 0, 3, 0, Math.PI * 2);
+      ctx.fillStyle = i % 2 === 0 ? '#38bdf8' : '#c084fc';
+      ctx.fill();
+    }
+
+    // Forebody Heat Shield (when installed)
+    if (vd.hasHeatShield) {
+      ctx.beginPath();
+      ctx.arc(busLen / 2 + (v === 1 ? 16 : 4), 0, 14, -Math.PI * 0.42, Math.PI * 0.42);
+      ctx.strokeStyle = reEntryHeat > 0 ? '#fb923c' : '#334155';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+    }
+
+    // Atmospheric Re-entry Plasma Shockwave (for Life Sciences return!)
+    if (reEntryHeat > 0) {
+      const noseX = busLen / 2 + (v === 1 ? 20 : 8);
+      ctx.beginPath();
+      ctx.arc(noseX, 0, 22, -Math.PI * 0.48, Math.PI * 0.48);
+      ctx.strokeStyle = vd.hasHeatShield
+        ? `rgba(251, 146, 60, ${0.85 * reEntryHeat})`
+        : `rgba(239, 68, 68, ${0.95 * reEntryHeat})`;
+      ctx.lineWidth = 7;
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
   function runFlightLoop() {
     if (state.stage !== 6) return;
 
@@ -2514,38 +3569,517 @@
       checkFlightMilestones(state.flight.elapsedMs);
     }
 
-    ctx.fillStyle = '#030712';
+    const t = Math.min(1.0, flightProgress);
+    const domId = state.selectedDomain ? state.selectedDomain.id : 'earth';
+    const vd = state.visualDesign;
+
+    // 1. Deep-Space Background & Twinkling Starfield
+    const bgGrad = ctx.createRadialGradient(w * 0.5, h * 0.45, 20, w * 0.5, h * 0.5, w * 0.7);
+    bgGrad.addColorStop(0, '#091526');
+    bgGrad.addColorStop(1, '#030712');
+    ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, w, h);
 
-    // Trajectory Curve
-    ctx.beginPath();
-    ctx.moveTo(60, h - 40);
-    ctx.quadraticCurveTo(w * 0.4, 50, w - 80, 100);
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
-    ctx.setLineDash([4, 4]);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    for (let i = 0; i < 42; i++) {
+      const sx = ((i * 197) % (w - 20)) + 10;
+      const sy = ((i * 131) % (h - 20)) + 10;
+      const alpha = 0.25 + 0.35 * Math.sin(now * 0.002 + i);
+      ctx.fillStyle = `rgba(226, 232, 240, ${alpha.toFixed(2)})`;
+      ctx.fillRect(sx, sy, i % 4 === 0 ? 2 : 1.3, i % 4 === 0 ? 2 : 1.3);
+    }
 
-    // Compute probe position along curve
-    const t = Math.min(1.0, flightProgress);
-    const p0x = 60, p0y = h - 40;
-    const p1x = w * 0.4, p1y = 50;
-    const p2x = w - 80, p2y = 100;
+    // Helper to draw Earth with continents, atmosphere, and Communications Tower
+    const drawEarthAndTower = (ex, ey, er, towerAngleDeg = -35) => {
+      // Atmosphere halo
+      const halo = ctx.createRadialGradient(ex, ey, er * 0.85, ex, ey, er * 1.28);
+      halo.addColorStop(0, 'rgba(56, 189, 248, 0.28)');
+      halo.addColorStop(1, 'rgba(56, 189, 248, 0)');
+      ctx.beginPath();
+      ctx.arc(ex, ey, er * 1.28, 0, Math.PI * 2);
+      ctx.fillStyle = halo;
+      ctx.fill();
 
-    const curX = (1 - t) * (1 - t) * p0x + 2 * (1 - t) * t * p1x + t * t * p2x;
-    const curY = (1 - t) * (1 - t) * p0y + 2 * (1 - t) * t * p1y + t * t * p2y;
+      // Ocean sphere
+      const ocean = ctx.createRadialGradient(ex - er * 0.3, ey - er * 0.3, er * 0.1, ex, ey, er);
+      ocean.addColorStop(0, '#38bdf8');
+      ocean.addColorStop(0.55, '#0284c7');
+      ocean.addColorStop(1, '#0f172a');
+      ctx.beginPath();
+      ctx.arc(ex, ey, er, 0, Math.PI * 2);
+      ctx.fillStyle = ocean;
+      ctx.fill();
 
-    // Vehicle Probe
-    ctx.beginPath();
-    ctx.arc(curX, curY, 6, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
+      // Stylized landmasses
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(ex, ey, er, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.fillStyle = 'rgba(52, 211, 153, 0.55)';
+      ctx.beginPath();
+      ctx.ellipse(ex - er * 0.25, ey - er * 0.18, er * 0.38, er * 0.22, -0.3, 0, Math.PI * 2);
+      ctx.ellipse(ex + er * 0.28, ey + er * 0.22, er * 0.32, er * 0.25, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
 
-    // Thrust flame
-    ctx.beginPath();
-    ctx.arc(curX - 8, curY + 6, 4, 0, Math.PI * 2);
-    ctx.fillStyle = '#f59e0b';
-    ctx.fill();
+      // Communications Tower on Earth's surface
+      const rad = (towerAngleDeg * Math.PI) / 180;
+      const tx = ex + Math.cos(rad) * er;
+      const ty = ey + Math.sin(rad) * er;
+      ctx.save();
+      ctx.translate(tx, ty);
+      ctx.rotate(rad + Math.PI / 2);
+      drawCanvasTower(ctx, 0, 0, vd, Math.max(0.32, er / 145));
+      ctx.restore();
+
+      return { tx, ty };
+    };
+
+    // Quad Bezier helper & tangent
+    const evalQuad = (p0, p1, p2, u) => {
+      const mu = 1 - u;
+      const x = mu * mu * p0.x + 2 * mu * u * p1.x + u * u * p2.x;
+      const y = mu * mu * p0.y + 2 * mu * u * p1.y + u * u * p2.y;
+      const dx = 2 * mu * (p1.x - p0.x) + 2 * u * (p2.x - p1.x);
+      const dy = 2 * mu * (p1.y - p0.y) + 2 * u * (p2.y - p1.y);
+      return { x, y, angle: Math.atan2(dy, dx) };
+    };
+
+    let craftPos = { x: 100, y: 200, angle: 0 };
+    let sepOrigin = { x: 200, y: 150, angle: 0 };
+    let towerPos = { tx: 100, ty: 260 };
+    let reEntryHeat = 0;
+    let showParachute = false;
+
+    if (domId === 'earth') {
+      // EARTH SCIENCE: Launch from Earth -> Deploy -> Continuous Low Earth Orbit around Earth
+      const ex = 420, ey = 215, er = 72;
+      const rx = 185, ry = 122;
+      towerPos = drawEarthAndTower(ex, ey, er, -125);
+
+      // Draw LEO Orbital Ellipse
+      ctx.beginPath();
+      ctx.ellipse(ex, ey, rx, ry, -0.12, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.38)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 5]);
+      ctx.stroke();
+
+      // Ascent curve from Earth surface to orbit insertion point (angle = -Math.PI * 0.75)
+      const insAngle = -Math.PI * 0.72;
+      const insX = ex + Math.cos(insAngle) * rx * Math.cos(-0.12) - Math.sin(insAngle) * ry * Math.sin(-0.12);
+      const insY = ey + Math.cos(insAngle) * rx * Math.sin(-0.12) + Math.sin(insAngle) * ry * Math.cos(-0.12);
+      const p0 = { x: ex - er * 0.65, y: ey - er * 0.72 };
+      const p1 = { x: ex - rx * 0.78, y: ey - ry * 0.98 };
+      const p2 = { x: insX, y: insY };
+
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.quadraticCurveTo(p1.x, p1.y, p2.x, p2.y);
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.45)';
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      sepOrigin = evalQuad(p0, p1, p2, 1.0);
+
+      if (t < 0.25) {
+        craftPos = evalQuad(p0, p1, p2, t / 0.25);
+      } else {
+        const orbitU = (t - 0.25) / 0.75;
+        const theta = insAngle + orbitU * Math.PI * 2.6;
+        const rot = -0.12;
+        const lx = Math.cos(theta) * rx;
+        const ly = Math.sin(theta) * ry;
+        const dlx = -Math.sin(theta) * rx;
+        const dly = Math.cos(theta) * ry;
+        craftPos = {
+          x: ex + lx * Math.cos(rot) - ly * Math.sin(rot),
+          y: ey + lx * Math.sin(rot) + ly * Math.cos(rot),
+          angle: Math.atan2(dlx * Math.sin(rot) + dly * Math.cos(rot), dlx * Math.cos(rot) - dly * Math.sin(rot))
+        };
+
+        // Sensor Nadir Scan Cone toward Earth
+        if (t >= 0.35) {
+          ctx.beginPath();
+          ctx.moveTo(craftPos.x, craftPos.y);
+          ctx.lineTo(ex - 18, ey - 12);
+          ctx.lineTo(ex + 18, ey + 12);
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+          ctx.fill();
+        }
+      }
+    } else if (domId === 'life') {
+      // LIFE SCIENCES: Launch from Earth -> Orbit / ISS Rendezvous -> Return to Earth with Re-entry & Splashdown!
+      const ex = 195, ey = 250, er = 78;
+      towerPos = drawEarthAndTower(ex, ey, er, -52);
+
+      // Orbital Lab (ISS reference node) at (545, 115)
+      const issX = 545, issY = 115;
+      ctx.save();
+      ctx.translate(issX, issY);
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.65)';
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(-26, -3, 52, 6);
+      ctx.fillStyle = '#1d4ed8';
+      ctx.fillRect(-22, -18, 8, 36);
+      ctx.fillRect(14, -18, 8, 36);
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '10px monospace';
+      ctx.fillText('ISS LAB', -20, -24);
+      ctx.restore();
+
+      const pLaunch0 = { x: ex + er * 0.45, y: ey - er * 0.88 };
+      const pLaunch1 = { x: 265, y: 65 };
+      const pLaunch2 = { x: 420, y: 105 };
+
+      const pOrbit1 = { x: 545, y: 65 };
+      const pOrbit2 = { x: 585, y: 155 };
+
+      const pReturn1 = { x: 440, y: 315 };
+      const pReturn2 = { x: ex + er * 0.88, y: ey + er * 0.32 };
+
+      // Outbound & Orbital Arc (Cyan)
+      ctx.beginPath();
+      ctx.moveTo(pLaunch0.x, pLaunch0.y);
+      ctx.quadraticCurveTo(pLaunch1.x, pLaunch1.y, pLaunch2.x, pLaunch2.y);
+      ctx.quadraticCurveTo(pOrbit1.x, pOrbit1.y, pOrbit2.x, pOrbit2.y);
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.42)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 5]);
+      ctx.stroke();
+
+      // Atmospheric Return Trajectory Arc back to Earth (Amber/Emerald)
+      ctx.beginPath();
+      ctx.moveTo(pOrbit2.x, pOrbit2.y);
+      ctx.quadraticCurveTo(pReturn1.x, pReturn1.y, pReturn2.x, pReturn2.y);
+      ctx.strokeStyle = 'rgba(251, 146, 60, 0.55)';
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      sepOrigin = evalQuad(pLaunch0, pLaunch1, pLaunch2, 1.0);
+
+      if (t < 0.25) {
+        craftPos = evalQuad(pLaunch0, pLaunch1, pLaunch2, t / 0.25);
+      } else if (t < 0.70) {
+        const u = (t - 0.25) / 0.45;
+        craftPos = evalQuad(pLaunch2, pOrbit1, pOrbit2, u);
+      } else {
+        const u = (t - 0.70) / 0.30;
+        craftPos = evalQuad(pOrbit2, pReturn1, pReturn2, u);
+        if (u > 0.35 && u < 0.88) {
+          reEntryHeat = Math.sin(((u - 0.35) / 0.53) * Math.PI);
+        }
+        if (u >= 0.85) {
+          showParachute = true;
+        }
+      }
+    } else if (domId === 'planetary') {
+      // PLANETARY SCIENCE: Launch from Earth -> Interplanetary Transfer -> Orbit Distant Ringed Planet
+      const ex = 95, ey = 315, er = 46;
+      towerPos = drawEarthAndTower(ex, ey, er, -45);
+
+      // Distant Ringed Planet at (645, 145)
+      const px = 645, py = 145, pr = 36;
+      const orbRx = 82, orbRy = 46;
+
+      // Planetary Capture Orbit Ellipse
+      ctx.beginPath();
+      ctx.ellipse(px, py, orbRx, orbRy, -0.2, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(251, 146, 60, 0.38)';
+      ctx.lineWidth = 1.8;
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+
+      // Ringed Planet Body & Rings
+      const pGrad = ctx.createRadialGradient(px - 10, py - 10, 4, px, py, pr);
+      pGrad.addColorStop(0, '#fdba74');
+      pGrad.addColorStop(0.6, '#ea580c');
+      pGrad.addColorStop(1, '#7c2d12');
+      ctx.beginPath();
+      ctx.arc(px, py, pr, 0, Math.PI * 2);
+      ctx.fillStyle = pGrad;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.ellipse(px, py, pr * 1.85, pr * 0.52, -0.25, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(253, 230, 138, 0.75)';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([]);
+      ctx.stroke();
+
+      const p0 = { x: ex + er * 0.7, y: ey - er * 0.7 };
+      const p1 = { x: 185, y: 165 };
+      const pSep = { x: 265, y: 145 };
+      const pTrans1 = { x: 420, y: 95 };
+      const insAngle = Math.PI;
+      const pCapture = {
+        x: px + Math.cos(insAngle) * orbRx * Math.cos(-0.2),
+        y: py + Math.cos(insAngle) * orbRx * Math.sin(-0.2)
+      };
+
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.quadraticCurveTo(p1.x, p1.y, pSep.x, pSep.y);
+      ctx.quadraticCurveTo(pTrans1.x, pTrans1.y, pCapture.x, pCapture.y);
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      sepOrigin = evalQuad(p0, p1, pSep, 1.0);
+
+      if (t < 0.25) {
+        craftPos = evalQuad(p0, p1, pSep, t / 0.25);
+      } else if (t < 0.65) {
+        craftPos = evalQuad(pSep, pTrans1, pCapture, (t - 0.25) / 0.40);
+      } else {
+        const u = (t - 0.65) / 0.35;
+        const theta = Math.PI + u * Math.PI * 2.1;
+        const rot = -0.2;
+        const lx = Math.cos(theta) * orbRx;
+        const ly = Math.sin(theta) * orbRy;
+        const dlx = -Math.sin(theta) * orbRx;
+        const dly = Math.cos(theta) * orbRy;
+        craftPos = {
+          x: px + lx * Math.cos(rot) - ly * Math.sin(rot),
+          y: py + lx * Math.sin(rot) + ly * Math.cos(rot),
+          angle: Math.atan2(dlx * Math.sin(rot) + dly * Math.cos(rot), dlx * Math.cos(rot) - dly * Math.sin(rot))
+        };
+      }
+    } else if (domId === 'helio') {
+      // HELIOPHYSICS: Launch from Earth -> Sun-Earth L1 Halo Orbit facing the Blazing Sun
+      const ex = 100, ey = 310, er = 44;
+      towerPos = drawEarthAndTower(ex, ey, er, -45);
+
+      // Blazing Sun on Right (745, 195)
+      const sx = 745, sy = 195, sr = 62;
+      const corona = ctx.createRadialGradient(sx, sy, sr * 0.6, sx, sy, sr * 2.1);
+      corona.addColorStop(0, 'rgba(251, 191, 36, 0.55)');
+      corona.addColorStop(0.5, 'rgba(249, 115, 22, 0.18)');
+      corona.addColorStop(1, 'rgba(249, 115, 22, 0)');
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr * 2.1, 0, Math.PI * 2);
+      ctx.fillStyle = corona;
+      ctx.fill();
+
+      const sunGrad = ctx.createRadialGradient(sx - 12, sy - 12, 8, sx, sy, sr);
+      sunGrad.addColorStop(0, '#fef08a');
+      sunGrad.addColorStop(0.6, '#f59e0b');
+      sunGrad.addColorStop(1, '#ea580c');
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+      ctx.fillStyle = sunGrad;
+      ctx.fill();
+
+      // Solar Wind Waves travelling outward from Sun
+      for (let wIdx = 0; wIdx < 3; wIdx++) {
+        const waveR = sr + 18 + (((now * 0.04) + wIdx * 45) % 135);
+        ctx.beginPath();
+        ctx.arc(sx, sy, waveR, Math.PI * 0.68, Math.PI * 1.32);
+        ctx.strokeStyle = `rgba(251, 191, 36, ${(1 - (waveR - sr) / 155) * 0.45})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // L1 Halo Orbit at (490, 195)
+      const l1x = 490, l1y = 195, l1rx = 52, l1ry = 86;
+      ctx.beginPath();
+      ctx.ellipse(l1x, l1y, l1rx, l1ry, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.42)';
+      ctx.lineWidth = 1.8;
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+
+      const p0 = { x: ex + er * 0.7, y: ey - er * 0.7 };
+      const p1 = { x: 195, y: 175 };
+      const pSep = { x: 275, y: 165 };
+      const pTrans1 = { x: 365, y: 155 };
+      const pL1Entry = { x: l1x - l1rx, y: l1y };
+
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.quadraticCurveTo(p1.x, p1.y, pSep.x, pSep.y);
+      ctx.quadraticCurveTo(pTrans1.x, pTrans1.y, pL1Entry.x, pL1Entry.y);
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      sepOrigin = evalQuad(p0, p1, pSep, 1.0);
+
+      if (t < 0.25) {
+        craftPos = evalQuad(p0, p1, pSep, t / 0.25);
+      } else if (t < 0.58) {
+        craftPos = evalQuad(pSep, pTrans1, pL1Entry, (t - 0.25) / 0.33);
+      } else {
+        const u = (t - 0.58) / 0.42;
+        const theta = Math.PI + u * Math.PI * 2.2;
+        craftPos = {
+          x: l1x + Math.cos(theta) * l1rx,
+          y: l1y + Math.sin(theta) * l1ry,
+          angle: Math.atan2(Math.cos(theta) * l1ry, -Math.sin(theta) * l1rx)
+        };
+      }
+    } else {
+      // ASTROPHYSICS: Launch from Earth -> L2 Deep-Space Observatory Halo Orbit -> Deep-Field Galaxy Scan
+      const ex = 100, ey = 310, er = 44;
+      towerPos = drawEarthAndTower(ex, ey, er, -45);
+
+      // Distant Spiral Galaxy & Nebula on Right (685, 125)
+      const gx = 685, gy = 125;
+      const nebGrad = ctx.createRadialGradient(gx, gy, 4, gx, gy, 58);
+      nebGrad.addColorStop(0, 'rgba(243, 232, 255, 0.95)');
+      nebGrad.addColorStop(0.35, 'rgba(192, 132, 252, 0.45)');
+      nebGrad.addColorStop(0.7, 'rgba(56, 189, 248, 0.18)');
+      nebGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+      ctx.beginPath();
+      ctx.arc(gx, gy, 58, 0, Math.PI * 2);
+      ctx.fillStyle = nebGrad;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(gx, gy, 36, 14, -0.4, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(233, 213, 255, 0.7)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // L2 Halo Orbit at (445, 195)
+      const l2x = 445, l2y = 195, l2rx = 50, l2ry = 82;
+      ctx.beginPath();
+      ctx.ellipse(l2x, l2y, l2rx, l2ry, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(192, 132, 252, 0.42)';
+      ctx.lineWidth = 1.8;
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+
+      const p0 = { x: ex + er * 0.7, y: ey - er * 0.7 };
+      const p1 = { x: 190, y: 175 };
+      const pSep = { x: 265, y: 165 };
+      const pTrans1 = { x: 340, y: 160 };
+      const pL2Entry = { x: l2x - l2rx, y: l2y };
+
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.quadraticCurveTo(p1.x, p1.y, pSep.x, pSep.y);
+      ctx.quadraticCurveTo(pTrans1.x, pTrans1.y, pL2Entry.x, pL2Entry.y);
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      sepOrigin = evalQuad(p0, p1, pSep, 1.0);
+
+      if (t < 0.25) {
+        craftPos = evalQuad(p0, p1, pSep, t / 0.25);
+      } else if (t < 0.55) {
+        craftPos = evalQuad(pSep, pTrans1, pL2Entry, (t - 0.25) / 0.30);
+      } else {
+        const u = (t - 0.55) / 0.45;
+        const theta = Math.PI + u * Math.PI * 2.1;
+        craftPos = {
+          x: l2x + Math.cos(theta) * l2rx,
+          y: l2y + Math.sin(theta) * l2ry,
+          angle: Math.atan2(gy - (l2y + Math.sin(theta) * l2ry), gx - (l2x + Math.cos(theta) * l2rx))
+        };
+
+        // Deep-Field Telescope Observation Cone toward Galaxy
+        ctx.beginPath();
+        ctx.moveTo(craftPos.x, craftPos.y);
+        ctx.lineTo(gx - 22, gy - 26);
+        ctx.lineTo(gx + 18, gy + 26);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(192, 132, 252, 0.14)';
+        ctx.fill();
+      }
+    }
+
+    // 2. Stage Separation & Fairing Split Animation (0.25 <= t <= 0.42)
+    if (t >= 0.25 && t <= 0.44) {
+      const sepU = (t - 0.25) / 0.19; // 0 -> 1
+      const alpha = Math.max(0, 1 - sepU);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+
+      // Drifting First-Stage Booster falling back
+      const bx = sepOrigin.x - Math.cos(sepOrigin.angle) * (18 + sepU * 55);
+      const by = sepOrigin.y - Math.sin(sepOrigin.angle) * (18 + sepU * 35) + sepU * 42;
+      drawCanvasRocket(ctx, bx, by, sepOrigin.angle + sepU * 0.65, vd, false, true);
+
+      // Left & Right Payload Fairing Halves splitting apart
+      const perpX = -Math.sin(sepOrigin.angle);
+      const perpY = Math.cos(sepOrigin.angle);
+      [-1, 1].forEach(side => {
+        const fx = sepOrigin.x + Math.cos(sepOrigin.angle) * (12 + sepU * 24) + perpX * side * (8 + sepU * 28);
+        const fy = sepOrigin.y + Math.sin(sepOrigin.angle) * (12 + sepU * 24) + perpY * side * (8 + sepU * 28);
+        ctx.save();
+        ctx.translate(fx, fy);
+        ctx.rotate(sepOrigin.angle + side * sepU * 0.85);
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 9, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Expanding separation ring
+      ctx.beginPath();
+      ctx.arc(sepOrigin.x, sepOrigin.y, 10 + sepU * 32, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(125, 211, 252, ${alpha.toFixed(2)})`;
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // 3. Downlink Telemetry Ripples to Ground Communications Tower (t >= 0.78)
+    if (t >= 0.78) {
+      const dx = towerPos.tx - craftPos.x;
+      const dy = towerPos.ty - craftPos.y;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(craftPos.x, craftPos.y);
+      ctx.lineTo(towerPos.tx, towerPos.ty);
+      ctx.strokeStyle = 'rgba(52, 211, 153, 0.55)';
+      ctx.lineWidth = 1.8;
+      ctx.setLineDash([6, 6]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      for (let rIdx = 0; rIdx < 3; rIdx++) {
+        const prog = (((now * 0.0014) + rIdx * 0.33) % 1);
+        const rx = craftPos.x + dx * prog;
+        const ry = craftPos.y + dy * prog;
+        ctx.beginPath();
+        ctx.arc(rx, ry, 5 + prog * 10, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(56, 189, 248, ${(1 - prog) * 0.85})`;
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // 4. Draw Active Spacecraft (Rocket during Launch t < 0.25, Deploying/Deployed Satellite for t >= 0.25)
+    if (t < 0.25) {
+      drawCanvasRocket(ctx, craftPos.x, craftPos.y, craftPos.angle, vd, true, false);
+    } else {
+      const deployPct = Math.min(1.0, (t - 0.25) / 0.12);
+      if (showParachute && vd.hasHeatShield) {
+        // Recovery Parachutes during Life Sciences splashdown!
+        ctx.save();
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(craftPos.x, craftPos.y);
+        ctx.lineTo(craftPos.x - 16, craftPos.y - 24);
+        ctx.moveTo(craftPos.x, craftPos.y);
+        ctx.lineTo(craftPos.x + 16, craftPos.y - 24);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(craftPos.x, craftPos.y - 24, 18, Math.PI, 0, false);
+        ctx.fillStyle = '#f97316';
+        ctx.fill();
+        ctx.restore();
+      }
+      drawCanvasSatellite(ctx, craftPos.x, craftPos.y, craftPos.angle, vd, deployPct, reEntryHeat);
+    }
 
     // Update status bars
     DOM.fgBarLaunch.style.width = `${state.flight.launchIntegrity}%`;
@@ -3307,6 +4841,7 @@
       groundStation: null
     };
     state.tempResources.diagnosticsBonus = 0;
+    randomizeDesignVariants();
 
     updatePermanentHud();
     goToStage(1);
@@ -3703,6 +5238,33 @@
       });
     }
 
+    // Stage 4 HUD View Mode Toggle (Image View vs Stats View) & Variant Cycler
+    if (DOM.btnDesignViewImage) {
+      DOM.btnDesignViewImage.addEventListener('click', () => {
+        playBeep(720);
+        setDesignViewMode('image');
+      });
+    }
+    if (DOM.btnDesignViewStats) {
+      DOM.btnDesignViewStats.addEventListener('click', () => {
+        playBeep(720);
+        setDesignViewMode('stats');
+      });
+    }
+    if (DOM.btnCycleVariant) {
+      DOM.btnCycleVariant.addEventListener('click', () => {
+        playBeep(780);
+        if (activeDesignSegment === 'launch') {
+          state.visualDesign.rocketVariant = (state.visualDesign.rocketVariant + 1) % 3;
+        } else if (activeDesignSegment === 'space') {
+          state.visualDesign.satelliteVariant = (state.visualDesign.satelliteVariant + 1) % 3;
+        } else {
+          state.visualDesign.towerVariant = (state.visualDesign.towerVariant + 1) % 3;
+        }
+        renderDesignVisualViewport();
+      });
+    }
+
     // Heat Shield Checkbox
     DOM.chkHeatShield.addEventListener('change', (e) => {
       playBeep(700);
@@ -3896,7 +5458,7 @@
     { selector: '#domain-grid', text: 'Pick where your mission goes (Earth, Planets, Sun, Deep Space, Life).' },
     { selector: '#btn-next-stage1', text: 'Continue to choose your science sensors.' },
     { selector: '#data-types-container', text: 'Pick what measurements & NASA sensors to fly.' },
-    { selector: '#btn-next-stage2', text: 'Continue to review mission requirements.' },
+    { selector: '#btn-next-stage2', text: 'Continue to review mission objectives.' },
     { selector: '#stage-3 .req-card:nth-of-type(1) .req-row:nth-of-type(1)', text: 'Primary Discipline: The science area you chose for this mission.' },
     { selector: '#stage-3 .req-card:nth-of-type(1) .req-row:nth-of-type(2)', text: 'Equipped Instruments: The science sensors flying on your spacecraft.' },
     { selector: '#stage-3 .req-card:nth-of-type(1) .req-row:nth-of-type(3)', text: 'Trajectory Velocity (Delta-V): Speed your rocket must reach to arrive.' },
@@ -4129,6 +5691,7 @@
       heatShieldInstalled: false,
       groundStation: null
     };
+    randomizeDesignVariants();
     hasSeenStage6Tutorial = false;
     updatePermanentHud();
     renderStage1Domains();
@@ -4194,8 +5757,8 @@
       advanceOnEvent: 'instrument-selected'
     },
     {
-      title: '5. OUTLINE REQUIREMENTS',
-      text: 'Click OUTLINE REQUIREMENTS to review the physics and power limits for your mission.',
+      title: '5. MISSION OBJECTIVES',
+      text: 'Click MISSION OBJECTIVES to review the physics and power limits for your mission.',
       getTarget: () => document.querySelector('#btn-next-stage2'),
       advanceOnClick: true
     },
@@ -4538,12 +6101,12 @@
   }
 
   let cutsceneSoundEnabled = true;
+  let cutsceneAudioUnlocked = false;
 
-  function playCutsceneCue(sceneIdx) {
+  function playCutsceneTones(sceneIdx) {
     if (!cutsceneSoundEnabled || masterVolume <= 0) return;
+    if (!audioCtx || audioCtx.state !== 'running') return;
     try {
-      initAudio();
-      if (!audioCtx || audioCtx.state !== 'running') return;
       const now = audioCtx.currentTime;
 
       const playTone = (freq, type, startOffset, dur, vol, endFreq = null) => {
@@ -4609,6 +6172,27 @@
     }
   }
 
+  function playCutsceneCue(sceneIdx) {
+    if (!cutsceneSoundEnabled || masterVolume <= 0) return;
+    try {
+      initAudio();
+      if (!audioCtx) return;
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume().then(() => {
+          cutsceneAudioUnlocked = true;
+          if (cutsceneSoundEnabled) playCutsceneTones(sceneIdx);
+        }).catch(() => {});
+        return;
+      }
+      if (audioCtx.state === 'running') {
+        cutsceneAudioUnlocked = true;
+        playCutsceneTones(sceneIdx);
+      }
+    } catch {
+      // Ignore if AudioContext is blocked
+    }
+  }
+
   function startIntroCutscene() {
     if (!DOM.introCutscene || !DOM.cutsceneStage) return;
     const scenes = Array.from(DOM.cutsceneStage.querySelectorAll('.cutscene-scene'));
@@ -4617,26 +6201,28 @@
     let masterTl = null;
     let fallbackTimer = null;
     let activeSceneIdx = 0;
-    let justUnlockedByPointer = false;
 
     const updateSoundBtnLabel = () => {
       if (!DOM.btnCutsceneSound) return;
       DOM.btnCutsceneSound.textContent = cutsceneSoundEnabled ? 'AUDIO: ON' : 'AUDIO: OFF';
     };
 
-    const unlockAudioOnGesture = () => {
+    const unlockAudioOnGesture = (e) => {
+      if (e && DOM.btnCutsceneSound && DOM.btnCutsceneSound.contains(e.target)) return;
       try {
         initAudio();
-        if (audioCtx && audioCtx.state === 'suspended') {
-          justUnlockedByPointer = true;
-          setTimeout(() => { justUnlockedByPointer = false; }, 450);
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') {
           audioCtx.resume().then(() => {
-            if (cutsceneSoundEnabled) playCutsceneCue(activeSceneIdx);
+            cutsceneAudioUnlocked = true;
+            if (cutsceneSoundEnabled) playCutsceneTones(activeSceneIdx);
           }).catch(() => {});
+        } else if (audioCtx.state === 'running' && !cutsceneAudioUnlocked) {
+          cutsceneAudioUnlocked = true;
+          if (cutsceneSoundEnabled) playCutsceneTones(activeSceneIdx);
         }
       } catch {}
     };
-    unlockAudioOnGesture();
     document.addEventListener('pointerdown', unlockAudioOnGesture, { once: true });
     document.addEventListener('keydown', unlockAudioOnGesture, { once: true });
 
@@ -4644,21 +6230,21 @@
       DOM.btnCutsceneSound.addEventListener('click', (e) => {
         e.stopPropagation();
         try { initAudio(); } catch {}
-        // If pointerdown just unlocked AudioContext on this click, keep AUDIO: ON instead of toggling OFF
-        if (justUnlockedByPointer || (audioCtx && audioCtx.state === 'suspended')) {
-          justUnlockedByPointer = false;
+        // First click when browser had blocked autoplay: unlock & play immediately on 1st click without toggling OFF
+        if (!cutsceneAudioUnlocked || !audioCtx || audioCtx.state !== 'running') {
           cutsceneSoundEnabled = true;
+          cutsceneAudioUnlocked = true;
           updateSoundBtnLabel();
           if (audioCtx && audioCtx.state === 'suspended') {
-            audioCtx.resume().then(() => playCutsceneCue(activeSceneIdx)).catch(() => {});
+            audioCtx.resume().then(() => playCutsceneTones(activeSceneIdx)).catch(() => {});
           } else {
-            playCutsceneCue(activeSceneIdx);
+            playCutsceneTones(activeSceneIdx);
           }
           return;
         }
         cutsceneSoundEnabled = !cutsceneSoundEnabled;
         if (cutsceneSoundEnabled) {
-          try { playCutsceneCue(activeSceneIdx); } catch {}
+          try { playCutsceneTones(activeSceneIdx); } catch {}
         }
         updateSoundBtnLabel();
       });
@@ -4704,18 +6290,46 @@
       updateSoundBtnLabel();
     };
 
+    // Scene 3 Bezier trajectory helper for rocket (M 360 470 Q 580 200 940 145)
+    const rocketMover = scenes[3] ? scenes[3].querySelector('.cs-rocket-mover') : null;
+    const rocketProg = { t: 0 };
+    const updateRocketAlongArc = () => {
+      if (!rocketMover) return;
+      const u = rocketProg.t;
+      const mu = 1 - u;
+      const x = mu * mu * 360 + 2 * mu * u * 580 + u * u * 940;
+      const y = mu * mu * 470 + 2 * mu * u * 200 + u * u * 145;
+      const dx = 2 * mu * (580 - 360) + 2 * u * (940 - 580);
+      const dy = 2 * mu * (200 - 470) + 2 * u * (145 - 200);
+      // Tabler rocket icon inside .cs-rocket-ship is natively oriented at -45 deg (up-right)
+      const deg = (Math.atan2(dy, dx) * 180) / Math.PI + 45;
+      rocketMover.setAttribute('transform', `translate(${x.toFixed(1)}, ${y.toFixed(1)}) rotate(${deg.toFixed(1)})`);
+    };
+    updateRocketAlongArc();
+
+    // Scene 4 clone satellite pulse circles to form continuous travelling ripples
+    const rippleGroup = scenes[4] ? scenes[4].querySelector('.cs-pulse-ripples') : null;
+    if (rippleGroup) {
+      const baseRipple = rippleGroup.querySelector('.cs-pulse-ripple');
+      if (baseRipple && rippleGroup.querySelectorAll('.cs-pulse-ripple').length < 4) {
+        for (let i = 0; i < 3; i++) {
+          const clone = baseRipple.cloneNode(true);
+          rippleGroup.appendChild(clone);
+        }
+      }
+    }
+
     if (window.gsap) {
       const g = window.gsap;
       g.set(scenes, { autoAlpha: 0, scale: 0.96 });
       masterTl = g.timeline({ onComplete: finishCutscene });
 
-      // Scene 0: Orbital Target Lock
+      // Scene 0: Orbital Target Lock (middle planet stays steady — no zoom in/out)
       masterTl
         .call(() => { setSceneUI(0); playCutsceneCue(0); })
         .to(scenes[0], { autoAlpha: 1, scale: 1, duration: 0.5, ease: 'power2.out' })
         .fromTo(scenes[0].querySelector('.cs-reticle'), { rotation: -120, scale: 1.7, opacity: 0 }, { rotation: 0, scale: 1, opacity: 1, duration: 1.25, ease: 'expo.out' }, '<0.08')
-        .to(scenes[0].querySelector('.cs-earth-body'), { scale: 1.06, duration: 1.2, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<0.1')
-        .to(scenes[0].querySelector('.cs-planet-ringed'), { y: -14, x: -10, duration: 1.5, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<')
+        .to(scenes[0].querySelector('.cs-planet-ringed'), { y: -14, x: -10, duration: 1.5, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<0.1')
         .to(scenes[0], { autoAlpha: 0, scale: 1.03, duration: 0.45, ease: 'power2.in' }, '+=0.35');
 
       // Scene 1: Solar Wings Unfold, Sensors Dock & Sweep Scan
@@ -4740,18 +6354,42 @@
           { strokeDashoffset: 80, opacity: 0 }, { strokeDashoffset: 0, opacity: 1, duration: 1.1, ease: 'power1.inOut' }, '<0.3')
         .to(scenes[2], { autoAlpha: 0, scale: 1.03, duration: 0.45, ease: 'power2.in' }, '+=1.4');
 
-      // Scene 3: Rocket Liftoff & Orbital Arc
+      // Scene 3: Rocket Liftoff & Orbital Arc (accurate Bezier path + tangent heading)
       masterTl
-        .call(() => { setSceneUI(3); playCutsceneCue(3); })
+        .call(() => {
+          rocketProg.t = 0;
+          updateRocketAlongArc();
+          setSceneUI(3);
+          playCutsceneCue(3);
+        })
         .to(scenes[3], { autoAlpha: 1, scale: 1, duration: 0.45, ease: 'power2.out' })
         .fromTo(scenes[3].querySelector('.cs-traj-arc'), { strokeDashoffset: 160, opacity: 0.2 }, { strokeDashoffset: 0, opacity: 1, duration: 2.1, ease: 'power1.inOut' }, '<0.1')
-        .fromTo(scenes[3].querySelector('.cs-rocket-ship'), { y: 30, x: 0, rotation: 0 }, { y: -315, x: 520, rotation: 52, duration: 2.2, ease: 'power2.inOut' }, '<0.1')
+        .fromTo(rocketProg, { t: 0 }, { t: 1, duration: 2.2, ease: 'power2.inOut', onUpdate: updateRocketAlongArc }, '<0.1')
         .to(scenes[3].querySelector('.cs-plume'), { scaleY: 1.5, opacity: 0.85, duration: 0.14, repeat: 14, yoyo: true }, '<')
         .to(scenes[3], { autoAlpha: 0, duration: 0.45, ease: 'power2.in' }, '+=0.9');
 
-      // Scene 4: Anomaly Shockwave, Shield & Downlink Stream
+      // Scene 4: Anomaly Shockwave, Travelling Satellite Pulse Ripples, Shield & Downlink Stream
+      const rippleCircles = scenes[4].querySelectorAll('.cs-pulse-ripple');
       masterTl
-        .call(() => { setSceneUI(4); playCutsceneCue(4); })
+        .call(() => {
+          setSceneUI(4);
+          playCutsceneCue(4);
+          if (rippleCircles.length > 0) {
+            g.killTweensOf(rippleCircles);
+            g.fromTo(
+              rippleCircles,
+              { attr: { r: 26 }, opacity: 0.95 },
+              {
+                attr: { r: 225 },
+                opacity: 0,
+                duration: 1.85,
+                stagger: 0.38,
+                repeat: -1,
+                ease: 'none'
+              }
+            );
+          }
+        })
         .to(scenes[4], { autoAlpha: 1, scale: 1, duration: 0.45, ease: 'power2.out' })
         .fromTo(scenes[4].querySelector('.cs-anomaly-ring'), { scale: 0.65, opacity: 0.9 }, { scale: 1.25, opacity: 0.15, duration: 0.9, repeat: 2, ease: 'power2.out' }, '<0.1')
         .fromTo(scenes[4].querySelector('.cs-shield-wave'), { scale: 0.5, opacity: 0 }, { scale: 1.05, opacity: 1, duration: 0.8, ease: 'expo.out' }, '<0.35')
@@ -4788,6 +6426,7 @@
 
   function init() {
     loadAdvancementsState();
+    randomizeDesignVariants();
     state.currentTrend = MARKET_TREND_POOLS[0];
     setTickerText(state.currentTrend.text);
     updatePermanentHud();
