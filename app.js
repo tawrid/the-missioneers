@@ -616,6 +616,10 @@
       segment: 'launch',
       progress: 0,
       running: false,
+      paused: false,
+      elapsedMs: 0,
+      lastTickMs: 0,
+      milestonesDone: {},
       launchIntegrity: 100,
       spaceIntegrity: 100,
       groundIntegrity: 100,
@@ -627,7 +631,8 @@
     },
 
     // Selection in Refinery
-    selectedInventoryIdx: null
+    selectedInventoryIdx: null,
+    vaultViewMode: 'grid'
   };
 
   // ========================================================================
@@ -827,6 +832,10 @@
     rulesModalClose: document.getElementById('rules-modal-close'),
     btnCloseRules: document.getElementById('btn-close-rules'),
 
+    initTutorialModal: document.getElementById('init-tutorial-modal'),
+    initBtnTutorialYes: document.getElementById('init-btn-tutorial-yes'),
+    initBtnTutorialNo: document.getElementById('init-btn-tutorial-no'),
+
     initModeModal: document.getElementById('init-mode-modal'),
     initBtnBasic: document.getElementById('init-btn-basic'),
     initBtnAdvanced: document.getElementById('init-btn-advanced'),
@@ -848,12 +857,32 @@
     l4ForgeFee: document.getElementById('l4-forge-fee'),
     btnForgeL4: document.getElementById('btn-forge-l4'),
 
+    btnRandomMissionName: document.getElementById('btn-random-mission-name'),
+    btnFlightPause: document.getElementById('btn-flight-pause'),
+    btnVaultGrid: document.getElementById('btn-vault-grid'),
+    btnVaultList: document.getElementById('btn-vault-list'),
+    btnRedoTutorial: document.getElementById('btn-redo-tutorial'),
+    btnResetGameData: document.getElementById('btn-reset-game-data'),
+
     btnOpenHelp: document.getElementById('btn-open-help'),
     menuHelpIcon: document.getElementById('menu-help-icon'),
     screenCoachOverlay: document.getElementById('screen-coach-overlay'),
     coachMaskSvg: document.getElementById('coach-mask-svg'),
     coachCalloutsLayer: document.getElementById('coach-callouts-layer'),
     btnCloseCoach: document.getElementById('btn-close-coach'),
+
+    tutorialOverlay: document.getElementById('tutorial-overlay'),
+    tutorialMaskSvg: document.getElementById('tutorial-mask-svg'),
+    tutorialMaskPath: document.getElementById('tutorial-mask-path'),
+    tutorialFocusRing: document.getElementById('tutorial-focus-ring'),
+    tutorialCallout: document.getElementById('tutorial-callout'),
+    tutorialArrow: document.getElementById('tutorial-arrow'),
+    tutorialStepBadge: document.getElementById('tutorial-step-badge'),
+    tutorialSkipBtn: document.getElementById('tutorial-skip-btn'),
+    tutorialTitle: document.getElementById('tutorial-title'),
+    tutorialText: document.getElementById('tutorial-text'),
+    tutorialNextBtn: document.getElementById('tutorial-next-btn'),
+
     introCutscene: document.getElementById('intro-cutscene'),
     btnSkipCutscene: document.getElementById('btn-skip-cutscene'),
     btnCutsceneSound: document.getElementById('btn-cutscene-sound'),
@@ -864,27 +893,37 @@
     gameNoticeTitle: document.getElementById('game-notice-title'),
     gameNoticeMessage: document.getElementById('game-notice-message'),
     gameNoticeClose: document.getElementById('game-notice-close'),
+    gameNoticeCancel: document.getElementById('game-notice-cancel'),
     gameNoticeOk: document.getElementById('game-notice-ok')
   };
 
   let pendingNoticeCallback = null;
+  let pendingNoticeCancelCallback = null;
 
-  function closeInPageNotice() {
+  function closeInPageNotice(confirmed = true) {
     if (!DOM.gameNoticeModal) return;
     DOM.gameNoticeModal.classList.remove('active');
     DOM.gameNoticeModal.style.display = 'none';
     if (DOM.gameNoticeOk) DOM.gameNoticeOk.textContent = 'ACKNOWLEDGE';
-    const cb = pendingNoticeCallback;
+    if (DOM.gameNoticeCancel) DOM.gameNoticeCancel.style.display = 'none';
+    const cb = confirmed ? pendingNoticeCallback : pendingNoticeCancelCallback;
     pendingNoticeCallback = null;
+    pendingNoticeCancelCallback = null;
     if (typeof cb === 'function') cb();
+    if (typeof tutorialOnNoticeClosed === 'function') tutorialOnNoticeClosed();
   }
 
-  function showInPageNotice(message, title = 'MISSION CONTROL NOTICE', onClose = null, okLabel = 'ACKNOWLEDGE') {
+  function showInPageNotice(message, title = 'MISSION CONTROL NOTICE', onClose = null, okLabel = 'ACKNOWLEDGE', onCancel = null, cancelLabel = 'CANCEL') {
     if (!DOM.gameNoticeModal || !DOM.gameNoticeMessage) return;
     pendingNoticeCallback = typeof onClose === 'function' ? onClose : null;
+    pendingNoticeCancelCallback = typeof onCancel === 'function' ? onCancel : null;
     if (DOM.gameNoticeTitle) DOM.gameNoticeTitle.textContent = title;
     DOM.gameNoticeMessage.textContent = String(message || '');
     if (DOM.gameNoticeOk) DOM.gameNoticeOk.textContent = okLabel;
+    if (DOM.gameNoticeCancel) {
+      DOM.gameNoticeCancel.textContent = cancelLabel;
+      DOM.gameNoticeCancel.style.display = typeof onCancel === 'function' ? 'inline-flex' : 'none';
+    }
     DOM.gameNoticeModal.style.display = 'flex';
     DOM.gameNoticeModal.classList.add('active');
   }
@@ -1009,6 +1048,7 @@
     MISSION_DOMAINS.forEach(dom => {
       const card = document.createElement('div');
       card.className = `domain-card ${state.selectedDomain?.id === dom.id ? 'selected' : ''}`;
+      card.dataset.domainId = dom.id;
 
       card.innerHTML = `
         <div class="domain-icon">${dom.icon}</div>
@@ -1061,7 +1101,8 @@
       const t2Locked = state.reputation < 35 && !isInfiniteBudget();
 
       const card = document.createElement('div');
-      card.className = `instrument-card ${isSelected ? 'selected' : ''}`;
+      card.className = `instrument-card ${isSelected ? 'selected' : ''} ${isTrendingInst ? 'is-trending-inst' : ''}`;
+      card.dataset.instId = instGroup.id;
 
       card.innerHTML = `
         <div class="inst-header">
@@ -1284,6 +1325,7 @@
 
       const card = document.createElement('div');
       card.className = `opt-card ${isSelected ? 'selected' : ''}`;
+      card.dataset.itemId = item.id;
 
       let metricsHtml = `<div class="metric-tag"><span class="label">COST</span><span class="val text-cyan">$${item.cost.toLocaleString()}</span></div>`;
       if (item.payloadMass) metricsHtml += `<div class="metric-tag"><span class="label">MAX PAYLOAD</span><span class="val text-emerald">${item.payloadMass.toLocaleString()} kg</span></div>`;
@@ -1827,6 +1869,16 @@
 
   let hasSeenStage6Tutorial = false;
 
+  function setFlightPaused(paused) {
+    state.flight.paused = !!paused;
+    state.flight.lastTickMs = performance.now();
+    if (DOM.btnFlightPause) {
+      DOM.btnFlightPause.textContent = state.flight.paused ? 'RESUME TIME' : 'PAUSE TIME';
+      DOM.btnFlightPause.classList.toggle('primary', state.flight.paused);
+      DOM.btnFlightPause.classList.toggle('secondary', !state.flight.paused);
+    }
+  }
+
   function startStage6Flight() {
     // Deduct procurement cost (unless Sandbox)
     if (!isInfiniteBudget()) {
@@ -1838,6 +1890,10 @@
       segment: 'launch',
       progress: 0,
       running: true,
+      paused: false,
+      elapsedMs: 0,
+      lastTickMs: performance.now(),
+      milestonesDone: {},
       launchIntegrity: 100,
       spaceIntegrity: 100,
       groundIntegrity: 100,
@@ -1848,6 +1904,7 @@
       anomalyUrgentTimer: null
     };
 
+    setFlightPaused(false);
     DOM.anomalyAlertBox.style.display = 'none';
     DOM.btnCompleteFlight.style.display = 'none';
     DOM.flightTerminal.innerHTML = '';
@@ -1865,11 +1922,11 @@
     if (flightAnimId) cancelAnimationFrame(flightAnimId);
 
     const beginFlight = () => {
+      state.flight.lastTickMs = performance.now();
       runFlightLoop();
-      scheduleFlightMilestones();
     };
 
-    if (!hasSeenStage6Tutorial) {
+    if (!hasSeenStage6Tutorial && !(typeof tutorialState !== 'undefined' && tutorialState.active)) {
       hasSeenStage6Tutorial = true;
       showInPageNotice(
         'FLIGHT BRIEFING:\n' +
@@ -1881,6 +1938,7 @@
         'LAUNCH MISSION'
       );
     } else {
+      hasSeenStage6Tutorial = true;
       beginFlight();
     }
   }
@@ -1902,70 +1960,62 @@
     DOM.flightTerminal.scrollTop = DOM.flightTerminal.scrollHeight;
   }
 
-  function scheduleFlightMilestones() {
+  function checkFlightMilestones(elapsedMs) {
+    if (!state.flight.running) return;
     const diff = getDifficultyConfig();
+    const done = state.flight.milestonesDone;
     const tLaunch = flightDurationMs * 0.25;
     const tExtra = flightDurationMs * 0.42;
     const tSpace = flightDurationMs * 0.55;
     const tGround = flightDurationMs * 0.80;
     const tEnd = flightDurationMs * 1.05;
 
-    // Launch Segment milestone
-    setTimeout(() => {
-      if (!state.flight.running) return;
+    if (!done.launch && elapsedMs >= tLaunch) {
+      done.launch = true;
       state.flight.segment = 'space';
       DOM.flightSegmentName.textContent = 'SPACE SEGMENT';
       DOM.flightPhaseName.textContent = 'STAGE SEPARATION & FAIRING JETTISON';
       logFlightMessage('Main stage separation confirmed. Spacecraft bus deployed solar panels.', false, 'satellite');
       triggerTimedAnomaly('launch');
-    }, tLaunch);
-
-    // Extra anomaly window on Hard difficulty
-    if (diff.extraAnomalyChance > 0) {
-      setTimeout(() => {
-        if (!state.flight.running || state.flight.anomalyActive) return;
-        if (Math.random() < diff.extraAnomalyChance) {
-          logFlightMessage('Deep-space solar flare interference detected!', true, 'alert');
-          triggerTimedAnomaly('space');
-        }
-      }, tExtra);
     }
 
-    // Space Segment milestone
-    setTimeout(() => {
-      if (!state.flight.running) return;
+    if (!done.extra && diff.extraAnomalyChance > 0 && elapsedMs >= tExtra) {
+      done.extra = true;
+      if (!state.flight.anomalyActive && Math.random() < diff.extraAnomalyChance) {
+        logFlightMessage('Deep-space solar flare interference detected!', true, 'alert');
+        triggerTimedAnomaly('space');
+      }
+    }
+
+    if (!done.space && elapsedMs >= tSpace) {
+      done.space = true;
       DOM.flightPhaseName.textContent = 'SCIENCE INSTRUMENT CALIBRATION';
       logFlightMessage('Space Segment: Instruments online. Gathering multi-spectral telemetry.', false, 'microscope');
       state.flight.dataAccumulatedMB += 550;
       DOM.flightDataCounter.textContent = `${state.flight.dataAccumulatedMB} MB`;
       triggerTimedAnomaly('space');
-    }, tSpace);
+    }
 
-    // Ground Segment milestone
-    setTimeout(() => {
-      if (!state.flight.running) return;
+    if (!done.ground && elapsedMs >= tGround) {
+      done.ground = true;
       state.flight.segment = 'ground';
       DOM.flightSegmentName.textContent = 'GROUND SEGMENT';
       DOM.flightPhaseName.textContent = 'DOWNLINKING TELEMETRY';
 
-      // Bandwidth affects downlink speed and buffer capacity
       const bw = state.tempResources.bandwidth;
       if (bw < 30) {
         logFlightMessage('Low Bandwidth warning: Telemetry buffer bottlenecked at ground receiver.', true, 'alert');
-        state.flight.dataAccumulatedMB = Math.round(state.flight.dataAccumulatedMB * 0.7); // data lost from buffer overflow!
+        state.flight.dataAccumulatedMB = Math.round(state.flight.dataAccumulatedMB * 0.7);
       } else {
         state.flight.dataAccumulatedMB += 850;
       }
       DOM.flightDataCounter.textContent = `${state.flight.dataAccumulatedMB} MB`;
 
       triggerTimedAnomaly('ground');
-    }, tGround);
+    }
 
-    // Flight End & Re-entry check for biological missions!
-    setTimeout(() => {
-      if (!state.flight.running) return;
-
-      // Check Biological Sample Return Heat Shield
+    if (!done.end && elapsedMs >= tEnd) {
+      done.end = true;
       if (state.selectedDomain.requiresHeatShield && !state.selections.heatShieldInstalled) {
         playAlarm();
         logFlightMessage('RE-ENTRY CATASTROPHE: No heat shield installed! Re-entry temperatures reached 1600°C and incinerated all biological samples.', true, 'alert');
@@ -1979,16 +2029,17 @@
       DOM.flightPhaseName.textContent = 'MISSION FLIGHT OPERATIONS COMPLETE';
       logFlightMessage('MISSION COMPLETED: Downlinked telemetry verified. Proceed to User Segment.', false, 'trophy');
       DOM.btnCompleteFlight.style.display = 'block';
-    }, tEnd);
+      if (typeof tutorialOnFlightComplete === 'function') tutorialOnFlightComplete();
+    }
   }
 
   function triggerTimedAnomaly(seg) {
     if (state.flight.anomalyActive) return;
 
     const diff = getDifficultyConfig();
-    // Saboteur mode logic
+    const isTutorialLaunchAnomaly = (typeof tutorialState !== 'undefined' && tutorialState.active && seg === 'launch');
     const isSabotaged = (state.gameMode === 'sabotage') && (state.saboteurRole === seg);
-    if (!isSabotaged && Math.random() > diff.anomalyChance) {
+    if (!isTutorialLaunchAnomaly && !isSabotaged && Math.random() > diff.anomalyChance) {
       logFlightMessage(`${seg.toUpperCase()} segment nominal — no anomaly triggered.`, false, 'check');
       return;
     }
@@ -2027,10 +2078,12 @@
     DOM.anomalyTimerBar.style.width = '100%';
     DOM.anomalyAlertBox.style.display = 'block';
     playAlarm();
+    if (typeof tutorialOnAnomalyTriggered === 'function') tutorialOnAnomalyTriggered();
 
     // Start 15-second unaddressed anomaly countdown timer!
     if (state.flight.anomalyUrgentTimer) clearInterval(state.flight.anomalyUrgentTimer);
     state.flight.anomalyUrgentTimer = setInterval(() => {
+      if (state.flight.paused) return;
       state.flight.anomalyUrgentSeconds -= 1;
       const pct = (state.flight.anomalyUrgentSeconds / 15) * 100;
       DOM.anomalyTimerBar.style.width = `${Math.max(0, pct)}%`;
@@ -2084,9 +2137,16 @@
 
     ctx.clearRect(0, 0, w, h);
 
-    if (state.flight.running && flightProgress < 1.0) {
-      // Step rate based on duration
-      flightProgress += 1 / (state.selectedDomain.transitDurationSec * 60);
+    const now = performance.now();
+    const dt = Math.min(100, Math.max(0, now - (state.flight.lastTickMs || now)));
+    state.flight.lastTickMs = now;
+
+    if (state.flight.running && !state.flight.paused) {
+      state.flight.elapsedMs += dt;
+      if (flightProgress < 1.0) {
+        flightProgress = Math.min(1.0, state.flight.elapsedMs / flightDurationMs);
+      }
+      checkFlightMilestones(state.flight.elapsedMs);
     }
 
     ctx.fillStyle = '#030712';
@@ -2251,6 +2311,8 @@
       logFlightMessage(`ANOMALY RESOLVED: ${anomaly.seg.toUpperCase()} station stabilized the issue!`, false, 'check');
       DOM.anomalyAlertBox.style.display = 'none';
       state.flight.anomalyActive = false;
+      if (state.flight.paused) setFlightPaused(false);
+      if (typeof tutorialOnAnomalyResolved === 'function') tutorialOnAnomalyResolved();
     } else {
       handleAnomalyTimeout(anomaly);
     }
@@ -2758,6 +2820,11 @@
 
   function renderVaultList() {
     DOM.vaultListContainer.innerHTML = '';
+    const isList = state.vaultViewMode === 'list';
+    DOM.vaultListContainer.classList.toggle('list-view', isList);
+    if (DOM.btnVaultGrid) DOM.btnVaultGrid.classList.toggle('active', !isList);
+    if (DOM.btnVaultList) DOM.btnVaultList.classList.toggle('active', isList);
+
     if (state.dataInventory.length === 0) {
       DOM.vaultListContainer.innerHTML = `<p style="grid-column: 1/-1; color: var(--text-muted); font-size: 0.85rem;">Vault empty. Complete missions to downlink and store science data!</p>`;
       return;
@@ -2772,11 +2839,15 @@
         : '';
 
       card.innerHTML = `
-        ${decayBadge}
-        <span class="data-level-badge">${item.level}</span>
-        <strong style="color: var(--text-main); font-size: 0.85rem;">${item.name}</strong>
-        <span style="font-size: 0.72rem; color: var(--text-muted);">${item.category} (${item.domainName})</span>
-        <span style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--color-emerald); margin-top: 0.4rem;">
+        <div class="vault-card-meta">
+          <span class="data-level-badge">${item.level}</span>
+          <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+            <strong style="color: var(--text-main); font-size: 0.85rem;">${item.name}</strong>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">${item.category} (${item.domainName})</span>
+          </div>
+          ${decayBadge}
+        </div>
+        <span class="vault-card-val" style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--color-emerald); margin-top: 0.4rem;">
           Base Value: $${item.estValue.toLocaleString()}
         </span>
       `;
@@ -2945,8 +3016,22 @@
       });
     }
 
-    // Vault Button
+    // Vault Button & View Mode
     DOM.btnOpenVault.addEventListener('click', openDataVault);
+    if (DOM.btnVaultGrid) {
+      DOM.btnVaultGrid.addEventListener('click', () => {
+        playBeep(650);
+        state.vaultViewMode = 'grid';
+        renderVaultList();
+      });
+    }
+    if (DOM.btnVaultList) {
+      DOM.btnVaultList.addEventListener('click', () => {
+        playBeep(650);
+        state.vaultViewMode = 'list';
+        renderVaultList();
+      });
+    }
     DOM.vaultModalClose.addEventListener('click', () => {
       DOM.vaultModal.classList.remove('active');
       DOM.vaultModal.style.display = 'none';
@@ -2969,6 +3054,50 @@
       DOM.settingsModal.classList.remove('active');
       DOM.settingsModal.style.display = 'none';
     });
+
+    if (DOM.btnRedoTutorial) {
+      DOM.btnRedoTutorial.addEventListener('click', () => {
+        playBeep(820);
+        DOM.settingsModal.classList.remove('active');
+        DOM.settingsModal.style.display = 'none';
+        startGuidedTutorialFlow();
+      });
+    }
+
+    if (DOM.btnResetGameData) {
+      DOM.btnResetGameData.addEventListener('click', () => {
+        playBeep(620);
+        showInPageNotice(
+          'Reset all mission progress, budget, reputation, stored datasets, and preferences back to a fresh start?',
+          'CONFIRM RESET GAME DATA',
+          () => {
+            resetAllGameData();
+            DOM.settingsModal.classList.remove('active');
+            DOM.settingsModal.style.display = 'none';
+            showInPageNotice('All game data has been reset to defaults.', 'DATA RESET COMPLETE');
+          },
+          'RESET EVERYTHING',
+          () => {},
+          'CANCEL'
+        );
+      });
+    }
+
+    // Startup Tutorial Prompt Modal
+    if (DOM.initBtnTutorialYes) {
+      DOM.initBtnTutorialYes.addEventListener('click', () => {
+        playBeep(900);
+        if (DOM.initTutorialModal) DOM.initTutorialModal.classList.remove('active');
+        startGuidedTutorialFlow();
+      });
+    }
+    if (DOM.initBtnTutorialNo) {
+      DOM.initBtnTutorialNo.addEventListener('click', () => {
+        playBeep(700);
+        if (DOM.initTutorialModal) DOM.initTutorialModal.classList.remove('active');
+        if (DOM.initModeModal) DOM.initModeModal.classList.add('active');
+      });
+    }
 
     // LM Studio Test Connection
     if (DOM.btnTestLmSettings) {
@@ -3104,10 +3233,36 @@
       });
     }
 
-    // Mission Name Customization
+    // Mission Name Customization & Randomizer
     if (DOM.inputMissionName) {
       DOM.inputMissionName.addEventListener('input', (e) => {
         state.missionName = e.target.value.trim() || 'ARTEMIS-1';
+      });
+    }
+    if (DOM.btnRandomMissionName && DOM.inputMissionName) {
+      const RANDOM_MISSION_NAMES = [
+        'ARTEMIS-1', 'VOYAGER-3', 'KEPLER-X', 'CASSINI-II', 'DAWN-7',
+        'NEW HORIZONS', 'OSIRIS-APEX', 'EUROPA CLIPPER', 'WEBB-PRIME',
+        'TESS-NOVA', 'PIONEER-12', 'GALILEO-NEXT', 'JUNO-POLAR',
+        'MAGELLAN-IV', 'DRAGONFLY-1', 'VIKING-9', 'SENTINEL-6', 'HELIOS-STAR'
+      ];
+      DOM.btnRandomMissionName.addEventListener('click', () => {
+        playBeep(820);
+        const cur = DOM.inputMissionName.value.trim();
+        const pool = RANDOM_MISSION_NAMES.filter(n => n !== cur);
+        const pick = pool[Math.floor(Math.random() * pool.length)] || 'ARTEMIS-1';
+        DOM.inputMissionName.value = pick;
+        state.missionName = pick;
+      });
+    }
+
+    // Stage 6 Pause Time Toggle
+    if (DOM.btnFlightPause) {
+      DOM.btnFlightPause.addEventListener('click', () => {
+        if (!state.flight.running) return;
+        playBeep(state.flight.paused ? 860 : 540);
+        setFlightPaused(!state.flight.paused);
+        logFlightMessage(state.flight.paused ? 'Simulation time PAUSED by Flight Director.' : 'Simulation time RESUMED.', false);
       });
     }
 
@@ -3276,11 +3431,12 @@
       });
     }
 
-    if (DOM.gameNoticeClose) DOM.gameNoticeClose.addEventListener('click', closeInPageNotice);
-    if (DOM.gameNoticeOk) DOM.gameNoticeOk.addEventListener('click', closeInPageNotice);
+    if (DOM.gameNoticeClose) DOM.gameNoticeClose.addEventListener('click', () => closeInPageNotice(false));
+    if (DOM.gameNoticeCancel) DOM.gameNoticeCancel.addEventListener('click', () => closeInPageNotice(false));
+    if (DOM.gameNoticeOk) DOM.gameNoticeOk.addEventListener('click', () => closeInPageNotice(true));
     if (DOM.gameNoticeModal) {
       DOM.gameNoticeModal.addEventListener('click', (e) => {
-        if (e.target === DOM.gameNoticeModal) closeInPageNotice();
+        if (e.target === DOM.gameNoticeModal) closeInPageNotice(false);
       });
     }
 
@@ -3348,9 +3504,69 @@
     { selector: '#btn-next-mission-loop', text: 'Start your next mission cycle!' }
   ];
 
+  let coachRafId = null;
+  let coachResizeHandler = null;
+  let coachPairs = [];
+  let coachMaskPathEl = null;
+
+  function updateScreenCoachPositions() {
+    if (!DOM.screenCoachOverlay || !DOM.screenCoachOverlay.classList.contains('active')) return;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const cutouts = [];
+
+    coachPairs.forEach(pair => {
+      const rect = pair.el.getBoundingClientRect();
+      if (rect.width < 8 || rect.height < 8 || rect.bottom < 0 || rect.top > vh) {
+        pair.box.style.display = 'none';
+        pair.tip.style.display = 'none';
+        return;
+      }
+      pair.box.style.display = 'block';
+      pair.tip.style.display = '';
+
+      const x = Math.max(4, rect.left - 4);
+      const y = Math.max(4, rect.top - 4);
+      const w = Math.min(vw - 8, rect.width + 8);
+      const h = rect.height + 8;
+      cutouts.push({ x, y, w, h });
+
+      pair.box.style.left = `${x}px`;
+      pair.box.style.top = `${y}px`;
+      pair.box.style.width = `${w}px`;
+      pair.box.style.height = `${h}px`;
+
+      const placeAbove = rect.bottom + 74 > vh && rect.top > 85;
+      pair.tip.style.left = `${Math.min(Math.max(8, rect.left), Math.max(8, vw - 295))}px`;
+      pair.tip.style.top = placeAbove
+        ? `${Math.max(12, rect.top - 58)}px`
+        : `${Math.min(vh - 80, rect.bottom + 8)}px`;
+    });
+
+    if (DOM.coachMaskSvg && coachMaskPathEl) {
+      DOM.coachMaskSvg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
+      let pathD = `M0,0 H${vw} V${vh} H0 Z `;
+      cutouts.forEach(c => {
+        pathD += `M${c.x},${c.y} h${c.w} v${c.h} h${-c.w} Z `;
+      });
+      coachMaskPathEl.setAttribute('d', pathD);
+    }
+  }
+
   function closeScreenCoachOverlay() {
     if (!DOM.screenCoachOverlay) return;
     DOM.screenCoachOverlay.classList.remove('active');
+    if (coachRafId) {
+      cancelAnimationFrame(coachRafId);
+      coachRafId = null;
+    }
+    if (coachResizeHandler) {
+      window.removeEventListener('resize', coachResizeHandler);
+      window.removeEventListener('scroll', coachResizeHandler, true);
+      coachResizeHandler = null;
+    }
+    coachPairs = [];
+    coachMaskPathEl = null;
     if (DOM.coachCalloutsLayer) DOM.coachCalloutsLayer.innerHTML = '';
     if (DOM.coachMaskSvg) DOM.coachMaskSvg.innerHTML = '';
   }
@@ -3365,48 +3581,29 @@
     hintBanner.textContent = 'Hover or tap any highlighted area to read its description.';
     DOM.coachCalloutsLayer.appendChild(hintBanner);
 
-    const vw = window.innerWidth;
     const vh = window.innerHeight;
     let delayIdx = 0;
-    const cutouts = [];
-    const allPairs = [];
+    coachPairs = [];
 
     SCREEN_ELEMENT_GUIDES.forEach(item => {
       const el = document.querySelector(item.selector);
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      // Only annotate elements that are actually visible on the current screen
       if (rect.width < 8 || rect.height < 8 || rect.bottom < 0 || rect.top > vh) return;
-
-      const x = Math.max(4, rect.left - 4);
-      const y = Math.max(4, rect.top - 4);
-      const w = Math.min(vw - 8, rect.width + 8);
-      const h = rect.height + 8;
-      cutouts.push({ x, y, w, h });
 
       const box = document.createElement('div');
       box.className = 'coach-highlight-box';
-      box.style.left = `${x}px`;
-      box.style.top = `${y}px`;
-      box.style.width = `${w}px`;
-      box.style.height = `${h}px`;
       box.style.animationDelay = `${delayIdx * 0.04}s`;
 
       const tip = document.createElement('div');
       tip.className = 'coach-tip-pill';
       tip.textContent = item.text;
-      // Place tip below or above the highlighted element so it stays on screen
-      const placeAbove = rect.bottom + 74 > vh && rect.top > 85;
-      tip.style.left = `${Math.min(Math.max(8, rect.left), Math.max(8, vw - 295))}px`;
-      tip.style.top = placeAbove
-        ? `${Math.max(12, rect.top - 58)}px`
-        : `${Math.min(vh - 80, rect.bottom + 8)}px`;
 
-      const pair = { box, tip };
-      allPairs.push(pair);
+      const pair = { el, box, tip };
+      coachPairs.push(pair);
 
       const activateOnlyThis = (active) => {
-        allPairs.forEach(p => {
+        coachPairs.forEach(p => {
           p.box.classList.remove('is-hovered');
           p.tip.classList.remove('is-hovered');
         });
@@ -3429,20 +3626,476 @@
       delayIdx++;
     });
 
-    // Gray overlay covers ONLY unexplained/unimportant areas via evenodd SVG cutout mask
     if (DOM.coachMaskSvg) {
-      DOM.coachMaskSvg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
-      let pathD = `M0,0 H${vw} V${vh} H0 Z `;
-      cutouts.forEach(c => {
-        pathD += `M${c.x},${c.y} h${c.w} v${c.h} h${-c.w} Z `;
-      });
-      const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      pathEl.setAttribute('d', pathD);
-      pathEl.setAttribute('fill', 'rgba(51, 65, 85, 0.78)');
-      pathEl.setAttribute('fill-rule', 'evenodd');
+      coachMaskPathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      coachMaskPathEl.setAttribute('fill', 'rgba(51, 65, 85, 0.78)');
+      coachMaskPathEl.setAttribute('fill-rule', 'evenodd');
       DOM.coachMaskSvg.innerHTML = '';
-      DOM.coachMaskSvg.appendChild(pathEl);
+      DOM.coachMaskSvg.appendChild(coachMaskPathEl);
     }
+
+    coachResizeHandler = () => updateScreenCoachPositions();
+    window.addEventListener('resize', coachResizeHandler);
+    window.addEventListener('scroll', coachResizeHandler, true);
+
+    const tickCoach = () => {
+      if (!DOM.screenCoachOverlay.classList.contains('active')) return;
+      updateScreenCoachPositions();
+      coachRafId = requestAnimationFrame(tickCoach);
+    };
+    updateScreenCoachPositions();
+    coachRafId = requestAnimationFrame(tickCoach);
+  }
+
+  // ========================================================================
+  // 18. RESET GAME DATA & GUIDED INTERACTIVE TUTORIAL
+  // ========================================================================
+
+  function resetAllGameData() {
+    endGuidedTutorial(false);
+    try {
+      localStorage.removeItem('tm_text_size');
+    } catch (e) {}
+    document.documentElement.classList.remove('text-size-small', 'text-size-large');
+    document.documentElement.classList.add('text-size-normal');
+    const selSize = document.getElementById('select-text-size');
+    if (selSize) selSize.value = 'normal';
+
+    state.difficulty = 'hard';
+    state.customSlidersEnabled = false;
+    if (DOM.chkAdvSliders) DOM.chkAdvSliders.checked = false;
+    state.budget = getDifficultyConfig().startingBudget;
+    state.reputation = 50;
+    state.activeDebt = 0;
+    state.cycleCount = 1;
+    state.trendLocked = false;
+    if (DOM.trendsTicker) DOM.trendsTicker.classList.remove('locked');
+    if (DOM.tickerLockBadge) DOM.tickerLockBadge.innerHTML = `${ICONS.unlock} LIVE`;
+    state.currentTrend = MARKET_TREND_POOLS[0];
+    setTickerText(state.currentTrend.text);
+    state.missionName = 'ARTEMIS-1';
+    if (DOM.inputMissionName) DOM.inputMissionName.value = 'ARTEMIS-1';
+    state.selectedDomain = null;
+    state.selectedInstruments = [];
+    state.instrumentTiers = {};
+    state.dataInventory = [];
+    state.selectedInventoryIdx = null;
+    state.vaultViewMode = 'grid';
+    state.inventoryViewMode = 'grid';
+    state.selections = {
+      launchRocket: null,
+      selectedFuel: 'kerosene',
+      spaceBus: null,
+      busSizing: 'standard',
+      heatShieldInstalled: false,
+      groundStation: null
+    };
+    hasSeenStage6Tutorial = false;
+    updatePermanentHud();
+    renderStage1Domains();
+    goToStage(1);
+  }
+
+  const tutorialState = {
+    active: false,
+    stepIdx: 0,
+    rafId: null,
+    cleanupFn: null,
+    waitingForAnomaly: false,
+    waitingForFlightEnd: false,
+    waitingForNoticeClose: false
+  };
+
+  function getRecommendedRocketId() {
+    const reqVel = state.tempResources.reqVelocity || (state.selectedDomain ? state.selectedDomain.baseDeltaV : 7.8);
+    const fuel = FUEL_TYPES[state.selections.selectedFuel] || FUEL_TYPES.kerosene;
+    const bus = CATALOG.space_bus[0];
+    const estMass = state.tempResources.mass || ((bus ? bus.dryMass : 350) + state.selectedInstruments.length * 140 + 400);
+    const match = CATALOG.launch.find(r => r.payloadMass >= estMass && (r.velocityDV + (fuel ? fuel.dvBonus : 0)) >= reqVel);
+    return (match || CATALOG.launch[CATALOG.launch.length - 1]).id;
+  }
+
+  function getRecommendedBusId() {
+    const reqPower = 75 + state.selectedInstruments.reduce((acc, i) => acc + i.power, 0);
+    const reqVol = Math.max(2.0, state.selectedInstruments.length * 1.1);
+    const match = CATALOG.space_bus.find(b => b.basePower >= reqPower && b.baseVol >= reqVol)
+      || CATALOG.space_bus.find(b => b.basePower >= reqPower)
+      || CATALOG.space_bus[CATALOG.space_bus.length - 1];
+    return match.id;
+  }
+
+  function getRecommendedGroundId() {
+    const sorted = [...CATALOG.ground].sort((a, b) => (b.bandwidthMbps || 0) - (a.bandwidthMbps || 0));
+    return sorted[0].id;
+  }
+
+  const TUTORIAL_STEPS = [
+    {
+      title: '1. MARKET DEMAND TRENDS',
+      text: () => `Watch the Global Data Demand Trend bar! Missions and instruments matching the trending discipline (${state.currentTrend?.domainName || 'Earth Science'}) earn a huge +${Math.round(((state.currentTrend?.boost || 1.7) - 1) * 100)}% sell value bonus. Always aim for what is trending! Click NEXT to begin.`,
+      getTarget: () => document.querySelector('#trends-ticker'),
+      showNext: true
+    },
+    {
+      title: '2. SELECT THE TRENDING DISCIPLINE',
+      text: () => `Select ${state.currentTrend?.domainName || 'the trending discipline'} here to match the active Market Trend and maximize your mission payout.`,
+      getTarget: () => document.querySelector(`.domain-card[data-domain-id="${state.currentTrend?.domain || 'earth'}"]`),
+      advanceOnClick: true
+    },
+    {
+      title: '3. PROCEED TO INSTRUMENTS',
+      text: 'Great! Now click PROCEED TO DEFINE CONCEPT to choose your science sensors.',
+      getTarget: () => document.querySelector('#btn-next-stage1'),
+      advanceOnClick: true
+    },
+    {
+      title: '4. PICK A TRENDING INSTRUMENT',
+      text: 'Instruments marked TRENDING earn the market trend bonus! Click a trending instrument card to equip it.',
+      getTarget: () => document.querySelector('.instrument-card.is-trending-inst'),
+      advanceOnEvent: 'instrument-selected'
+    },
+    {
+      title: '5. OUTLINE REQUIREMENTS',
+      text: 'Click OUTLINE REQUIREMENTS to review the physics and power limits for your mission.',
+      getTarget: () => document.querySelector('#btn-next-stage2'),
+      advanceOnClick: true
+    },
+    {
+      title: '6. COMMENCE DESIGN & BUDGET',
+      text: 'Here are your mission delta-v, mass, power, and bandwidth targets. Click COMMENCE DESIGN & BUDGET to build your spacecraft.',
+      getTarget: () => document.querySelector('#btn-next-stage3'),
+      advanceOnClick: true
+    },
+    {
+      title: '7. CHOOSE A CAPABLE ROCKET',
+      text: 'Pick a launch vehicle with enough Payload Mass and Delta-V velocity to reach your destination.',
+      getTarget: () => document.querySelector(`.opt-card[data-item-id="${getRecommendedRocketId()}"]`),
+      advanceOnClick: true
+    },
+    {
+      title: '8. NEXT SEGMENT (SPACE BUS)',
+      text: 'Rocket selected! Click NEXT SEGMENT to configure your spacecraft bus.',
+      getTarget: () => document.querySelector('#btn-next-segment'),
+      advanceOnClick: true
+    },
+    {
+      title: '9. CHOOSE A BUS WITH ENOUGH POWER',
+      text: 'Select a spacecraft bus that supplies enough electrical power (Watts) and internal volume for your sensors.',
+      getTarget: () => document.querySelector(`.opt-card[data-item-id="${getRecommendedBusId()}"]`),
+      advanceOnClick: true
+    },
+    {
+      title: '10. NEXT SEGMENT (GROUND DISH)',
+      text: 'Spacecraft bus ready! Click NEXT SEGMENT to pick your ground receiving station.',
+      getTarget: () => document.querySelector('#btn-next-segment'),
+      advanceOnClick: true
+    },
+    {
+      title: '11. PICK HIGH-BANDWIDTH GROUND SEGMENT',
+      text: 'Choose the high-bandwidth Deep Space Network dish so all science telemetry downlinks without packet loss.',
+      getTarget: () => document.querySelector(`.opt-card[data-item-id="${getRecommendedGroundId()}"]`),
+      advanceOnClick: true
+    },
+    {
+      title: '12. BUILD & VERIFY',
+      text: 'All 3 segments are green! Click BUILD & VERIFY to run pre-flight safety checks.',
+      getTarget: () => document.querySelector('#btn-next-stage4'),
+      advanceOnClick: true
+    },
+    {
+      title: '13. RUN DIAGNOSTIC SIMULATION',
+      text: 'Click RUN FULL DIAGNOSTIC SIMULATION to test all systems for +10% flight reliability and +5 Reputation.',
+      getTarget: () => document.querySelector('#btn-run-tests'),
+      advanceOnClick: true,
+      delayMs: 1200
+    },
+    {
+      title: '14. AUTHORIZE LAUNCH & IMPLEMENT',
+      text: 'Diagnostics passed! Click AUTHORIZE LAUNCH & IMPLEMENT to send your spacecraft into flight.',
+      getTarget: () => document.querySelector('#btn-next-stage5'),
+      advanceOnClick: true,
+      waitForAnomaly: true
+    },
+    {
+      title: '15. ANOMALY ALERT — PAUSE TIME!',
+      text: 'An urgent in-flight error just triggered! Click PAUSE TIME to freeze the 15-second countdown while you inspect the alert.',
+      getTarget: () => document.querySelector('#btn-flight-pause'),
+      advanceOnClick: true
+    },
+    {
+      title: '16. SOLVE THE ANOMALY',
+      text: 'Click INTERVENE & SOLVE ISSUE! In the minigame, pump the valve or align the slider so the red needle stays inside the green target zone before time runs out.',
+      getTarget: () => document.querySelector('#btn-start-minigame'),
+      advanceOnClick: true,
+      waitForFlightEnd: true
+    },
+    {
+      title: '17. GO TO USER SEGMENT',
+      text: 'Mission flight succeeded! Click ENTER USER SEGMENT & DATA REFINERY to process and sell your data.',
+      getTarget: () => document.querySelector('#btn-complete-flight'),
+      advanceOnClick: true
+    },
+    {
+      title: '18. SELECT YOUR DATA',
+      text: 'Click your newly downlinked dataset in the Mission Data Inventory to inspect it on the workbench.',
+      getTarget: () => document.querySelector('#data-inventory-list .data-card'),
+      advanceOnClick: true
+    },
+    {
+      title: '19. REFINE DATA',
+      text: 'Click REFINE TO L1A to process raw telemetry into a higher-value scientific dataset.',
+      getTarget: () => document.querySelector('#btn-refine-data'),
+      advanceOnClick: true
+    },
+    {
+      title: '20. SELL TO INSTITUTE',
+      text: 'Click SELL TO INSTITUTE to earn budget cash and +8 Reputation!',
+      getTarget: () => document.querySelector('#buyer-institute .btn-sell-action'),
+      advanceOnClick: true,
+      waitForNoticeClose: true
+    },
+    {
+      title: '21. COMMENCE NEXT MISSION CYCLE',
+      text: 'Click COMMENCE NEXT MISSION CYCLE to advance to your next mission and refresh market trends!',
+      getTarget: () => document.querySelector('#btn-next-mission-loop'),
+      advanceOnClick: true
+    }
+  ];
+
+  function updateTutorialOverlayPosition() {
+    if (!tutorialState.active || !DOM.tutorialOverlay || !DOM.tutorialOverlay.classList.contains('active')) return;
+    const step = TUTORIAL_STEPS[tutorialState.stepIdx];
+    if (!step) return;
+    const el = step.getTarget();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    if (!el) {
+      if (DOM.tutorialFocusRing) DOM.tutorialFocusRing.style.display = 'none';
+      return;
+    }
+
+    const rect = el.getBoundingClientRect();
+    if (rect.width < 2 || rect.height < 2) {
+      if (DOM.tutorialFocusRing) DOM.tutorialFocusRing.style.display = 'none';
+      return;
+    }
+
+    const pad = 6;
+    const x = Math.max(2, rect.left - pad);
+    const y = Math.max(2, rect.top - pad);
+    const w = Math.min(vw - x - 2, rect.width + pad * 2);
+    const h = Math.min(vh - y - 2, rect.height + pad * 2);
+
+    if (DOM.tutorialMaskSvg && DOM.tutorialMaskPath) {
+      DOM.tutorialMaskSvg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
+      DOM.tutorialMaskPath.setAttribute('d', `M0,0 H${vw} V${vh} H0 Z M${x},${y} h${w} v${h} h${-w} Z`);
+    }
+
+    if (DOM.tutorialFocusRing) {
+      DOM.tutorialFocusRing.style.display = 'block';
+      DOM.tutorialFocusRing.style.left = `${x}px`;
+      DOM.tutorialFocusRing.style.top = `${y}px`;
+      DOM.tutorialFocusRing.style.width = `${w}px`;
+      DOM.tutorialFocusRing.style.height = `${h}px`;
+    }
+
+    if (DOM.tutorialCallout) {
+      const calloutW = Math.min(360, vw - 24);
+      const calloutH = DOM.tutorialCallout.offsetHeight || 150;
+      const spaceBelow = vh - (y + h);
+      const placeAbove = spaceBelow < calloutH + 24 && y > calloutH + 24;
+      const leftPos = Math.min(Math.max(12, x + w / 2 - calloutW / 2), vw - calloutW - 12);
+      const topPos = placeAbove
+        ? Math.max(12, y - calloutH - 16)
+        : Math.min(vh - calloutH - 12, y + h + 16);
+
+      DOM.tutorialCallout.style.left = `${leftPos}px`;
+      DOM.tutorialCallout.style.top = `${topPos}px`;
+
+      if (DOM.tutorialArrow) {
+        DOM.tutorialArrow.className = `tutorial-arrow ${placeAbove ? 'arrow-down' : 'arrow-up'}`;
+        const arrowX = Math.min(Math.max(16, (x + w / 2) - leftPos - 10), calloutW - 36);
+        DOM.tutorialArrow.style.left = `${arrowX}px`;
+      }
+    }
+  }
+
+  function clearTutorialStepListeners() {
+    if (typeof tutorialState.cleanupFn === 'function') {
+      tutorialState.cleanupFn();
+      tutorialState.cleanupFn = null;
+    }
+  }
+
+  function showTutorialStep(idx) {
+    clearTutorialStepListeners();
+    if (!tutorialState.active) return;
+
+    if (idx >= TUTORIAL_STEPS.length) {
+      endGuidedTutorial(true);
+      return;
+    }
+
+    tutorialState.stepIdx = idx;
+    const step = TUTORIAL_STEPS[idx];
+    const targetEl = step.getTarget();
+
+    if (targetEl && typeof targetEl.scrollIntoView === 'function') {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    }
+
+    if (DOM.tutorialStepBadge) DOM.tutorialStepBadge.textContent = `STEP ${idx + 1} / ${TUTORIAL_STEPS.length}`;
+    if (DOM.tutorialTitle) DOM.tutorialTitle.textContent = step.title;
+    if (DOM.tutorialText) DOM.tutorialText.textContent = typeof step.text === 'function' ? step.text() : step.text;
+    if (DOM.tutorialNextBtn) DOM.tutorialNextBtn.style.display = step.showNext ? 'inline-flex' : 'none';
+
+    if (DOM.tutorialOverlay) DOM.tutorialOverlay.classList.add('active');
+
+    const advance = () => {
+      if (!tutorialState.active) return;
+      clearTutorialStepListeners();
+      if (step.waitForAnomaly) {
+        tutorialState.waitingForAnomaly = true;
+        if (DOM.tutorialOverlay) DOM.tutorialOverlay.classList.remove('active');
+        return;
+      }
+      if (step.waitForFlightEnd) {
+        tutorialState.waitingForFlightEnd = true;
+        if (DOM.tutorialOverlay) DOM.tutorialOverlay.classList.remove('active');
+        return;
+      }
+      if (step.waitForNoticeClose) {
+        tutorialState.waitingForNoticeClose = true;
+        if (DOM.tutorialOverlay) DOM.tutorialOverlay.classList.remove('active');
+        return;
+      }
+      const nextIdx = idx + 1;
+      if (step.delayMs) {
+        setTimeout(() => showTutorialStep(nextIdx), step.delayMs);
+      } else {
+        setTimeout(() => showTutorialStep(nextIdx), 80);
+      }
+    };
+
+    if (step.advanceOnClick && targetEl) {
+      const onTargetClick = () => advance();
+      targetEl.addEventListener('click', onTargetClick, { once: true });
+      tutorialState.cleanupFn = () => targetEl.removeEventListener('click', onTargetClick);
+    } else if (step.advanceOnEvent === 'instrument-selected') {
+      const container = DOM.dataTypesContainer;
+      const onContainerClick = () => {
+        setTimeout(() => {
+          if (state.selectedInstruments.length > 0 && tutorialState.active && tutorialState.stepIdx === idx) {
+            advance();
+          }
+        }, 60);
+      };
+      if (container) {
+        container.addEventListener('click', onContainerClick);
+        tutorialState.cleanupFn = () => container.removeEventListener('click', onContainerClick);
+      }
+    }
+
+    updateTutorialOverlayPosition();
+  }
+
+  function tutorialOnAnomalyTriggered() {
+    if (!tutorialState.active || !tutorialState.waitingForAnomaly) return;
+    tutorialState.waitingForAnomaly = false;
+    setTimeout(() => showTutorialStep(tutorialState.stepIdx + 1), 120);
+  }
+
+  function tutorialOnAnomalyResolved() {
+    // Flight resumes automatically; wait for tutorialOnFlightComplete
+  }
+
+  function tutorialOnNoticeClosed() {
+    if (!tutorialState.active || !tutorialState.waitingForNoticeClose) return;
+    tutorialState.waitingForNoticeClose = false;
+    setTimeout(() => showTutorialStep(tutorialState.stepIdx + 1), 120);
+  }
+
+  function tutorialOnFlightComplete() {
+    if (!tutorialState.active || !tutorialState.waitingForFlightEnd) return;
+    tutorialState.waitingForFlightEnd = false;
+    setTimeout(() => showTutorialStep(tutorialState.stepIdx + 1), 120);
+  }
+
+  function endGuidedTutorial(showCongrats = false) {
+    clearTutorialStepListeners();
+    tutorialState.active = false;
+    tutorialState.waitingForAnomaly = false;
+    tutorialState.waitingForFlightEnd = false;
+    if (tutorialState.rafId) {
+      cancelAnimationFrame(tutorialState.rafId);
+      tutorialState.rafId = null;
+    }
+    if (DOM.tutorialOverlay) DOM.tutorialOverlay.classList.remove('active');
+
+    if (showCongrats) {
+      playBeep(1200);
+      showInPageNotice(
+        'Congratulations, Flight Director!\n\nYou have completed the Guided Tutorial: you selected a trending NASA mission, engineered a capable rocket, bus, and ground link, paused & resolved an in-flight anomaly, refined your downlinked data, and sold it to advance to the next mission cycle.\n\nYou are ready to lead NASA\'s Science Directorate!',
+        'TUTORIAL COMPLETE — CONGRATULATIONS!'
+      );
+    }
+  }
+
+  function startGuidedTutorialFlow() {
+    // Configure Basic Controls + Easy (Cadet) difficulty
+    state.customSlidersEnabled = false;
+    if (DOM.chkAdvSliders) DOM.chkAdvSliders.checked = false;
+    state.difficulty = 'easy';
+    state.budget = DIFFICULTY_MODES.easy.startingBudget;
+    state.reputation = 50;
+    state.gameMode = 'singleplayer';
+    state.selectedDomain = null;
+    state.selectedInstruments = [];
+    state.selections.heatShieldInstalled = false;
+
+    if (DOM.initTutorialModal) DOM.initTutorialModal.classList.remove('active');
+    if (DOM.initModeModal) DOM.initModeModal.classList.remove('active');
+    if (DOM.initDifficultyModal) DOM.initDifficultyModal.classList.remove('active');
+    if (DOM.mainMenuOverlay) {
+      DOM.mainMenuOverlay.classList.remove('active');
+      DOM.mainMenuOverlay.style.display = 'none';
+    }
+    if (DOM.appContainer) DOM.appContainer.style.display = 'flex';
+    if (DOM.hudModeBadge) DOM.hudModeBadge.textContent = 'SINGLEPLAYER';
+    if (DOM.rolesBar) DOM.rolesBar.style.display = 'none';
+    if (DOM.saboteurStatusPill) DOM.saboteurStatusPill.style.display = 'none';
+
+    updatePermanentHud();
+    renderStage1Domains();
+    goToStage(1);
+
+    tutorialState.active = true;
+    tutorialState.waitingForAnomaly = false;
+    tutorialState.waitingForFlightEnd = false;
+    if (tutorialState.rafId) cancelAnimationFrame(tutorialState.rafId);
+
+    const tickTutorial = () => {
+      if (!tutorialState.active) return;
+      updateTutorialOverlayPosition();
+      tutorialState.rafId = requestAnimationFrame(tickTutorial);
+    };
+    tutorialState.rafId = requestAnimationFrame(tickTutorial);
+
+    if (DOM.tutorialNextBtn) {
+      DOM.tutorialNextBtn.onclick = () => {
+        playBeep(820);
+        showTutorialStep(tutorialState.stepIdx + 1);
+      };
+    }
+    if (DOM.tutorialSkipBtn) {
+      DOM.tutorialSkipBtn.onclick = () => {
+        playBeep(620);
+        endGuidedTutorial(false);
+      };
+    }
+
+    showTutorialStep(0);
   }
 
   let cutsceneSoundEnabled = true;

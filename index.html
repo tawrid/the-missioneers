@@ -516,6 +516,9 @@
         <div class="mission-name-bar">
           <label for="input-mission-name"><svg class="inline-heading-icon tabler-icon tabler-filled ti-cyan" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13a8 8 0 0 1 7 7a6 6 0 0 0 3 -5a9 9 0 0 0 6 -8a3 3 0 0 0 -3 -3a9 9 0 0 0 -8 6a6 6 0 0 0 -5 3" /><path d="M7 14a6 6 0 0 0 -3 6a6 6 0 0 0 6 -3" fill="none" /><path d="M14 9a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" fill="#0f172a" /></svg> MISSION DESIGNATION:</label>
           <input type="text" id="input-mission-name" value="ARTEMIS-1" maxlength="32" placeholder="Enter custom mission name...">
+          <button type="button" class="action-btn secondary mini-btn mission-rand-btn" id="btn-random-mission-name" title="Randomize Mission Name">
+            <svg class="tabler-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14" /><path d="M8 8.5a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0" fill="currentColor" /><path d="M15 8.5a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0" fill="currentColor" /><path d="M15 15.5a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0" fill="currentColor" /><path d="M8 15.5a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0" fill="currentColor" /><path d="M11.5 12a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0" fill="currentColor" /></svg> RANDOM
+          </button>
         </div>
 
         <div class="domain-grid" id="domain-grid">
@@ -825,6 +828,7 @@
               <div class="hud-tag">MISSION STATUS: <span id="flight-phase-name" class="text-emerald">STAGE 1 IGNITION</span></div>
               <div class="hud-tag">CURRENT SEGMENT: <span id="flight-segment-name" class="text-cyan">LAUNCH SEGMENT</span></div>
               <div class="hud-tag">DATA BUFFER: <span id="flight-data-counter">0 MB</span></div>
+              <button type="button" class="action-btn secondary mini-btn" id="btn-flight-pause">PAUSE TIME</button>
             </div>
 
             <canvas id="flight-canvas" width="800" height="420"></canvas>
@@ -1046,7 +1050,17 @@
         <button class="modal-close" id="vault-modal-close">&times;</button>
       </div>
       <div class="modal-body">
-        <p>All stored datasets downlinked across all missions. Datasets decay by 15% each mission cycle they remain unsold.</p>
+        <div class="vault-toolbar">
+          <p style="margin: 0;">All stored datasets downlinked across all missions. Datasets decay by 15% each mission cycle they remain unsold.</p>
+          <div class="inv-view-toggle">
+            <button class="view-toggle-btn active" id="btn-vault-grid" type="button" title="Grid View">
+              <svg class="tabler-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M14 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M4 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M14 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /></svg> GRID
+            </button>
+            <button class="view-toggle-btn" id="btn-vault-list" type="button" title="List View">
+              <svg class="tabler-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l11 0" /><path d="M9 12l11 0" /><path d="M9 18l11 0" /><path d="M5 6l0 .01" /><path d="M5 12l0 .01" /><path d="M5 18l0 .01" /></svg> LIST
+            </button>
+          </div>
+        </div>
         <div class="vault-list-container" id="vault-list-container">
           <!-- Populated by app.js -->
         </div>
@@ -1104,6 +1118,15 @@
           <input type="text" id="input-lm-url" value="http://localhost:1234/v1">
           <button class="action-btn secondary mini-btn" id="btn-test-lm-settings" style="margin-top: 0.4rem;">TEST CONNECTION</button>
           <div id="settings-lm-status" style="font-size: 0.72rem; font-family: var(--font-mono); margin-top: 0.3rem;"></div>
+        </div>
+
+        <!-- Tutorial & Reset Game Data -->
+        <div class="setting-item" style="margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid var(--border-hud);">
+          <label>Tutorial &amp; Save Data:</label>
+          <div style="display: flex; gap: 0.65rem; flex-wrap: wrap; margin-top: 0.4rem;">
+            <button type="button" class="action-btn secondary mini-btn" id="btn-redo-tutorial">REDO TUTORIAL</button>
+            <button type="button" class="action-btn danger-btn mini-btn" id="btn-reset-game-data">RESET GAME DATA</button>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -1175,8 +1198,35 @@
     </div>
   </div>
 
+  <!-- INITIALIZATION TUTORIAL PROMPT MODAL -->
+  <div class="modal-overlay active" id="init-tutorial-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>FLIGHT ACADEMY // GUIDED TUTORIAL</h3>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.88rem; color: var(--text-main); margin-bottom: 0.75rem;">
+          Welcome to <strong>THE MISSIONEERS</strong>! Would you like a step-by-step guided tutorial showing how to plan a trending NASA mission, survive an in-flight anomaly, and refine &amp; sell your data?
+        </p>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Selecting <strong>Yes</strong> automatically configures <strong>Basic Controls</strong> and <strong>Easy (Cadet)</strong> difficulty so you can learn smoothly.
+        </p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <button class="action-btn primary" id="init-btn-tutorial-yes" style="flex-direction: column; padding: 1.05rem; height: auto; text-align: center;">
+            <strong style="font-size: 0.95rem;">YES, START TUTORIAL</strong>
+            <span style="font-size: 0.72rem; font-weight: 400; margin-top: 0.3rem; opacity: 0.9;">Guided mission + anomaly walkthrough (Basic &bull; Easy)</span>
+          </button>
+          <button class="action-btn secondary" id="init-btn-tutorial-no" style="flex-direction: column; padding: 1.05rem; height: auto; text-align: center;">
+            <strong style="font-size: 0.95rem;">NO, SKIP TUTORIAL</strong>
+            <span style="font-size: 0.72rem; font-weight: 400; margin-top: 0.3rem; opacity: 0.9;">Choose your own controls and difficulty</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- INITIALIZATION CONTROLS MODE MODAL -->
-  <div class="modal-overlay active" id="init-mode-modal">
+  <div class="modal-overlay" id="init-mode-modal">
     <div class="modal-card">
       <div class="modal-header">
         <h3>CONTROL CONFIGURATION // SELECT ENGINEERING MODE</h3>
@@ -1288,6 +1338,7 @@
         <p id="game-notice-message" class="notice-modal-message"></p>
       </div>
       <div class="modal-footer">
+        <button class="action-btn secondary" id="game-notice-cancel" type="button" style="display: none;">CANCEL</button>
         <button class="action-btn primary" id="game-notice-ok" type="button">ACKNOWLEDGE</button>
       </div>
     </div>
@@ -1298,6 +1349,26 @@
     <svg id="coach-mask-svg" class="coach-mask-svg" xmlns="http://www.w3.org/2000/svg"></svg>
     <div id="coach-callouts-layer" class="coach-callouts-layer"></div>
     <button class="coach-close-x-btn" id="btn-close-coach" type="button" aria-label="Close Screen Guide" title="Close Screen Guide">&times;</button>
+  </div>
+
+  <!-- GUIDED INTERACTIVE TUTORIAL SPOTLIGHT OVERLAY -->
+  <div id="tutorial-overlay" class="tutorial-overlay" aria-label="Guided Tutorial">
+    <svg id="tutorial-mask-svg" class="tutorial-mask-svg" xmlns="http://www.w3.org/2000/svg">
+      <path id="tutorial-mask-path" fill="rgba(30, 41, 59, 0.78)" fill-rule="evenodd"></path>
+    </svg>
+    <div id="tutorial-focus-ring" class="tutorial-focus-ring"></div>
+    <div id="tutorial-callout" class="tutorial-callout">
+      <div id="tutorial-arrow" class="tutorial-arrow"></div>
+      <div class="tutorial-callout-header">
+        <span id="tutorial-step-badge" class="tutorial-step-badge">STEP 1 / 21</span>
+        <button type="button" id="tutorial-skip-btn" class="tutorial-skip-btn">SKIP TUTORIAL</button>
+      </div>
+      <h4 id="tutorial-title" class="tutorial-title"></h4>
+      <p id="tutorial-text" class="tutorial-text"></p>
+      <div class="tutorial-callout-actions" id="tutorial-callout-actions">
+        <button type="button" id="tutorial-next-btn" class="action-btn primary mini-btn" style="display: none;">NEXT &rarr;</button>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
