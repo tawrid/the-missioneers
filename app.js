@@ -1458,7 +1458,11 @@
     DOM.advancementsSummary.textContent = `${goldOrSingleCount} / ${totalCount} Advancements Mastered`;
   }
 
-  function goToStage(stageNum) {
+  function isMpMode() {
+    return state.gameMode === 'coop' || state.gameMode === 'sabotage';
+  }
+
+  function goToStage(stageNum, fromRemote = false) {
     closeScreenCoachOverlay();
     playQuindarTone();
     const prevStage = state.stage;
@@ -1473,11 +1477,15 @@
       s.classList.toggle('completed', idx < stageNum - 1);
     });
 
+    if (stageNum === 1) renderStage1Domains();
     if (stageNum === 2) renderStage2Instruments();
     if (stageNum === 3) renderStage3Requirements();
     if (stageNum === 4) {
-      // RESET TO LAUNCH SEGMENT ON CYCLE!
-      activeDesignSegment = 'launch';
+      if (isMpMode()) {
+        activeDesignSegment = state.userRole === 'space' ? 'space' : (state.userRole === 'ground' ? 'ground' : 'launch');
+      } else {
+        activeDesignSegment = 'launch';
+      }
       if (prevStage !== 5) {
         randomizeDesignVariants();
       }
@@ -1489,21 +1497,70 @@
     if (stageNum === 6) startStage6Flight();
     if (stageNum === 7) renderStage7RefineryAndMarket();
 
+    if (typeof updateMultiplayerStationBar === 'function') {
+      updateMultiplayerStationBar();
+    }
+
+    if (!fromRemote && isMpMode() && typeof pushMpSharedState === 'function') {
+      pushMpSharedState({
+        stage: stageNum,
+        domainId: state.selectedDomain ? state.selectedDomain.id : null,
+        selectedInstruments: state.selectedInstruments,
+        selections: state.selections,
+        budget: state.budget,
+        reputation: state.reputation,
+        dataInventory: state.dataInventory
+      });
+    }
+
     if (typeof window.scrollTo === 'function') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
   // ========================================================================
-  // 6. STAGE 1: SET GOAL (5 NASA SCIENCE DISCIPLINES)
+  // 6. STAGE 1: SET GOAL (5 NASA SCIENCE DISCIPLINES — TEAM VOTE IN 4P)
   // ========================================================================
 
   function renderStage1Domains() {
     DOM.domainGrid.innerHTML = '';
+    const voteBanner = document.getElementById('mp-concept-vote-banner');
+    const votes = state.conceptVotes || {};
+    const voteEntries = Object.entries(votes);
+
+    if (voteBanner) {
+      if (isMpMode()) {
+        voteBanner.style.display = 'flex';
+        const voteSummary = voteEntries.length > 0
+          ? voteEntries.map(([r, d]) => `${r.toUpperCase()}: ${d.toUpperCase()}`).join(' | ')
+          : 'No votes cast yet — click a mission concept card below to cast your station vote!';
+        const winnerDom = state.conceptVoteWinner ? MISSION_DOMAINS.find(d => d.id === state.conceptVoteWinner) : null;
+        const winnerText = winnerDom
+          ? `<span class="text-emerald"><strong>WINNING CONCEPT: ${winnerDom.name.toUpperCase()}</strong> (${state.conceptVoteTiebroken ? 'Random Tiebreak — No Majority' : 'Majority Vote Winner'})</span>`
+          : `<span class="text-amber">Waiting for all 4 stations to vote (${voteEntries.length}/4 voted)... Majority wins; if no majority, random!</span>`;
+        voteBanner.innerHTML = `
+          <div><strong>4-PLAYER TEAM CONCEPT VOTE (${voteEntries.length}/4):</strong> <span style="color:#cbd5e1;">${voteSummary}</span></div>
+          <div>${winnerText}</div>
+        `;
+      } else {
+        voteBanner.style.display = 'none';
+      }
+    }
+
     MISSION_DOMAINS.forEach(dom => {
       const card = document.createElement('div');
-      card.className = `domain-card ${state.selectedDomain?.id === dom.id ? 'selected' : ''}`;
+      const votersForDom = voteEntries.filter(([, dId]) => dId === dom.id).map(([r]) => r.toUpperCase());
+      const myVote = isMpMode() && votes[state.userRole] === dom.id;
+      const isSelected = state.selectedDomain?.id === dom.id;
+      card.className = `domain-card ${isSelected ? 'selected' : ''}`;
       card.dataset.domainId = dom.id;
+
+      const mpVoteHtml = isMpMode() ? `
+        <div class="mp-domain-vote-badges">
+          <span>VOTES: <strong>${votersForDom.length}/4</strong> ${votersForDom.length ? `(${votersForDom.join(', ')})` : ''}</span>
+          <span>${myVote ? '✓ YOUR VOTE' : 'CLICK TO VOTE'}</span>
+        </div>
+      ` : '';
 
       card.innerHTML = `
         <div class="domain-icon">${dom.icon}</div>
@@ -1514,10 +1571,15 @@
           <span>Transit: <strong>${dom.transitDurationSec}s</strong></span>
           <span>Return Shield: <strong class="${dom.requiresHeatShield ? 'text-crimson' : 'text-emerald'}">${dom.requiresHeatShield ? 'YES' : 'NO'}</strong></span>
         </div>
+        ${mpVoteHtml}
       `;
 
-      card.addEventListener('click', () => {
+      card.addEventListener('click', async () => {
         playBeep(700);
+        if (isMpMode()) {
+          await castMpConceptVote(dom);
+          return;
+        }
         state.selectedDomain = dom;
         state.selectedInstruments = []; // reset instrument choices
         document.querySelectorAll('.domain-card').forEach(c => c.classList.remove('selected'));
@@ -1527,14 +1589,24 @@
 
       DOM.domainGrid.appendChild(card);
     });
+
+    DOM.btnNextStage1.disabled = !state.selectedDomain;
   }
 
   // ========================================================================
-  // 7. STAGE 2: REAL NASA INSTRUMENTS WITH HOVER CARDS
+  // 7. STAGE 2: REAL NASA INSTRUMENTS WITH HOVER CARDS (SPACE PLAYER IN 4P)
   // ========================================================================
 
   function renderStage2Instruments() {
-    DOM.stage2DomainTitle.textContent = `STAGE 2: DEFINE CONCEPT // ${state.selectedDomain.name.toUpperCase()} SENSORS`;
+    if (!state.selectedDomain) {
+      state.selectedDomain = MISSION_DOMAINS[0];
+    }
+    const roleHint = isMpMode()
+      ? (state.userRole === 'space'
+        ? ' // SPACE PLAYER: SELECT INSTRUMENTS WITHIN ALLOCATED BUDGET'
+        : ` // VIEW ONLY (SPACE PLAYER CHOOSES INSTRUMENTS — YOU ARE ${ROLE_DUTY_CONFIG[state.userRole]?.title || state.userRole.toUpperCase()})`)
+      : '';
+    DOM.stage2DomainTitle.textContent = `STAGE 2: DEFINE CONCEPT // ${state.selectedDomain.name.toUpperCase()} SENSORS${roleHint}`;
     DOM.dataTypesContainer.innerHTML = '';
 
     const domain = state.selectedDomain;
@@ -1619,6 +1691,11 @@
 
       btnT1.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (isMpMode() && state.userRole !== 'space') {
+          playAlarm();
+          showInPageNotice(`ROLE PERMISSION: Only the SPACE PLAYER can choose instruments and sensor tiers! (Your locked station: ${ROLE_DUTY_CONFIG[state.userRole].title})`, 'SPACE STATION ONLY');
+          return;
+        }
         playBeep(650);
         state.instrumentTiers[instGroup.id] = 1;
         if (existing) {
@@ -1630,10 +1707,24 @@
           existing.cost = instGroup.t1.cost;
         }
         renderStage2Instruments();
+        if (isMpMode()) {
+          state.designApprovals.space = false;
+          pushMpSharedState({
+            selectedInstruments: state.selectedInstruments,
+            instrumentTiers: state.instrumentTiers,
+            designApprovals: state.designApprovals
+          });
+          updateMultiplayerStationBar();
+        }
       });
 
       btnT2.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (isMpMode() && state.userRole !== 'space') {
+          playAlarm();
+          showInPageNotice(`ROLE PERMISSION: Only the SPACE PLAYER can choose instruments and sensor tiers! (Your locked station: ${ROLE_DUTY_CONFIG[state.userRole].title})`, 'SPACE STATION ONLY');
+          return;
+        }
         if (state.reputation < 35 && !isInfiniteBudget()) {
           playAlarm();
           showInPageNotice('Tier 2 advanced NRT sensors require at least 35 Reputation!');
@@ -1650,14 +1741,37 @@
           existing.cost = instGroup.t2.cost;
         }
         renderStage2Instruments();
+        if (isMpMode()) {
+          state.designApprovals.space = false;
+          pushMpSharedState({
+            selectedInstruments: state.selectedInstruments,
+            instrumentTiers: state.instrumentTiers,
+            designApprovals: state.designApprovals
+          });
+          updateMultiplayerStationBar();
+        }
       });
 
       btnSelect.addEventListener('click', () => {
+        if (isMpMode() && state.userRole !== 'space') {
+          playAlarm();
+          showInPageNotice(`ROLE PERMISSION: Only the SPACE PLAYER can select scientific instruments! (Your locked station: ${ROLE_DUTY_CONFIG[state.userRole].title})`, 'SPACE STATION ONLY');
+          return;
+        }
         playBeep(isSelected ? 500 : 880);
         if (isSelected) {
           state.selectedInstruments = state.selectedInstruments.filter(i => i.instId !== instGroup.id);
         } else {
           const chosen = currentTier === 1 ? instGroup.t1 : instGroup.t2;
+          if (isMpMode() && !isInfiniteBudget()) {
+            const currentInstCost = state.selectedInstruments.reduce((acc, i) => acc + (i.cost || 0), 0);
+            const spaceCap = (state.budgetAllocations && state.budgetAllocations.space) || 500000;
+            if (currentInstCost + chosen.cost > spaceCap) {
+              playAlarm();
+              showInPageNotice(`SPACE BUDGET ALLOCATION EXCEEDED ($${(currentInstCost + chosen.cost).toLocaleString()} / $${spaceCap.toLocaleString()}):\nAsk the USER PLAYER to allocate more budget to the Space Station in the top collaboration bar!`, 'BUDGET ALLOCATION LIMIT');
+              return;
+            }
+          }
           state.selectedInstruments.push({
             instId: instGroup.id,
             category: instGroup.category,
@@ -1673,6 +1787,15 @@
         }
         renderStage2Instruments();
         DOM.btnNextStage2.disabled = state.selectedInstruments.length === 0;
+        if (isMpMode()) {
+          state.designApprovals.space = false;
+          pushMpSharedState({
+            selectedInstruments: state.selectedInstruments,
+            instrumentTiers: state.instrumentTiers,
+            designApprovals: state.designApprovals
+          });
+          updateMultiplayerStationBar();
+        }
       });
 
       DOM.dataTypesContainer.appendChild(card);
@@ -1802,12 +1925,44 @@
       `;
 
       card.addEventListener('click', () => {
+        if (isMpMode()) {
+          if (activeDesignSegment === 'launch' && state.userRole !== 'launch') {
+            playAlarm();
+            showInPageNotice(`ROLE PERMISSION: Only the LAUNCH PLAYER can choose the Launch Rocket! (Your locked station: ${ROLE_DUTY_CONFIG[state.userRole].title})`, 'LAUNCH STATION ONLY');
+            return;
+          }
+          if (activeDesignSegment === 'space' && state.userRole !== 'space') {
+            playAlarm();
+            showInPageNotice(`ROLE PERMISSION: Only the SPACE PLAYER can choose the Spacecraft Bus! (Your locked station: ${ROLE_DUTY_CONFIG[state.userRole].title})`, 'SPACE STATION ONLY');
+            return;
+          }
+          if (activeDesignSegment === 'ground' && state.userRole !== 'ground') {
+            playAlarm();
+            showInPageNotice(`ROLE PERMISSION: Only the GROUND PLAYER can choose the Ground Communications Network! (Your locked station: ${ROLE_DUTY_CONFIG[state.userRole].title})`, 'GROUND STATION ONLY');
+            return;
+          }
+        }
         playBeep(750);
-        if (activeDesignSegment === 'launch') state.selections.launchRocket = item.id;
-        if (activeDesignSegment === 'space') state.selections.spaceBus = item.id;
-        if (activeDesignSegment === 'ground') state.selections.groundStation = item.id;
+        if (activeDesignSegment === 'launch') {
+          state.selections.launchRocket = item.id;
+          if (isMpMode()) state.designApprovals.launch = false;
+        }
+        if (activeDesignSegment === 'space') {
+          state.selections.spaceBus = item.id;
+          if (isMpMode()) state.designApprovals.space = false;
+        }
+        if (activeDesignSegment === 'ground') {
+          state.selections.groundStation = item.id;
+          if (isMpMode()) state.designApprovals.ground = true;
+        }
         renderStage4Design();
         calculateTempResources();
+        if (isMpMode()) {
+          pushMpSharedState({
+            selections: state.selections,
+            designApprovals: state.designApprovals
+          });
+        }
       });
 
       DOM.segmentOptionsContainer.appendChild(card);
@@ -1896,17 +2051,24 @@
       input.max = String(s.max);
       input.step = String(s.step);
       input.value = String(cd[s.key]);
+      if (isMpMode() && state.userRole !== activeDesignSegment) {
+        input.disabled = true;
+      }
 
       const hintEl = document.createElement('div');
       hintEl.className = 'custom-slider-hint';
       hintEl.textContent = s.hint;
 
       input.addEventListener('input', (e) => {
+        if (isMpMode() && state.userRole !== activeDesignSegment) return;
         const num = parseFloat(e.target.value);
         cd[s.key] = num;
         valSpan.textContent = `${s.step < 1 ? num.toFixed(1) : num.toLocaleString()} ${s.unit}`;
         summaryEl.innerHTML = cfg.summaryFn();
         calculateTempResources();
+        if (isMpMode()) {
+          pushMpSharedState({ customDesign: state.customDesign });
+        }
       });
 
       row.appendChild(header);
@@ -1929,10 +2091,19 @@
         <span>Isp: ${fuel.isp}s | &Delta;V: +${fuel.dvBonus} km/s | Cost: +$${fuel.cost.toLocaleString()}</span>
       `;
       card.addEventListener('click', () => {
+        if (isMpMode() && state.userRole !== 'launch') {
+          playAlarm();
+          showInPageNotice(`ROLE PERMISSION: Only the LAUNCH PLAYER can choose Rocket Propellant Chemistry!`, 'LAUNCH STATION ONLY');
+          return;
+        }
         playBeep(650);
         state.selections.selectedFuel = fuel.id;
+        if (isMpMode()) state.designApprovals.launch = false;
         renderFuelOptions();
         calculateTempResources();
+        if (isMpMode()) {
+          pushMpSharedState({ selections: state.selections, designApprovals: state.designApprovals });
+        }
       });
       DOM.fuelOptionsGrid.appendChild(card);
     });
@@ -1948,13 +2119,45 @@
         <span>Vol: +${sizing.volBonus} m³ | Mass: +${sizing.massAdd} kg | Max: ${sizing.maxInstruments} Inst</span>
       `;
       card.addEventListener('click', () => {
+        if (isMpMode() && state.userRole !== 'space') {
+          playAlarm();
+          showInPageNotice(`ROLE PERMISSION: Only the SPACE PLAYER can choose Spacecraft Bus Sizing!`, 'SPACE STATION ONLY');
+          return;
+        }
         playBeep(650);
         state.selections.busSizing = sizing.id;
+        if (isMpMode()) state.designApprovals.space = false;
         renderBusSizingOptions();
         calculateTempResources();
+        if (isMpMode()) {
+          pushMpSharedState({ selections: state.selections, designApprovals: state.designApprovals });
+        }
       });
       DOM.busSizingGrid.appendChild(card);
     });
+  }
+
+  function getSegmentExpenditure() {
+    const sel = state.selections;
+    const fuel = FUEL_TYPES[sel.selectedFuel] || FUEL_TYPES.kerosene;
+    const rocket = CATALOG.launch.find(i => i.id === sel.launchRocket);
+    const bus = CATALOG.space_bus.find(i => i.id === sel.spaceBus);
+    const ground = CATALOG.ground.find(i => i.id === sel.groundStation);
+    const sizing = BUS_SIZINGS[sel.busSizing] || BUS_SIZINGS.standard;
+    const instCost = (state.selectedInstruments || []).reduce((acc, inst) => acc + (inst.cost || 0), 0);
+    const shieldCost = sel.heatShieldInstalled ? 45000 : 0;
+
+    if (state.customSlidersEnabled) {
+      const cd = state.customDesign;
+      const launchCost = fuel.cost + Math.round(cd.launchPayloadMax * 35 + cd.launchDeltaV * 18000 + Math.pow(Math.max(0, cd.launchReliability - 70), 2) * 350);
+      const spaceCost = instCost + shieldCost + Math.round(45000 + cd.spaceVolumeMax * 12000 + cd.spacePowerGen * 45 + cd.spaceFuelCap * 30 + Math.pow(Math.max(0, cd.spaceReliability - 70), 2) * 300);
+      const groundCost = Math.round(15000 + cd.groundBandwidth * 350 + Math.pow(Math.max(0, cd.groundReliability - 70), 2) * 250);
+      return { launchCost, spaceCost, groundCost };
+    }
+    const launchCost = fuel.cost + (rocket ? rocket.cost : 0);
+    const spaceCost = instCost + shieldCost + (bus ? bus.cost + sizing.costAdd : 0);
+    const groundCost = ground ? ground.cost : 0;
+    return { launchCost, spaceCost, groundCost };
   }
 
   function calculateTempResources() {
@@ -2053,7 +2256,7 @@
       volume: volumeUsed,
       maxVolume,
       velocity: velocityDV,
-      reqVelocity: state.selectedDomain.baseDeltaV,
+      reqVelocity: state.selectedDomain ? state.selectedDomain.baseDeltaV : 7.8,
       totalCost,
       bandwidth,
       reliabilityLaunch: relLaunch,
@@ -2111,46 +2314,65 @@
     const isAdv = !!state.customSlidersEnabled;
 
     if (!isAdv) {
-      if (!rocket) buildIssues.push('Missing Launch Rocket: Select a Launch Vehicle in 1. Launch Segment.');
-      if (!bus) buildIssues.push('Missing Space Bus: Select a Spacecraft Bus in 2. Space Segment.');
-      if (!ground) buildIssues.push('Missing Ground Station: Select a Ground Network in 3. Ground Segment.');
+      if (!rocket) buildIssues.push('Missing Launch Rocket: LAUNCH PLAYER must select a Launch Vehicle in 1. Launch Segment.');
+      if (!bus) buildIssues.push('Missing Space Bus: SPACE PLAYER must select a Spacecraft Bus in 2. Space Segment.');
+      if (!ground) buildIssues.push('Missing Ground Station: GROUND PLAYER must select a Communications Network in 3. Ground Segment.');
     }
 
     if ((isAdv || rocket) && totalMass > maxMass) {
       buildIssues.push(
         isAdv
           ? `Mass Exceeded (${totalMass.toLocaleString()} / ${maxMass.toLocaleString()} kg): Increase the "Rocket Max Payload Mass" slider in 1. Launch Segment, or lower "Fuel Capacity" / sensors.`
-          : `Mass Exceeded (${totalMass.toLocaleString()} / ${maxMass.toLocaleString()} kg): Upgrade to a heavier Launch Rocket in 1. Launch Segment or reduce Bus Sizing / sensors.`
+          : `Mass Exceeded (${totalMass.toLocaleString()} / ${maxMass.toLocaleString()} kg): LAUNCH PLAYER must upgrade to a heavier Launch Rocket or SPACE PLAYER must reduce Bus Sizing / sensors.`
       );
     }
     if ((isAdv || bus) && powerConsumed > powerGen) {
       buildIssues.push(
         isAdv
           ? `Insufficient Power (${powerConsumed} / ${powerGen} W): Increase the "Bus Solar/RTG Power" slider in 2. Space Segment, or unequip high-power sensors.`
-          : `Insufficient Power (${powerConsumed} / ${powerGen} W): Select a higher-power Spacecraft Bus in 2. Space Segment or unequip high-power sensors.`
+          : `Insufficient Power (${powerConsumed} / ${powerGen} W): SPACE PLAYER must select a higher-power Spacecraft Bus or unequip high-power sensors.`
       );
     }
     if ((isAdv || bus) && volumeUsed > maxVolume) {
       buildIssues.push(
         isAdv
           ? `Bus Volume Full (${volumeUsed.toFixed(1)} / ${maxVolume.toFixed(1)} m³): Increase the "Spacecraft Bus Volume" slider in 2. Space Segment, or equip fewer sensors.`
-          : `Bus Volume Full (${volumeUsed.toFixed(1)} / ${maxVolume.toFixed(1)} m³): Increase Bus Sizing in 2. Space Segment or equip fewer sensors.`
+          : `Bus Volume Full (${volumeUsed.toFixed(1)} / ${maxVolume.toFixed(1)} m³): SPACE PLAYER must increase Bus Sizing in 2. Space Segment or equip fewer sensors.`
       );
     }
     if ((isAdv || rocket) && velocityDV < state.tempResources.reqVelocity) {
       buildIssues.push(
         isAdv
-          ? `Not enough Delta-V (${velocityDV.toFixed(1)} / ${state.tempResources.reqVelocity.toFixed(1)} km/s): Increase "Base Rocket Velocity (ΔV)" slider or change fuel (e.g. Hydrolox/Methalox) in 1. Launch Segment.`
-          : `Not enough Delta-V (${velocityDV.toFixed(1)} / ${state.tempResources.reqVelocity.toFixed(1)} km/s): Upgrade your Rocket or switch to Hydrolox/Methalox fuel in 1. Launch Segment.`
+          ? `Not enough Delta-V (${velocityDV.toFixed(1)} / ${state.tempResources.reqVelocity.toFixed(1)} km/s): Increase "Base Rocket Velocity (ΔV)" slider or change fuel in 1. Launch Segment.`
+          : `Not enough Delta-V (${velocityDV.toFixed(1)} / ${state.tempResources.reqVelocity.toFixed(1)} km/s): LAUNCH PLAYER must upgrade Rocket or switch to Hydrolox/Methalox fuel.`
       );
     }
     if (!sandbox && totalCost > state.budget) {
       buildIssues.push(
-        isAdv
-          ? `Over Budget ($${totalCost.toLocaleString()} / $${state.budget.toLocaleString()}): Lower slider targets (Payload Mass, Delta-V, Power, or Reliability) or claim an Emergency Grant below.`
-          : `Over Budget ($${totalCost.toLocaleString()} / $${state.budget.toLocaleString()}): Pick lower-cost hardware or claim an Emergency Grant below.`
+        `Over Agency Budget ($${totalCost.toLocaleString()} / $${state.budget.toLocaleString()}): Pick lower-cost hardware or have USER PLAYER claim an Emergency Grant.`
       );
     }
+
+    if (isMpMode()) {
+      const segCosts = getSegmentExpenditure();
+      const alloc = state.budgetAllocations || { launch: 450000, space: 500000, ground: 250000 };
+      if (!sandbox) {
+        if (segCosts.launchCost > alloc.launch) {
+          buildIssues.push(`Launch Over Allocated Budget ($${segCosts.launchCost.toLocaleString()} / $${alloc.launch.toLocaleString()}): USER PLAYER must allocate more budget to Launch, or LAUNCH PLAYER must pick a cheaper rocket/fuel.`);
+        }
+        if (segCosts.spaceCost > alloc.space) {
+          buildIssues.push(`Space Over Allocated Budget ($${segCosts.spaceCost.toLocaleString()} / $${alloc.space.toLocaleString()}): USER PLAYER must allocate more budget to Space, or SPACE PLAYER must pick a cheaper bus/sensors.`);
+        }
+        if (segCosts.groundCost > alloc.ground) {
+          buildIssues.push(`Ground Over Allocated Budget ($${segCosts.groundCost.toLocaleString()} / $${alloc.ground.toLocaleString()}): USER PLAYER must allocate more budget to Ground, or GROUND PLAYER must pick a cheaper station.`);
+        }
+      }
+      const appr = state.designApprovals || {};
+      if (!appr.launch) buildIssues.push('Pending Approval: GROUND PLAYER must approve the Launch Player\'s rocket design in the top collaboration bar.');
+      if (!appr.space) buildIssues.push('Pending Approval: GROUND PLAYER must approve the Space Player\'s bus & instrument design in the top collaboration bar.');
+      if (!appr.ground) buildIssues.push('Pending Approval: GROUND PLAYER must approve the Ground Communications network in the top collaboration bar.');
+    }
+
     if (!instrumentsCountOk) {
       buildIssues.push('No Science Sensors Equipped: Return to Stage 2 and equip at least one sensor.');
     }
@@ -2166,7 +2388,7 @@
         DOM.buildVerifyIssues.innerHTML = '';
         const titleEl = document.createElement('div');
         titleEl.className = 'build-verify-issues-title';
-        titleEl.textContent = 'BUILD & VERIFY BLOCKED — FIX THESE ITEMS:';
+        titleEl.textContent = 'BUILD & VERIFY BLOCKED — TEAM COLLABORATION CHECKLIST:';
         const ul = document.createElement('ul');
         buildIssues.forEach(msg => {
           const li = document.createElement('li');
@@ -2180,13 +2402,21 @@
           const grantBtn = document.createElement('button');
           grantBtn.type = 'button';
           grantBtn.className = 'inline-grant-btn';
-          grantBtn.textContent = 'CLAIM EMERGENCY GRANT (+$150,000 | -8 REP)';
+          grantBtn.textContent = 'USER PLAYER: CLAIM EMERGENCY GRANT (+$150,000 | -8 REP)';
           grantBtn.addEventListener('click', () => {
+            if (isMpMode() && state.userRole !== 'user') {
+              playAlarm();
+              showInPageNotice('ROLE PERMISSION: Only the USER PLAYER can claim agency grants and allocate budget!', 'USER STATION ONLY');
+              return;
+            }
             state.budget += 150000;
             state.reputation = Math.max(0, state.reputation - 8);
             playBeep(720);
             updatePermanentHud();
             calculateTempResources();
+            if (isMpMode()) {
+              pushMpSharedState({ budget: state.budget, reputation: state.reputation });
+            }
           });
           DOM.buildVerifyIssues.appendChild(grantBtn);
         }
@@ -2195,6 +2425,9 @@
 
     DOM.btnNextStage4.disabled = !isValid;
 
+    if (typeof updateMultiplayerStationBar === 'function') {
+      updateMultiplayerStationBar();
+    }
     syncVisualDesignFromStats();
     renderDesignVisualViewport();
   }
@@ -3080,6 +3313,7 @@
       paused: false,
       elapsedMs: 0,
       lastTickMs: performance.now(),
+      flightStartWallMs: performance.now(),
       milestonesDone: {},
       launchIntegrity: 100,
       spaceIntegrity: 100,
@@ -3088,7 +3322,11 @@
       anomalyActive: false,
       activeAnomalyData: null,
       anomalyUrgentSeconds: 15,
-      anomalyUrgentTimer: null
+      anomalyUrgentTimer: null,
+      anomaliesEncountered: 0,
+      anomaliesResolvedThisFlight: 0,
+      flightOutcome: 'IN_FLIGHT',
+      failReason: ''
     };
 
     setFlightPaused(false);
@@ -3119,7 +3357,7 @@
         'FLIGHT BRIEFING:\n' +
         '1. Watch the 3 health bars (Rocket, Sensors, Telemetry) below the flight view.\n' +
         '2. If an Anomaly Alert appears on the right, click INTERVENE before the 15s timer runs out.\n' +
-        '3. When flight finishes, click ENTER USER SEGMENT to refine and sell your data.',
+        '3. When flight finishes, review the Post-Flight Mission Report (Save, Share, or Compare your design) before entering the Data Refinery.',
         'STAGE 6 // FLIGHT BRIEFING',
         beginFlight,
         'LAUNCH MISSION'
@@ -3207,14 +3445,24 @@
         playAlarm();
         logFlightMessage('RE-ENTRY CATASTROPHE: No heat shield installed! Re-entry temperatures reached 1600°C and incinerated all biological samples.', true, 'alert');
         state.flight.dataAccumulatedMB = 0;
+        state.flight.flightOutcome = 'FAILED';
+        state.flight.failReason = 'Atmospheric Re-entry Burnup (No Heat Shield Installed)';
         showInPageNotice('MISSION FAILURE: Atmospheric Re-entry burned up your biological samples because no Heat Shield was installed!', 'MISSION FAILURE');
       } else if (state.selectedDomain.requiresHeatShield && state.selections.heatShieldInstalled) {
         logFlightMessage('RE-ENTRY SUCCESS: PICA-X heat shield protected the biological sample return capsule during splashdown!', false, 'shield');
       }
 
       state.flight.segment = 'done';
+      if (state.flight.dataAccumulatedMB > 0 && state.flight.launchIntegrity > 0) {
+        state.flight.flightOutcome = 'SUCCEEDED';
+      } else {
+        state.flight.flightOutcome = 'FAILED';
+        if (!state.flight.failReason) {
+          state.flight.failReason = 'Zero Telemetry Downlinked (Segment Failure)';
+        }
+      }
       DOM.flightPhaseName.textContent = 'MISSION FLIGHT OPERATIONS COMPLETE';
-      logFlightMessage('MISSION COMPLETED: Downlinked telemetry verified. Proceed to User Segment.', false, 'trophy');
+      logFlightMessage('MISSION COMPLETED: Downlinked telemetry verified. Review Mission Report before Data Refinery.', false, 'trophy');
       DOM.btnCompleteFlight.style.display = 'block';
       if (state.flight.dataAccumulatedMB > 0) {
         state.advStats.missionsCompleted = (state.advStats.missionsCompleted || 0) + 1;
@@ -3225,6 +3473,9 @@
         evaluateAdvancements();
       }
       if (typeof tutorialOnFlightComplete === 'function') tutorialOnFlightComplete();
+      if (!(typeof tutorialState !== 'undefined' && tutorialState.active) && typeof openMissionReportModal === 'function') {
+        openMissionReportModal();
+      }
     }
   }
 
@@ -3264,6 +3515,7 @@
     }
 
     state.flight.anomalyActive = true;
+    state.flight.anomaliesEncountered = (state.flight.anomaliesEncountered || 0) + 1;
     state.flight.activeAnomalyData = anomaly;
     state.flight.anomalyUrgentSeconds = 15;
 
@@ -3307,18 +3559,30 @@
     if (anomaly.seg === 'launch') {
       state.flight.launchIntegrity = 0;
       state.flight.running = false;
+      state.flight.flightOutcome = 'FAILED';
+      state.flight.failReason = 'Unaddressed Launch Valve Rupture (-$300,000 salvage penalty)';
       const penalty = 300000;
       state.budget = Math.max(0, state.budget - penalty);
       updatePermanentHud();
-      showInPageNotice(`UNADDRESSED LAUNCH FAILURE!\nPropellant valve rupture resulted in catastrophic vehicle explosion. You lost -$${penalty.toLocaleString()} in salvage fees and the mission immediately failed.`, 'LAUNCH FAILURE');
-      goToStage(7);
+      showInPageNotice(
+        `UNADDRESSED LAUNCH FAILURE!\nPropellant valve rupture resulted in catastrophic vehicle explosion. You lost -$${penalty.toLocaleString()} in salvage fees and the mission immediately failed.`,
+        'LAUNCH FAILURE',
+        () => {
+          if (typeof openMissionReportModal === 'function') openMissionReportModal();
+          else goToStage(7);
+        }
+      );
     } else if (anomaly.seg === 'space') {
       state.flight.spaceIntegrity = 0;
       state.flight.dataAccumulatedMB = 0;
+      state.flight.flightOutcome = 'FAILED';
+      state.flight.failReason = 'Unaddressed Space Sensor Burnout (0 MB collected)';
       showInPageNotice(`UNADDRESSED SPACE FAILURE!\nSensors suffered electrical burnout. Zero data collected.`, 'SPACE SEGMENT FAILURE');
     } else if (anomaly.seg === 'ground') {
       state.flight.groundIntegrity = 0;
       state.flight.dataAccumulatedMB = 0;
+      state.flight.flightOutcome = 'FAILED';
+      state.flight.failReason = 'Unaddressed Ground Tracking Drift (All downlink packets lost)';
       showInPageNotice(`UNADDRESSED GROUND FAILURE!\nTracking dish drifted completely out of line of sight. All data lost.`, 'GROUND SEGMENT FAILURE');
     }
   }
@@ -4272,6 +4536,7 @@
       logFlightMessage(`ANOMALY RESOLVED: ${anomaly.seg.toUpperCase()} station stabilized the issue!`, false, 'check');
       DOM.anomalyAlertBox.style.display = 'none';
       state.flight.anomalyActive = false;
+      state.flight.anomaliesResolvedThisFlight = (state.flight.anomaliesResolvedThisFlight || 0) + 1;
       state.advStats.anomaliesResolved = (state.advStats.anomaliesResolved || 0) + 1;
       saveAdvancementsState();
       evaluateAdvancements();
@@ -4495,6 +4760,11 @@
   }
 
   function refineSelectedData() {
+    if (isMpMode() && state.userRole !== 'user') {
+      playAlarm();
+      showInPageNotice(`ROLE PERMISSION: Only the USER PLAYER can refine and sell datasets! (Your locked station: ${ROLE_DUTY_CONFIG[state.userRole].title})`, 'USER STATION ONLY');
+      return;
+    }
     if (state.selectedInventoryIdx === null) return;
     const item = state.dataInventory[state.selectedInventoryIdx];
     if (!item) return;
@@ -4528,9 +4798,17 @@
     updatePermanentHud();
     renderInventoryList();
     renderRefineryWorkbench(item);
+    if (isMpMode()) {
+      pushMpSharedState({ budget: state.budget, dataInventory: state.dataInventory });
+    }
   }
 
   function combineSelectedData() {
+    if (isMpMode() && state.userRole !== 'user') {
+      playAlarm();
+      showInPageNotice(`ROLE PERMISSION: Only the USER PLAYER can refine and combine datasets! (Your locked station: ${ROLE_DUTY_CONFIG[state.userRole].title})`, 'USER STATION ONLY');
+      return;
+    }
     if (state.selectedInventoryIdx === null) return;
     const primaryIdx = state.selectedInventoryIdx;
     const item = state.dataInventory[primaryIdx];
@@ -4583,6 +4861,9 @@
     renderInventoryList();
     if (state.dataInventory[state.selectedInventoryIdx]) {
       renderRefineryWorkbench(state.dataInventory[state.selectedInventoryIdx]);
+    }
+    if (isMpMode()) {
+      pushMpSharedState({ budget: state.budget, dataInventory: state.dataInventory });
     }
   }
 
@@ -4688,6 +4969,11 @@
   }
 
   function forgeL4Dataset() {
+    if (isMpMode() && state.userRole !== 'user') {
+      playAlarm();
+      showInPageNotice(`ROLE PERMISSION: Only the USER PLAYER can splice L4 Master Datasets! (Your locked station: ${ROLE_DUTY_CONFIG[state.userRole].title})`, 'USER STATION ONLY');
+      return;
+    }
     const proj = getL4ForgeProjected(state.l4ChamberIndices);
     if (!proj.valid) {
       playAlarm();
@@ -4736,10 +5022,23 @@
     updatePermanentHud();
     renderInventoryList();
     renderRefineryWorkbench(newL4);
+    if (isMpMode()) {
+      pushMpSharedState({ budget: state.budget, dataInventory: state.dataInventory });
+    }
     showInPageNotice(`L4 MASTER DATASET FORGED!\nSynthesized ${proj.items.length} datasets into 1 L4 Master Dataset worth $${proj.projectedVal.toLocaleString()} (immune to cycle degradation)!`, 'L4 SPLICING COMPLETE');
   }
 
   function sellDataToBuyer(buyerType) {
+    if (isMpMode() && state.userRole !== 'user') {
+      playAlarm();
+      showInPageNotice(`ROLE PERMISSION: Only the USER PLAYER can sell refined datasets on the market! (Your locked station: ${ROLE_DUTY_CONFIG[state.userRole].title})`, 'USER STATION ONLY');
+      return;
+    }
+    if (state.gameMode !== 'singleplayer' && !state.groundApproved) {
+      playAlarm();
+      showInPageNotice('GROUND APPROVAL REQUIRED: Ground Player must grant approval before selling datasets!', 'GROUND CONTROL HOLD');
+      return;
+    }
     if (state.selectedInventoryIdx === null) {
       playAlarm();
       showInPageNotice('Select a dataset from your inventory to sell!');
@@ -4793,6 +5092,9 @@
 
     updatePermanentHud();
     renderInventoryList();
+    if (isMpMode()) {
+      pushMpSharedState({ budget: state.budget, reputation: state.reputation, dataInventory: state.dataInventory });
+    }
   }
 
   // ========================================================================
@@ -5289,15 +5591,44 @@
     }
 
     // Stage Transitions
-    DOM.btnNextStage1.addEventListener('click', () => goToStage(2));
+    DOM.btnNextStage1.addEventListener('click', async () => {
+      if (isMpMode()) {
+        if (!state.conceptVoteWinner && state.selectedDomain) {
+          await castMpConceptVote(state.selectedDomain, true);
+        }
+        if (!state.selectedDomain) {
+          playAlarm();
+          showInPageNotice('Cast a vote for a Mission Concept first!', 'TEAM CONCEPT VOTE');
+          return;
+        }
+      }
+      goToStage(2);
+    });
     DOM.btnBackStage2.addEventListener('click', () => goToStage(1));
-    DOM.btnNextStage2.addEventListener('click', () => goToStage(3));
+    DOM.btnNextStage2.addEventListener('click', () => {
+      if (isMpMode() && state.userRole !== 'space') {
+        const spaceIsBot = state.mpLobby && Array.isArray(state.mpLobby.players) && state.mpLobby.players.some(p => p.role === 'space' && p.is_bot);
+        if (!spaceIsBot) {
+          playAlarm();
+          showInPageNotice('ROLE PERMISSION: Only the SPACE PLAYER can confirm the scientific instruments and advance to Stage 3!', 'SPACE STATION ONLY');
+          return;
+        }
+      }
+      goToStage(3);
+    });
     DOM.btnBackStage3.addEventListener('click', () => goToStage(2));
     DOM.btnNextStage3.addEventListener('click', () => goToStage(4));
     DOM.btnBackStage4.addEventListener('click', () => goToStage(3));
     DOM.btnNextStage4.addEventListener('click', () => goToStage(5));
     DOM.btnBackStage5.addEventListener('click', () => goToStage(4));
-    DOM.btnNextStage5.addEventListener('click', () => goToStage(6));
+    DOM.btnNextStage5.addEventListener('click', () => {
+      if (state.gameMode !== 'singleplayer' && !state.groundApproved) {
+        playAlarm();
+        showInPageNotice('GROUND APPROVAL REQUIRED: Ground Player must approve the launch before proceeding to Launch & Flight!', 'LAUNCH HOLD');
+        return;
+      }
+      goToStage(6);
+    });
 
     // Design Sub-Tabs (Launch, Space, Ground)
     DOM.segTabLaunch.addEventListener('click', () => {
@@ -5362,10 +5693,20 @@
 
     // Heat Shield Checkbox
     DOM.chkHeatShield.addEventListener('change', (e) => {
+      if (isMpMode() && state.userRole !== 'space') {
+        e.target.checked = state.selections.heatShieldInstalled;
+        playAlarm();
+        showInPageNotice('ROLE PERMISSION: Only the SPACE PLAYER can install or remove the Spacecraft Re-entry Heat Shield!', 'SPACE STATION ONLY');
+        return;
+      }
       playBeep(700);
       state.selections.heatShieldInstalled = e.target.checked;
+      if (isMpMode()) state.designApprovals.space = false;
       renderStage4Design();
       calculateTempResources();
+      if (isMpMode()) {
+        pushMpSharedState({ selections: state.selections, designApprovals: state.designApprovals });
+      }
     });
 
     // Test Bench Diagnostics
@@ -6522,6 +6863,1765 @@
     }
   }
 
+  // ========================================================================
+  // 19. MISSION REPORT, DESIGN ARCHIVE (SAVE/SHARE/COMPARE), LEADERBOARD & MULTIPLAYER HUB
+  // ========================================================================
+
+  const DESIGNS_STORAGE_KEY = 'tm_saved_designs_v1';
+  const LEADERBOARD_STORAGE_KEY = 'tm_leaderboard_v1';
+
+  const DEFAULT_SAVED_DESIGNS = [
+    {
+      id: 'preset_terra_1',
+      name: 'TERRA-EARTH-BASELINE',
+      domainId: 'earth',
+      domainName: 'Earth Science (LEO)',
+      instruments: ['AIRS (T1)', 'CERES (T1)'],
+      rocketName: 'Falcon-Light LEO',
+      fuelName: 'RP-1 Kerosene',
+      busName: 'Standard LEO Bus',
+      heatShield: false,
+      groundName: 'Regional VHF Array',
+      totalCost: 420000,
+      mass: 980,
+      maxMass: 1500,
+      power: 390,
+      maxPower: 600,
+      volume: 4.1,
+      maxVolume: 5.5,
+      velocity: 8.1,
+      reqVelocity: 7.8,
+      bandwidth: 85,
+      relLaunch: 92,
+      relSpace: 91,
+      relGround: 94,
+      outcome: 'SUCCEEDED',
+      anomalies: '1 / 1 Fixed',
+      flightTimeSec: 12,
+      dataMB: 1400
+    },
+    {
+      id: 'preset_europa_2',
+      name: 'EUROPA-DEEP-SPACE-MK2',
+      domainId: 'planetary',
+      domainName: 'Planetary Science (Deep Space)',
+      instruments: ['MOLA (T2)', 'THEMIS (T2)', 'SAM (T1)'],
+      rocketName: 'SLS Block-1B Heavy',
+      fuelName: 'Cryo Hydrolox (LH2/LOX)',
+      busName: 'Deep-Space Armored Bus',
+      heatShield: false,
+      groundName: 'NASA Deep Space Network (70m)',
+      totalCost: 915000,
+      mass: 2450,
+      maxMass: 3800,
+      power: 880,
+      maxPower: 1200,
+      volume: 6.8,
+      maxVolume: 8.5,
+      velocity: 12.4,
+      reqVelocity: 11.2,
+      bandwidth: 160,
+      relLaunch: 96,
+      relSpace: 95,
+      relGround: 98,
+      outcome: 'SUCCEEDED',
+      anomalies: '2 / 2 Fixed',
+      flightTimeSec: 18,
+      dataMB: 1950
+    }
+  ];
+
+  function loadSavedDesigns() {
+    try {
+      const raw = localStorage.getItem(DESIGNS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return DEFAULT_SAVED_DESIGNS.slice();
+  }
+
+  function saveDesignsToStorage(list) {
+    try {
+      localStorage.setItem(DESIGNS_STORAGE_KEY, JSON.stringify(list));
+    } catch (e) {}
+  }
+
+  function buildCurrentDesignSnapshot(customName = '') {
+    try { calculateTempResources(); } catch (e) {}
+    const dom = state.selectedDomain || MISSION_DOMAINS[0];
+    const tr = state.tempResources || {};
+    const sel = state.selections || {};
+    const instList = (state.selectedInstruments && state.selectedInstruments.length > 0)
+      ? state.selectedInstruments.map(i => `${i.name} (T${i.tier || 1})`)
+      : ['AIRS (T1)'];
+
+    const rocketName = state.customSlidersEnabled
+      ? `Custom Booster (${state.customDesign.launchPayloadMax}kg)`
+      : (sel.launchRocket ? sel.launchRocket.name : 'Standard LEO Booster');
+    const fuelObj = (FUEL_TYPES && FUEL_TYPES[sel.selectedFuel]) || FUEL_TYPES.kerosene || Object.values(FUEL_TYPES)[0];
+    const busName = state.customSlidersEnabled
+      ? `Custom Bus (${state.customDesign.spacePowerGen}W)`
+      : (sel.spaceBus ? `${sel.spaceBus.name} (${sel.busSizing})` : 'Standard Spacecraft Bus');
+    const groundName = state.customSlidersEnabled
+      ? `Custom Dish (${state.customDesign.groundBandwidth} Mbps)`
+      : (sel.groundStation ? sel.groundStation.name : 'Standard Ground Dish');
+
+    const fl = state.flight || {};
+    const elapsedSec = fl.elapsedMs
+      ? Math.max(1, Math.round(fl.elapsedMs / 1000))
+      : (dom.transitDurationSec || 12);
+    const enc = fl.anomaliesEncountered || 0;
+    const res = fl.anomaliesResolvedThisFlight || 0;
+    const outcome = (fl.flightOutcome && fl.flightOutcome !== 'IN_FLIGHT')
+      ? fl.flightOutcome
+      : (fl.dataAccumulatedMB > 0 ? 'SUCCEEDED' : 'DESIGN_ONLY');
+
+    return {
+      id: `design_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      name: (customName || state.missionName || 'ARTEMIS-DESIGN').trim().slice(0, 36),
+      domainId: dom.id,
+      domainName: dom.name,
+      instruments: instList,
+      rocketName,
+      fuelName: fuelObj ? fuelObj.name : 'RP-1 Kerosene',
+      busName,
+      heatShield: Boolean(sel.heatShieldInstalled),
+      groundName,
+      totalCost: Math.round(tr.totalCost || 380000),
+      mass: Math.round(tr.mass || 950),
+      maxMass: Math.round(tr.maxMass || 1500),
+      power: Math.round(tr.power || 350),
+      maxPower: Math.round(tr.maxPower || 600),
+      volume: Number((tr.volume || 3.8).toFixed(1)),
+      maxVolume: Number((tr.maxVolume || 5.5).toFixed(1)),
+      velocity: Number((tr.velocity || 8.0).toFixed(1)),
+      reqVelocity: Number((tr.reqVelocity || dom.baseDeltaV || 7.8).toFixed(1)),
+      bandwidth: Math.round(tr.bandwidth || 85),
+      relLaunch: Math.round(tr.reliabilityLaunch || 90),
+      relSpace: Math.round(tr.reliabilitySpace || 90),
+      relGround: Math.round(tr.reliabilityGround || 90),
+      outcome,
+      anomalies: `${enc} / ${res} Fixed`,
+      flightTimeSec: elapsedSec,
+      dataMB: Math.round(fl.dataAccumulatedMB || 0)
+    };
+  }
+
+  function encodeDesignShareCode(design) {
+    const compact = {
+      n: design.name,
+      d: design.domainName,
+      i: design.instruments,
+      r: design.rocketName,
+      f: design.fuelName,
+      b: design.busName,
+      h: design.heatShield ? 1 : 0,
+      g: design.groundName,
+      c: design.totalCost,
+      m: [design.mass, design.maxMass],
+      p: [design.power, design.maxPower],
+      v: [design.volume, design.maxVolume],
+      dv: [design.velocity, design.reqVelocity],
+      bw: design.bandwidth,
+      rel: [design.relLaunch, design.relSpace, design.relGround],
+      o: design.outcome,
+      a: design.anomalies,
+      t: design.flightTimeSec,
+      mb: design.dataMB
+    };
+    const jsonStr = JSON.stringify(compact);
+    const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
+    return `TM1:${b64}`;
+  }
+
+  function decodeDesignShareCode(codeStr) {
+    const raw = (codeStr || '').trim();
+    const cleaned = raw.startsWith('TM1:') ? raw.slice(4).trim() : raw;
+    const jsonStr = decodeURIComponent(escape(atob(cleaned)));
+    const c = JSON.parse(jsonStr);
+    if (!c || typeof c !== 'object') throw new Error('Invalid share code');
+    return {
+      id: `shared_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`,
+      name: String(c.n || 'SHARED-DESIGN').slice(0, 36),
+      domainId: 'earth',
+      domainName: String(c.d || 'Earth Science'),
+      instruments: Array.isArray(c.i) ? c.i : ['AIRS (T1)'],
+      rocketName: String(c.r || 'Custom Booster'),
+      fuelName: String(c.f || 'RP-1 Kerosene'),
+      busName: String(c.b || 'Standard Bus'),
+      heatShield: Boolean(c.h),
+      groundName: String(c.g || 'Deep Space Dish'),
+      totalCost: Number(c.c || 400000),
+      mass: Number((c.m && c.m[0]) || 900),
+      maxMass: Number((c.m && c.m[1]) || 1500),
+      power: Number((c.p && c.p[0]) || 400),
+      maxPower: Number((c.p && c.p[1]) || 600),
+      volume: Number((c.v && c.v[0]) || 4.0),
+      maxVolume: Number((c.v && c.v[1]) || 6.0),
+      velocity: Number((c.dv && c.dv[0]) || 8.0),
+      reqVelocity: Number((c.dv && c.dv[1]) || 7.8),
+      bandwidth: Number(c.bw || 85),
+      relLaunch: Number((c.rel && c.rel[0]) || 90),
+      relSpace: Number((c.rel && c.rel[1]) || 90),
+      relGround: Number((c.rel && c.rel[2]) || 90),
+      outcome: String(c.o || 'SHARED'),
+      anomalies: String(c.a || '0 / 0 Fixed'),
+      flightTimeSec: Number(c.t || 12),
+      dataMB: Number(c.mb || 0)
+    };
+  }
+
+  function openMissionReportModal() {
+    const modal = document.getElementById('mission-report-modal');
+    if (!modal) {
+      goToStage(7);
+      return;
+    }
+    const fl = state.flight || {};
+    const succeeded = fl.flightOutcome === 'SUCCEEDED' || (fl.dataAccumulatedMB > 0 && fl.launchIntegrity > 0);
+    const badge = document.getElementById('report-outcome-badge');
+    const rmStatus = document.getElementById('rm-status');
+    const rmAnomalies = document.getElementById('rm-anomalies');
+    const rmFlightTime = document.getElementById('rm-flight-time');
+    const rmPackets = document.getElementById('rm-packets');
+    const rmCost = document.getElementById('rm-cost');
+    const rmIntegrity = document.getElementById('rm-integrity');
+    const leadEl = document.getElementById('report-summary-lead');
+    const summaryEl = document.getElementById('report-design-summary');
+    const nameInput = document.getElementById('report-design-name-input');
+    const shareBox = document.getElementById('report-share-feedback');
+    const voteBtn = document.getElementById('btn-report-vote-saboteur');
+
+    if (shareBox) shareBox.style.display = 'none';
+    if (nameInput) nameInput.value = `${state.missionName || 'ARTEMIS'}-CYCLE-${state.missionCycle || 1}`;
+    if (voteBtn) {
+      voteBtn.style.display = state.gameMode === 'sabotage' ? 'inline-flex' : 'none';
+    }
+
+    if (badge) {
+      badge.textContent = succeeded ? 'MISSION SUCCEEDED' : 'MISSION FAILED';
+      badge.classList.toggle('failed', !succeeded);
+    }
+    if (rmStatus) {
+      rmStatus.textContent = succeeded ? 'SUCCEEDED' : 'FAILED';
+      rmStatus.className = `rm-val ${succeeded ? 'text-emerald' : 'text-crimson'}`;
+    }
+
+    const enc = fl.anomaliesEncountered || 0;
+    const res = fl.anomaliesResolvedThisFlight || 0;
+    if (rmAnomalies) {
+      rmAnomalies.textContent = `${enc} Encountered / ${res} Fixed`;
+    }
+
+    const wallElapsedSec = fl.flightStartWallMs
+      ? Math.max(1, Math.round((performance.now() - fl.flightStartWallMs) / 1000))
+      : (state.selectedDomain ? state.selectedDomain.transitDurationSec : 12);
+    const simSec = state.selectedDomain ? state.selectedDomain.transitDurationSec : wallElapsedSec;
+    if (rmFlightTime) {
+      rmFlightTime.textContent = `${simSec}s Transit (${wallElapsedSec}s Real)`;
+    }
+
+    const pktCount = succeeded ? Math.max(1, state.selectedInstruments.length) : 0;
+    if (rmPackets) {
+      rmPackets.textContent = `${pktCount} Datasets (${fl.dataAccumulatedMB || 0} MB)`;
+      rmPackets.className = `rm-val ${succeeded ? 'text-emerald' : 'text-crimson'}`;
+    }
+
+    if (rmCost) {
+      rmCost.textContent = `$${(state.tempResources.totalCost || 0).toLocaleString()}`;
+    }
+    if (rmIntegrity) {
+      rmIntegrity.textContent = `L:${fl.launchIntegrity ?? 100}% / S:${fl.spaceIntegrity ?? 100}% / G:${fl.groundIntegrity ?? 100}%`;
+    }
+    if (leadEl) {
+      leadEl.textContent = succeeded
+        ? `Mission [${state.missionName}] successfully completed orbital operations and downlinked ${fl.dataAccumulatedMB} MB of scientific telemetry.`
+        : `Mission [${state.missionName}] failed during flight operations: ${fl.failReason || 'Critical telemetry loss'}.`;
+    }
+
+    const snap = buildCurrentDesignSnapshot();
+    if (summaryEl) {
+      summaryEl.innerHTML = `
+        <div><strong>Domain:</strong> ${snap.domainName}</div>
+        <div><strong>Instruments:</strong> ${snap.instruments.join(', ')}</div>
+        <div><strong>Launch Vehicle:</strong> ${snap.rocketName} (${snap.fuelName})</div>
+        <div><strong>Spacecraft Bus:</strong> ${snap.busName} ${snap.heatShield ? '+ Heat Shield' : ''}</div>
+        <div><strong>Ground Station:</strong> ${snap.groundName} (${snap.bandwidth} Mbps)</div>
+        <div><strong>Mass / Power / Δv:</strong> ${snap.mass}/${snap.maxMass} kg | ${snap.power}/${snap.maxPower} W | ${snap.velocity}/${snap.reqVelocity} km/s</div>
+      `;
+    }
+
+    modal.classList.add('active');
+    modal.style.display = 'flex';
+  }
+
+  function renderDesignsModal(highlightCompareId = null) {
+    const designs = loadSavedDesigns();
+    const currentSnap = buildCurrentDesignSnapshot(`${state.missionName || 'CURRENT'} (Active)`);
+    currentSnap.id = '__current__';
+
+    const countEl = document.getElementById('saved-designs-count');
+    if (countEl) countEl.textContent = String(designs.length);
+
+    const nameIn = document.getElementById('design-save-name');
+    if (nameIn && !nameIn.value) {
+      nameIn.value = `${state.missionName || 'ARTEMIS'}-MK${designs.length + 1}`;
+    }
+
+    const selA = document.getElementById('compare-select-a');
+    const selB = document.getElementById('compare-select-b');
+    const allOptions = [currentSnap, ...designs];
+
+    if (selA && selB) {
+      const prevA = selA.value;
+      const prevB = highlightCompareId || selB.value;
+      const makeOpts = () => allOptions.map(d => `<option value="${d.id}">${d.name} (${d.domainName})</option>`).join('');
+      selA.innerHTML = makeOpts();
+      selB.innerHTML = makeOpts();
+      selA.value = allOptions.some(d => d.id === prevA) ? prevA : '__current__';
+      if (highlightCompareId && allOptions.some(d => d.id === highlightCompareId)) {
+        selB.value = highlightCompareId;
+      } else if (allOptions.some(d => d.id === prevB) && prevB !== selA.value) {
+        selB.value = prevB;
+      } else if (designs[0]) {
+        selB.value = designs[0].id;
+      }
+      renderDesignComparisonTable(allOptions, selA.value, selB.value);
+    }
+
+    const listEl = document.getElementById('saved-designs-list');
+    if (listEl) {
+      listEl.innerHTML = '';
+      designs.forEach(d => {
+        const row = document.createElement('div');
+        row.className = 'saved-design-item';
+        row.innerHTML = `
+          <div>
+            <strong class="text-cyan">${d.name}</strong>
+            <span style="color:#94a3b8; margin-left:0.4rem;">${d.domainName} | $${Number(d.totalCost || 0).toLocaleString()} | ${d.mass}/${d.maxMass} kg | ${d.velocity} km/s | ${d.outcome || 'DESIGN'}</span>
+          </div>
+          <div class="designs-inline-row">
+            <button type="button" class="hud-view-btn" data-action="compare" data-id="${d.id}">COMPARE</button>
+            <button type="button" class="hud-view-btn" data-action="share" data-id="${d.id}">SHARE CODE</button>
+            <button type="button" class="hud-view-btn" data-action="delete" data-id="${d.id}">DELETE</button>
+          </div>
+        `;
+        listEl.appendChild(row);
+      });
+
+      listEl.querySelectorAll('button[data-action]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const act = btn.getAttribute('data-action');
+          const id = btn.getAttribute('data-id');
+          const found = designs.find(x => x.id === id);
+          if (!found) return;
+          playBeep(760);
+          if (act === 'compare') {
+            if (selB) selB.value = found.id;
+            renderDesignComparisonTable(allOptions, selA ? selA.value : '__current__', found.id);
+          } else if (act === 'share') {
+            const code = encodeDesignShareCode(found);
+            const banner = document.getElementById('design-share-banner');
+            if (banner) {
+              banner.style.display = 'block';
+              banner.textContent = `SHARE CODE FOR [${found.name}]: ${code}`;
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(code).catch(() => {});
+            }
+          } else if (act === 'delete') {
+            const updated = designs.filter(x => x.id !== id);
+            saveDesignsToStorage(updated);
+            renderDesignsModal();
+          }
+        });
+      });
+    }
+  }
+
+  function renderDesignComparisonTable(allOptions, idA, idB) {
+    const wrap = document.getElementById('designs-comparison-table-wrap');
+    if (!wrap) return;
+    const dA = allOptions.find(d => d.id === idA) || allOptions[0];
+    const dB = allOptions.find(d => d.id === idB) || allOptions[1] || allOptions[0];
+    if (!dA || !dB) return;
+
+    const betterLow = (a, b) => (a < b ? ['text-emerald', ''] : a > b ? ['', 'text-emerald'] : ['', '']);
+    const betterHigh = (a, b) => (a > b ? ['text-emerald', ''] : a < b ? ['', 'text-emerald'] : ['', '']);
+
+    const [costClsA, costClsB] = betterLow(dA.totalCost, dB.totalCost);
+    const [dvClsA, dvClsB] = betterHigh(dA.velocity, dB.velocity);
+    const [bwClsA, bwClsB] = betterHigh(dA.bandwidth, dB.bandwidth);
+    const avgRelA = Math.round((dA.relLaunch + dA.relSpace + dA.relGround) / 3);
+    const avgRelB = Math.round((dB.relLaunch + dB.relSpace + dB.relGround) / 3);
+    const [relClsA, relClsB] = betterHigh(avgRelA, avgRelB);
+
+    wrap.innerHTML = `
+      <table class="designs-comparison-table">
+        <thead>
+          <tr>
+            <th>METRIC / PARAMETER</th>
+            <th>${dA.name}</th>
+            <th>${dB.name}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Scientific Domain</td>
+            <td>${dA.domainName}</td>
+            <td>${dB.domainName}</td>
+          </tr>
+          <tr>
+            <td>Equipped Instruments</td>
+            <td>${(dA.instruments || []).join(', ')}</td>
+            <td>${(dB.instruments || []).join(', ')}</td>
+          </tr>
+          <tr>
+            <td>Launch Vehicle &amp; Fuel</td>
+            <td>${dA.rocketName} (${dA.fuelName})</td>
+            <td>${dB.rocketName} (${dB.fuelName})</td>
+          </tr>
+          <tr>
+            <td>Spacecraft Bus &amp; Shield</td>
+            <td>${dA.busName} (${dA.heatShield ? 'Heat Shield' : 'No Shield'})</td>
+            <td>${dB.busName} (${dB.heatShield ? 'Heat Shield' : 'No Shield'})</td>
+          </tr>
+          <tr>
+            <td>Total Expenditure Cost</td>
+            <td class="${costClsA}">$${Number(dA.totalCost).toLocaleString()}</td>
+            <td class="${costClsB}">$${Number(dB.totalCost).toLocaleString()}</td>
+          </tr>
+          <tr>
+            <td>Mass / Lift Capacity</td>
+            <td>${dA.mass} / ${dA.maxMass} kg</td>
+            <td>${dB.mass} / ${dB.maxMass} kg</td>
+          </tr>
+          <tr>
+            <td>Power Draw / Generation</td>
+            <td>${dA.power} / ${dA.maxPower} W</td>
+            <td>${dB.power} / ${dB.maxPower} W</td>
+          </tr>
+          <tr>
+            <td>Velocity (&Delta;v) / Target</td>
+            <td class="${dvClsA}">${dA.velocity} / ${dA.reqVelocity} km/s</td>
+            <td class="${dvClsB}">${dB.velocity} / ${dB.reqVelocity} km/s</td>
+          </tr>
+          <tr>
+            <td>Downlink Bandwidth</td>
+            <td class="${bwClsA}">${dA.bandwidth} Mbps (${dA.groundName})</td>
+            <td class="${bwClsB}">${dB.bandwidth} Mbps (${dB.groundName})</td>
+          </tr>
+          <tr>
+            <td>Avg Segment Reliability</td>
+            <td class="${relClsA}">${avgRelA}% (L:${dA.relLaunch}% S:${dA.relSpace}% G:${dA.relGround}%)</td>
+            <td class="${relClsB}">${avgRelB}% (L:${dB.relLaunch}% S:${dB.relSpace}% G:${dB.relGround}%)</td>
+          </tr>
+          <tr>
+            <td>Flight Outcome &amp; Anomalies</td>
+            <td>${dA.outcome} (${dA.anomalies}, ${dA.flightTimeSec}s)</td>
+            <td>${dB.outcome} (${dB.anomalies}, ${dB.flightTimeSec}s)</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+  }
+
+  function openDesignsModal(highlightCompareId = null) {
+    const modal = document.getElementById('designs-modal');
+    if (!modal) return;
+    renderDesignsModal(highlightCompareId);
+    modal.classList.add('active');
+    modal.style.display = 'flex';
+  }
+
+  // Money Leaderboard
+  async function fetchAndRenderLeaderboard() {
+    const tbody = document.getElementById('leaderboard-tbody');
+    if (!tbody) return;
+    let entries = [
+      { name: 'CDR. VANCE (JPL)', money: 1840000, missions: 7, reputation: 96, mode: '4P CO-OP' },
+      { name: 'DR. ELENA ROSTOVA', money: 1520000, missions: 6, reputation: 92, mode: 'SABOTAGE' },
+      { name: 'KSC FLIGHT OPS', money: 1290000, missions: 5, reputation: 88, mode: '4P CO-OP' },
+      { name: 'DIRECTOR CHEN', money: 1110000, missions: 4, reputation: 84, mode: 'SINGLEPLAYER' },
+      { name: 'ORBITAL PIONEERS', money: 945000, missions: 3, reputation: 79, mode: 'SABOTAGE' }
+    ];
+    try {
+      const resp = await fetch('/api/leaderboard');
+      if (resp.ok) {
+        const data = await resp.json();
+        if (Array.isArray(data.entries)) {
+          entries = data.entries.map(e => ({
+            name: e.name,
+            money: e.money < 50000 ? e.money * 1000 : e.money,
+            missions: e.missions || 1,
+            reputation: e.reputation || 50,
+            mode: e.mode || 'SINGLEPLAYER'
+          }));
+        }
+      }
+    } catch (e) {}
+
+    try {
+      const localRaw = localStorage.getItem(LEADERBOARD_STORAGE_KEY);
+      if (localRaw) {
+        const localArr = JSON.parse(localRaw);
+        if (Array.isArray(localArr)) {
+          localArr.forEach(le => {
+            if (!entries.some(x => x.name.toUpperCase() === le.name.toUpperCase() && x.money >= le.money)) {
+              entries.push(le);
+            }
+          });
+        }
+      }
+    } catch (e) {}
+
+    entries.sort((a, b) => b.money - a.money);
+    tbody.innerHTML = entries.slice(0, 15).map((e, idx) => `
+      <tr>
+        <td><strong class="${idx === 0 ? 'text-gold' : idx < 3 ? 'text-cyan' : ''}">#${idx + 1}</strong></td>
+        <td><strong>${e.name}</strong></td>
+        <td class="text-emerald" style="font-family:var(--font-mono); font-weight:700;">$${Number(e.money).toLocaleString()}</td>
+        <td>${e.missions}</td>
+        <td>${e.reputation} / 100</td>
+        <td><span class="badge">${e.mode}</span></td>
+      </tr>
+    `).join('');
+  }
+
+  async function submitCurrentScoreToLeaderboard() {
+    const input = document.getElementById('leaderboard-callsign-input');
+    const name = ((input && input.value) || 'CDR. MISSIONEER').trim().slice(0, 26) || 'CDR. MISSIONEER';
+    const money = Math.round(state.budget || 1200000);
+    const missions = Math.max(1, (state.advStats && state.advStats.missionsCompleted) || state.missionCycle || 1);
+    const reputation = Math.round(state.reputation || 50);
+    const mode = state.gameMode === 'sabotage' ? 'SABOTAGE' : state.gameMode === 'coop' ? '4P CO-OP' : 'SINGLEPLAYER';
+
+    const entry = { name, money, missions, reputation, mode };
+    try {
+      const localRaw = localStorage.getItem(LEADERBOARD_STORAGE_KEY);
+      const localArr = localRaw ? JSON.parse(localRaw) : [];
+      localArr.push(entry);
+      localStorage.setItem(LEADERBOARD_STORAGE_KEY, JSON.stringify(localArr));
+    } catch (e) {}
+
+    try {
+      await fetch('/api/leaderboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry)
+      });
+    } catch (e) {}
+
+    playBeep(1100);
+    await fetchAndRenderLeaderboard();
+  }
+
+  function openLeaderboardModal() {
+    const modal = document.getElementById('leaderboard-modal');
+    if (!modal) return;
+    fetchAndRenderLeaderboard();
+    modal.classList.add('active');
+    modal.style.display = 'flex';
+  }
+
+  // ========================================================================
+  // 20. 4-PLAYER COLLABORATION & SABOTAGE MULTIPLAYER + LOBBY & MATCHMAKING
+  // ========================================================================
+
+  const ROLE_DUTY_CONFIG = {
+    launch: {
+      title: 'LAUNCH PLAYER',
+      duty: 'LAUNCH PLAYER: Design rocket & propellant, manage Δv, and fix mechanical booster issues.',
+      taskBtn: 'CALIBRATE BOOSTER VALVES (+3% LAUNCH REL)',
+      sabotageAct: 'UNDERFILL PROPELLANT & TAMPER REGULATOR VALVE'
+    },
+    space: {
+      title: 'SPACE PLAYER',
+      duty: 'SPACE PLAYER: Plan scientific instruments & bus frame, and fix orbital sensor issues.',
+      taskBtn: 'ALIGN STAR-TRACKER OPTICS (+3% SPACE REL)',
+      sabotageAct: 'DETUNE OPTICAL SENSORS & DRAIN SOLAR BUS'
+    },
+    ground: {
+      title: 'GROUND PLAYER',
+      duty: 'GROUND PLAYER: Receive telemetry, fix computer/downlink issues, negotiate, and approve launches & sales.',
+      taskBtn: 'OPTIMIZE DOWNLINK BUFFER (+10 Mbps)',
+      sabotageAct: 'INJECT PACKET LOSS & SLEW TRACKING DISH'
+    },
+    user: {
+      title: 'USER PLAYER',
+      duty: 'USER PLAYER: Find best market deals, coordinate part purchases with Launch & Space, manage loans & refine data.',
+      taskBtn: 'SCOUT MARKET DEAL & REBATE (+$25,000)',
+      sabotageAct: 'SIPHON AGENCY FUNDS & LOCK PREDATORY SPREAD'
+    }
+  };
+
+  state.mpLobby = null;
+  state.userRole = 'launch';
+  state.groundApproved = true;
+  state.budgetAllocations = { launch: 450000, space: 500000, ground: 250000 };
+  state.designApprovals = { launch: false, space: false, ground: false };
+  state.conceptVotes = {};
+  state.conceptVoteWinner = null;
+  state.conceptVoteTiebroken = false;
+  state.mpSharedVersion = 0;
+  state.sabotageForensicLogs = [
+    'Forensic Telemetry Monitor initialized across all 4 stations (Launch, Space, Ground, User).'
+  ];
+
+  async function pushMpSharedState(patch = {}) {
+    if (!isMpMode() || !state.mpLobby || !state.mpLobby.code) return null;
+    return sendLobbyAction({
+      action: 'sync_state',
+      code: state.mpLobby.code,
+      player_name: getMpPlayerName(),
+      shared_state: patch
+    });
+  }
+
+  async function castMpConceptVote(domainObj, forceResolve = false) {
+    if (!state.mpLobby || !state.mpLobby.code) return null;
+    const domId = domainObj ? domainObj.id : (state.conceptVotes[state.userRole] || state.domainId || 'earth');
+    state.conceptVotes = state.conceptVotes || {};
+    state.conceptVotes[state.userRole] = domId;
+    renderStage1Domains();
+    return sendLobbyAction({
+      action: 'vote_concept',
+      code: state.mpLobby.code,
+      player_name: getMpPlayerName(),
+      role: state.userRole,
+      domain_id: domId,
+      force_resolve: Boolean(forceResolve)
+    });
+  }
+
+  function applyMpSharedState(shared) {
+    if (!shared || typeof shared !== 'object') return;
+    if (typeof shared.missionCycle === 'number') state.missionCycle = shared.missionCycle;
+    if (typeof shared.missionName === 'string') {
+      state.missionName = shared.missionName;
+      if (DOM.inputMissionName && document.activeElement !== DOM.inputMissionName) {
+        DOM.inputMissionName.value = shared.missionName;
+      }
+    }
+    if (shared.conceptVotes && typeof shared.conceptVotes === 'object') {
+      state.conceptVotes = { ...shared.conceptVotes };
+    }
+    if ('conceptVoteWinner' in shared) {
+      state.conceptVoteWinner = shared.conceptVoteWinner;
+    }
+    if (typeof shared.conceptVoteTiebroken === 'boolean') {
+      state.conceptVoteTiebroken = shared.conceptVoteTiebroken;
+    }
+    if (shared.domainId !== undefined) {
+      state.domainId = shared.domainId;
+    }
+    if (Array.isArray(shared.selectedInstruments)) {
+      state.selectedInstruments = [...shared.selectedInstruments];
+    }
+    if (shared.instrumentTiers && typeof shared.instrumentTiers === 'object') {
+      state.instrumentTiers = { ...shared.instrumentTiers };
+    }
+    if (typeof shared.budget === 'number') state.budget = shared.budget;
+    if (typeof shared.reputation === 'number') state.reputation = shared.reputation;
+    if (typeof shared.activeDebt === 'number') state.activeDebt = shared.activeDebt;
+    if (shared.budgetAllocations && typeof shared.budgetAllocations === 'object') {
+      state.budgetAllocations = { ...state.budgetAllocations, ...shared.budgetAllocations };
+    }
+    if (shared.selections && typeof shared.selections === 'object') {
+      state.selections = { ...state.selections, ...shared.selections };
+    }
+    if (typeof shared.customSlidersEnabled === 'boolean') {
+      state.customSlidersEnabled = shared.customSlidersEnabled;
+    }
+    if (shared.customDesign && typeof shared.customDesign === 'object') {
+      state.customDesign = { ...state.customDesign, ...shared.customDesign };
+    }
+    if (shared.designApprovals && typeof shared.designApprovals === 'object') {
+      state.designApprovals = { ...state.designApprovals, ...shared.designApprovals };
+    }
+    if (typeof shared.groundApproved === 'boolean') {
+      state.groundApproved = shared.groundApproved;
+    }
+    if (typeof shared.diagnosticsBonus === 'number') {
+      state.diagnosticsBonus = shared.diagnosticsBonus;
+    }
+    if (Array.isArray(shared.dataInventory)) {
+      state.dataInventory = shared.dataInventory;
+    }
+    if (Array.isArray(shared.sabotageForensicLogs)) {
+      state.sabotageForensicLogs = shared.sabotageForensicLogs;
+    }
+
+    if (!isMpMode()) return;
+
+    if (typeof shared.stage === 'number' && shared.stage >= 1 && shared.stage <= 7 && shared.stage !== state.stage) {
+      goToStage(shared.stage, true);
+      return;
+    }
+
+    updatePermanentHud();
+    updateMultiplayerStationBar();
+    if (state.stage === 1) {
+      renderStage1Domains();
+    } else if (state.stage === 2) {
+      renderStage2Instruments();
+    } else if (state.stage === 3) {
+      renderStage3Funding();
+    } else if (state.stage === 4) {
+      calculateTempResources();
+      renderStage4Design();
+    } else if (state.stage === 7) {
+      renderStage7Refinery();
+    }
+  }
+
+  function renderMpCollabWorkspace() {
+    const ws = document.getElementById('mp-collab-workspace');
+    if (!ws) return;
+    if (!isMpMode()) {
+      ws.innerHTML = '';
+      ws.style.display = 'none';
+      return;
+    }
+    ws.style.display = 'grid';
+
+    const alloc = state.budgetAllocations || { launch: 450000, space: 500000, ground: 250000 };
+    const approvals = state.designApprovals || { launch: false, space: false, ground: false };
+    const isUserRole = state.userRole === 'user';
+    const isGroundRole = state.userRole === 'ground';
+
+    const spentLaunch = getSegmentExpenditure('launch');
+    const spentSpace = getSegmentExpenditure('space');
+    const spentGround = getSegmentExpenditure('ground');
+
+    const stations = [
+      { key: 'launch', label: 'Launch Player (Rocket)', spent: spentLaunch, cap: alloc.launch || 0, app: Boolean(approvals.launch) },
+      { key: 'space', label: 'Space Player (Instruments & Bus)', spent: spentSpace, cap: alloc.space || 0, app: Boolean(approvals.space) },
+      { key: 'ground', label: 'Ground Player (Comms)', spent: spentGround, cap: alloc.ground || 0, app: Boolean(approvals.ground) }
+    ];
+
+    ws.innerHTML = `
+      <div class="mp-collab-box">
+        <div class="mp-collab-title">
+          <span>💰 USER PLAYER BUDGET ALLOCATION</span>
+          <span class="badge ${isUserRole ? 'text-emerald' : 'text-muted'}">${isUserRole ? 'YOUR AUTHORITY (USER PLAYER)' : 'CONTROLLED BY USER PLAYER'}</span>
+        </div>
+        ${stations.map(st => `
+          <div class="mp-alloc-row">
+            <span><strong>${st.label}:</strong> <span class="${st.spent > st.cap ? 'text-crimson' : 'text-cyan'}">${formatMoney(st.spent)}</span> / ${formatMoney(st.cap)}</span>
+            <div class="mp-alloc-controls">
+              <button type="button" class="mp-alloc-btn" data-alloc-role="${st.key}" data-alloc-delta="-50000" ${!isUserRole ? 'disabled' : ''}>-$50k</button>
+              <button type="button" class="mp-alloc-btn" data-alloc-role="${st.key}" data-alloc-delta="50000" ${!isUserRole ? 'disabled' : ''}>+$50k</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="mp-collab-box">
+        <div class="mp-collab-title">
+          <span>🛡️ GROUND PLAYER DESIGN APPROVALS</span>
+          <span class="badge ${isGroundRole ? 'text-emerald' : 'text-muted'}">${isGroundRole ? 'YOUR AUTHORITY (GROUND PLAYER)' : 'CONTROLLED BY GROUND PLAYER'}</span>
+        </div>
+        ${stations.map(st => `
+          <div class="mp-approval-row">
+            <span><strong>${st.label}:</strong> <span class="${st.app ? 'text-emerald' : 'text-amber'}">${st.app ? 'APPROVED ✓' : 'PENDING ⏳'}</span></span>
+            <button type="button" class="mp-alloc-btn" data-approve-seg="${st.key}" ${!isGroundRole ? 'disabled' : ''}>
+              ${st.app ? 'REVOKE' : 'APPROVE ✓'}
+            </button>
+          </div>
+        `).join('')}
+        ${isGroundRole ? `
+          <div style="display:flex; justify-content:flex-end; margin-top:0.2rem;">
+            <button type="button" class="mp-alloc-btn" id="btn-mp-approve-all-designs" style="border-color:rgba(16,185,129,0.6); color:#34d399;">APPROVE ALL DESIGNS & LAUNCH ✓</button>
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    ws.querySelectorAll('button[data-alloc-role]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (state.userRole !== 'user') {
+          playAlarm();
+          showInPageNotice('Only the User Player can allocate station budgets!', 'USER PLAYER ONLY');
+          return;
+        }
+        const rk = btn.getAttribute('data-alloc-role');
+        const delta = parseInt(btn.getAttribute('data-alloc-delta'), 10) || 0;
+        const cur = state.budgetAllocations[rk] || 0;
+        const nextVal = Math.max(50000, Math.min(1500000, cur + delta));
+        state.budgetAllocations[rk] = nextVal;
+        playBeep(delta > 0 ? 880 : 620);
+        renderMpCollabWorkspace();
+        if (state.stage === 2) renderStage2Instruments();
+        if (state.stage === 4) {
+          calculateTempResources();
+          renderStage4Design();
+        }
+        pushMpSharedState({ budgetAllocations: state.budgetAllocations });
+      });
+    });
+
+    ws.querySelectorAll('button[data-approve-seg]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (state.userRole !== 'ground') {
+          playAlarm();
+          showInPageNotice('Only the Ground Player can approve or hold station designs!', 'GROUND PLAYER ONLY');
+          return;
+        }
+        const seg = btn.getAttribute('data-approve-seg');
+        state.designApprovals[seg] = !state.designApprovals[seg];
+        playBeep(state.designApprovals[seg] ? 920 : 540);
+        renderMpCollabWorkspace();
+        if (state.stage === 4) {
+          calculateTempResources();
+          renderStage4Design();
+        }
+        pushMpSharedState({ designApprovals: state.designApprovals });
+      });
+    });
+
+    ws.querySelector('#btn-mp-approve-all-designs')?.addEventListener('click', () => {
+      if (state.userRole !== 'ground') return;
+      state.designApprovals = { launch: true, space: true, ground: true };
+      state.groundApproved = true;
+      playChord([523.25, 659.25, 783.99], 'triangle', 0.25);
+      updateMultiplayerStationBar();
+      if (state.stage === 4) {
+        calculateTempResources();
+        renderStage4Design();
+      }
+      pushMpSharedState({
+        designApprovals: state.designApprovals,
+        groundApproved: true
+      });
+    });
+  }
+
+  function updateMultiplayerStationBar() {
+    const dutyText = document.getElementById('mp-role-duty-text');
+    const taskBtn = document.getElementById('btn-mp-station-task');
+    const roomPill = document.getElementById('mp-hud-room-code');
+    const approveBtn = document.getElementById('btn-mp-ground-approve');
+    const sabBtn = document.getElementById('btn-mp-sabotage-act');
+    const voteBtn = document.getElementById('btn-open-saboteur-vote');
+
+    const role = state.userRole || 'launch';
+    const cfg = ROLE_DUTY_CONFIG[role] || ROLE_DUTY_CONFIG.launch;
+
+    if (DOM.roleTabs) {
+      const players = (state.mpLobby && Array.isArray(state.mpLobby.players)) ? state.mpLobby.players : [];
+      const tabLabels = {
+        launch: 'Launch Player',
+        space: 'Space Player',
+        ground: 'Ground Player',
+        user: 'User Player'
+      };
+      Object.keys(DOM.roleTabs).forEach(rk => {
+        const tab = DOM.roleTabs[rk];
+        if (!tab) return;
+        const isMine = rk === role;
+        tab.classList.toggle('active', isMine);
+        tab.classList.toggle('locked-other', isMpMode() && !isMine);
+        const occ = players.find(p => p.role === rk);
+        const spanEl = tab.querySelector('span');
+        if (spanEl) {
+          spanEl.textContent = occ
+            ? `${tabLabels[rk]} (${occ.name}${isMine ? ' • YOU' : ''})`
+            : `${tabLabels[rk]}${isMine ? ' (YOU)' : ''}`;
+        }
+      });
+    }
+
+    if (dutyText) dutyText.textContent = cfg.duty;
+    if (taskBtn) taskBtn.textContent = cfg.taskBtn;
+    if (roomPill) {
+      roomPill.textContent = state.mpLobby
+        ? `ROOM: ${state.mpLobby.code} (${state.mpLobby.visibility.toUpperCase()}) • 4/4 CREW`
+        : `ROOM: LOCAL ${state.gameMode.toUpperCase()}`;
+    }
+    if (approveBtn) {
+      approveBtn.textContent = state.groundApproved
+        ? 'GROUND APPROVAL: GRANTED ✓'
+        : 'GROUND APPROVAL: HOLD ⚠';
+      approveBtn.className = `mp-mini-btn ${state.groundApproved ? 'emerald' : 'crimson'}`;
+    }
+    if (sabBtn) {
+      sabBtn.style.display = state.gameMode === 'sabotage' ? 'inline-flex' : 'none';
+    }
+    if (voteBtn) {
+      voteBtn.style.display = state.gameMode === 'sabotage' ? 'inline-flex' : 'none';
+    }
+    renderMpCollabWorkspace();
+  }
+
+  function executeActiveStationTask() {
+    const role = state.userRole || 'launch';
+    playBeep(940);
+    if (role === 'launch') {
+      state.tempResources.reliabilityLaunch = Math.min(99, (state.tempResources.reliabilityLaunch || 90) + 3);
+      if (state.flight && state.flight.running) {
+        state.flight.launchIntegrity = Math.min(100, (state.flight.launchIntegrity || 80) + 12);
+        logFlightMessage('LAUNCH PLAYER: Mechanical booster valves stabilized (+12% Launch Integrity).', false, 'check');
+      } else {
+        showInPageNotice('LAUNCH PLAYER TASK COMPLETE:\nCalibrated turbopump & regulator valves (+3% Launch Reliability).', 'LAUNCH STATION');
+      }
+    } else if (role === 'space') {
+      state.tempResources.reliabilitySpace = Math.min(99, (state.tempResources.reliabilitySpace || 90) + 3);
+      if (state.flight && state.flight.running) {
+        state.flight.spaceIntegrity = Math.min(100, (state.flight.spaceIntegrity || 80) + 12);
+        state.flight.dataAccumulatedMB = (state.flight.dataAccumulatedMB || 0) + 150;
+        if (DOM.flightDataCounter) DOM.flightDataCounter.textContent = `${state.flight.dataAccumulatedMB} MB`;
+        logFlightMessage('SPACE PLAYER: Calibrated payload optics (+150 MB telemetry & +12% Space Integrity).', false, 'microscope');
+      } else {
+        showInPageNotice('SPACE PLAYER TASK COMPLETE:\nAligned star-tracker and instrument thermal bus (+3% Space Reliability).', 'SPACE STATION');
+      }
+    } else if (role === 'ground') {
+      state.tempResources.bandwidth = (state.tempResources.bandwidth || 85) + 10;
+      state.tempResources.reliabilityGround = Math.min(99, (state.tempResources.reliabilityGround || 90) + 3);
+      if (state.flight && state.flight.running) {
+        state.flight.groundIntegrity = Math.min(100, (state.flight.groundIntegrity || 80) + 12);
+        logFlightMessage('GROUND PLAYER: Cleared receiver computer buffer & locked dish azimuth (+10 Mbps).', false, 'satellite');
+      } else {
+        showInPageNotice('GROUND PLAYER TASK COMPLETE:\nOptimized ground receiver array (+10 Mbps Downlink Bandwidth & +3% Ground Reliability).', 'GROUND STATION');
+      }
+    } else if (role === 'user') {
+      if (!state._userRebateCycle || state._userRebateCycle !== state.missionCycle) {
+        state._userRebateCycle = state.missionCycle;
+        state.budget += 25000;
+        updatePermanentHud();
+        pushMpSharedState({ budget: state.budget });
+        showInPageNotice('USER PLAYER TASK COMPLETE:\nNegotiated vendor part procurement rebate & scouted buyer contracts (+$25,000 Agency Budget).', 'USER STATION');
+      } else {
+        showInPageNotice('USER PLAYER MARKET INTEL:\nCurrent High-Demand Domain: ' + (state.currentTrend ? state.currentTrend.domain.toUpperCase() : 'EARTH') + ' (2.0x Payout Bonus). Coordinate with Space & Ground stations!', 'USER STATION');
+      }
+    }
+    if (state.stage === 4) {
+      renderDesignVisualViewport();
+    }
+  }
+
+  function triggerCovertSabotageAction() {
+    if (state.gameMode !== 'sabotage') return;
+    if (!state.saboteurRole) {
+      const roles = ['launch', 'space', 'ground', 'user'];
+      state.saboteurRole = roles[Math.floor(Math.random() * roles.length)];
+    }
+    const sabRole = state.saboteurRole;
+    playAlarm();
+
+    const clueMap = {
+      launch: 'FORENSIC ALERT [LAUNCH SEGMENT]: Unauthorized valve pressure command & propellant underfill signature detected on Launch console!',
+      space: 'FORENSIC ALERT [SPACE SEGMENT]: Covert star-tracker optical detune & payload bus power spike traced to Space console!',
+      ground: 'FORENSIC ALERT [GROUND SEGMENT]: Deliberate telemetry packet drop & dish azimuth slew injected from Ground terminal!',
+      user: 'FORENSIC ALERT [USER SEGMENT]: Unauthorized $45,000 budget siphon & high-interest debt routing traced to User financial desk!'
+    };
+
+    const clue = clueMap[sabRole] || clueMap.space;
+    state.sabotageForensicLogs.push(`[CYCLE ${state.missionCycle}] ${clue}`);
+
+    if (!isInfiniteBudget()) {
+      state.budget = Math.max(0, state.budget - 45000);
+      updatePermanentHud();
+    }
+    if (state.flight && state.flight.running && !state.flight.anomalyActive) {
+      const targetSeg = sabRole === 'user' ? 'ground' : sabRole;
+      triggerTimedAnomaly(targetSeg);
+    } else {
+      showInPageNotice(
+        `COVERT SABOTAGE DETECTED!\nA Saboteur among the 4 stations just caused a system malfunction (-$45,000 emergency containment cost).\n\nOpen "FIND & VOTE SABOTEUR" to inspect the forensic station logs and vote out the Saboteur!`,
+        'SABOTAGE ALERT'
+      );
+    }
+    pushMpSharedState({ budget: state.budget, sabotageForensicLogs: state.sabotageForensicLogs });
+  }
+
+  function openSaboteurVoteModal() {
+    const modal = document.getElementById('saboteur-vote-modal');
+    if (!modal) return;
+    if (!state.saboteurRole) {
+      const roles = ['launch', 'space', 'ground', 'user'];
+      state.saboteurRole = roles[Math.floor(Math.random() * roles.length)];
+    }
+    const clueBox = document.getElementById('saboteur-clue-box');
+    const resultBox = document.getElementById('saboteur-vote-result');
+    if (resultBox) resultBox.style.display = 'none';
+
+    const hintByRole = {
+      launch: 'Telemetry audit shows anomalous turbopump valve oscillations and fuel mixture tampering in the Launch bay.',
+      space: 'Telemetry audit shows deliberate optical calibration drift and unscheduled power bus drain on the Space bus.',
+      ground: 'Telemetry audit shows manual downlink buffer overflow and falsified launch signoff packets on the Ground console.',
+      user: 'Telemetry audit shows off-ledger wire transfers and artificially discounted contract quotes at the User market desk.'
+    };
+
+    const logs = state.sabotageForensicLogs.slice(-5);
+    logs.push(`LATEST FORENSIC TRACE: ${hintByRole[state.saboteurRole]}`);
+    if (clueBox) {
+      clueBox.innerHTML = logs.map(l => `<div style="margin-bottom:0.35rem;">&bull; ${l}</div>`).join('');
+    }
+
+    modal.classList.add('active');
+    modal.style.display = 'flex';
+  }
+
+  async function castSaboteurVote(suspectRole) {
+    if (!state.saboteurRole) {
+      const roles = ['launch', 'space', 'ground', 'user'];
+      state.saboteurRole = roles[Math.floor(Math.random() * roles.length)];
+    }
+    let caught = suspectRole === state.saboteurRole;
+    let actualRole = state.saboteurRole;
+
+    if (state.mpLobby && state.mpLobby.code) {
+      try {
+        const resp = await fetch('/api/lobbies', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'vote_saboteur',
+            code: state.mpLobby.code,
+            player_name: getMpPlayerName(),
+            suspect_role: suspectRole
+          })
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          caught = Boolean(data.caught);
+          actualRole = data.saboteur_role || actualRole;
+          state.mpLobby = data.lobby || state.mpLobby;
+        }
+      } catch (e) {}
+    }
+
+    const resultBox = document.getElementById('saboteur-vote-result');
+    if (caught) {
+      playBeep(1250);
+      if (!isInfiniteBudget()) {
+        state.budget += 200000;
+        updatePermanentHud();
+      }
+      state.reputation = Math.min(100, state.reputation + 10);
+      updatePermanentHud();
+      if (resultBox) {
+        resultBox.style.display = 'block';
+        resultBox.style.borderColor = 'var(--color-emerald)';
+        resultBox.style.color = 'var(--color-emerald)';
+        resultBox.textContent = `TRIBUNAL VERDICT: ${suspectRole.toUpperCase()} PLAYER WAS THE SABOTEUR! Saboteur ejected — +$200,000 security recovery & +10 Reputation awarded!`;
+      }
+    } else {
+      playAlarm();
+      if (resultBox) {
+        resultBox.style.display = 'block';
+        resultBox.style.borderColor = 'var(--color-crimson)';
+        resultBox.style.color = 'var(--color-crimson)';
+        resultBox.textContent = `TRIBUNAL VERDICT: ${suspectRole.toUpperCase()} Player was INNOCENT! The true Saboteur was ${actualRole.toUpperCase()} Player!`;
+      }
+    }
+  }
+
+  function getMpPlayerName() {
+    const el = document.getElementById('mp-player-name');
+    return ((el && el.value) || 'CDR. PIONEER').trim().slice(0, 22) || 'CDR. PIONEER';
+  }
+
+  let mpLobbyPollTimer = null;
+
+  function startMpLobbyPolling() {
+    if (mpLobbyPollTimer) return;
+    mpLobbyPollTimer = setInterval(() => {
+      const modal = document.getElementById('multiplayer-lobby-modal');
+      const modalOpen = modal && modal.classList.contains('active');
+      const inActiveMp = state.mpLobby && state.gameMode !== 'singleplayer';
+      if (!modalOpen && !inActiveMp) {
+        stopMpLobbyPolling();
+        return;
+      }
+      refreshPublicLobbies();
+    }, 1500);
+  }
+
+  function stopMpLobbyPolling() {
+    if (mpLobbyPollTimer) {
+      clearInterval(mpLobbyPollTimer);
+      mpLobbyPollTimer = null;
+    }
+  }
+
+  function renderActiveMpLobbyRoom(lobby, publicList = null) {
+    if (lobby !== undefined) {
+      state.mpLobby = lobby;
+      if (lobby && lobby.saboteur_role) {
+        state.saboteurRole = lobby.saboteur_role;
+      }
+    }
+    const titleEl = document.getElementById('mp-room-title');
+    const metaEl = document.getElementById('mp-room-meta');
+    const codeEl = document.getElementById('mp-room-code-display');
+    const slotsEl = document.getElementById('mp-stations-slots');
+    const logsEl = document.getElementById('mp-room-logs');
+    const delBtn = document.getElementById('btn-mp-delete-lobby');
+    const launchBtn = document.getElementById('btn-mp-launch-game');
+    const removeBotsBtn = document.getElementById('btn-mp-remove-bots');
+
+    const lob = state.mpLobby;
+    if (!lob) {
+      if (titleEl) titleEl.textContent = 'NO ACTIVE LOBBY SELECTED';
+      if (metaEl) metaEl.textContent = 'Use Quickplay, Create a Lobby, or Join from the Public Browser';
+      if (codeEl) codeEl.textContent = '------';
+      if (delBtn) delBtn.style.display = 'none';
+      if (removeBotsBtn) removeBotsBtn.disabled = true;
+      if (launchBtn) {
+        launchBtn.disabled = false;
+        launchBtn.textContent = 'ENTER MISSION CONTROL →';
+      }
+      if (slotsEl) {
+        slotsEl.innerHTML = ['launch', 'space', 'ground', 'user'].map(r => `
+          <div class="mp-station-slot-card">
+            <strong class="text-cyan">${ROLE_DUTY_CONFIG[r].title}</strong>
+            <span>Unassigned Station</span>
+          </div>
+        `).join('');
+      }
+      if (logsEl) logsEl.innerHTML = '';
+      if (Array.isArray(publicList)) {
+        renderPublicLobbiesBrowser(publicList);
+      }
+      updateMultiplayerStationBar();
+      return;
+    }
+
+    const myName = getMpPlayerName().toUpperCase();
+    const me = Array.isArray(lob.players) ? lob.players.find(p => p.name.toUpperCase() === myName) : null;
+    if (me && me.role) {
+      state.userRole = me.role;
+    }
+
+    const isHost = Boolean(lob.host && lob.host.toUpperCase() === myName);
+    const playerCount = (lob.players || []).length;
+    if (delBtn) delBtn.style.display = isHost ? 'inline-flex' : 'none';
+    if (removeBotsBtn) {
+      const hasBots = (lob.players || []).some(p => p.is_bot);
+      removeBotsBtn.disabled = !hasBots || lob.status === 'in_progress';
+    }
+    if (launchBtn) {
+      if (playerCount < 4) {
+        launchBtn.disabled = true;
+        launchBtn.textContent = `NEED 4/4 CREW TO START (${playerCount}/4) — FILL AI CREW OR INVITE PLAYERS`;
+      } else {
+        launchBtn.disabled = !isHost;
+        launchBtn.textContent = isHost ? 'ENTER MISSION CONTROL (4/4 READY) →' : 'WAITING FOR HOST TO START...';
+      }
+    }
+
+    if (lob.shared_state) {
+      applyMpSharedState(lob.shared_state);
+    }
+
+    if (titleEl) titleEl.textContent = `${lob.name}`;
+    if (metaEl) {
+      metaEl.textContent = `Host: ${lob.host || 'CREATOR'} | Mode: ${lob.gamemode === 'sabotage' ? '4P SABOTAGE (Find the Saboteur)' : '4P COLLABORATION (Co-op)'} | Visibility: ${lob.visibility.toUpperCase()} | Crew: ${playerCount}/4 (4 Required)`;
+    }
+    if (codeEl) codeEl.textContent = lob.code;
+
+    if (slotsEl) {
+      const isLocked = lob.status === 'in_progress';
+      slotsEl.innerHTML = ['launch', 'space', 'ground', 'user'].map(r => {
+        const occ = (lob.players || []).find(p => p.role === r);
+        return `
+          <div class="mp-station-slot-card ${occ ? 'occupied' : ''}">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong class="text-cyan">${ROLE_DUTY_CONFIG[r].title}</strong>
+              ${isLocked
+                ? `<span class="badge">ROLE LOCKED</span>`
+                : `<button type="button" class="hud-view-btn" data-claim-role="${r}">CLAIM STATION</button>`}
+            </div>
+            <span class="${occ ? 'text-emerald' : 'text-muted'}">${occ ? `${occ.name} ${occ.is_bot ? '(AI Crew)' : '(Human)'}` : 'OPEN SLOT'}</span>
+          </div>
+        `;
+      }).join('');
+
+      if (!isLocked) {
+        slotsEl.querySelectorAll('button[data-claim-role]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const r = btn.getAttribute('data-claim-role');
+            state.userRole = r;
+            playBeep(780);
+            await sendLobbyAction({ action: 'select_role', code: lob.code, player_name: getMpPlayerName(), role: r });
+          });
+        });
+      }
+    }
+
+    if (logsEl && Array.isArray(lob.logs)) {
+      logsEl.innerHTML = lob.logs.map(l => `<div class="mp-log-line">[${(l.role || 'OPS').toUpperCase()}] ${l.text}</div>`).join('');
+      logsEl.scrollTop = logsEl.scrollHeight;
+    }
+
+    if (Array.isArray(publicList)) {
+      renderPublicLobbiesBrowser(publicList);
+    }
+    updateMultiplayerStationBar();
+
+    if (lob.status === 'in_progress' && state.mpEnteredLobbyCode !== lob.code) {
+      state.mpEnteredLobbyCode = lob.code;
+      launchMultiplayerSessionFromLobby();
+    }
+  }
+
+  function renderPublicLobbiesBrowser(lobbies) {
+    const listEl = document.getElementById('mp-public-lobbies-list');
+    if (!listEl) return;
+    if (!Array.isArray(lobbies) || lobbies.length === 0) {
+      listEl.innerHTML = '<div class="mp-lobby-row">No public lobbies open. Click Create Lobby or Quickplay!</div>';
+      return;
+    }
+    const myName = getMpPlayerName().toUpperCase();
+    listEl.innerHTML = lobbies.map(l => {
+      const isHost = l.host && l.host.toUpperCase() === myName;
+      return `
+      <div class="mp-lobby-row">
+        <div>
+          <strong class="text-cyan">${l.name}</strong>
+          <span class="badge" style="margin-left:0.35rem;">${l.gamemode === 'sabotage' ? 'SABOTAGE' : '4P CO-OP'}</span>
+          <small style="color:#94a3b8; margin-left:0.35rem;">Code: ${l.code} | ${l.player_count || (l.players || []).length}/4</small>
+        </div>
+        <div style="display:flex; gap:0.35rem; align-items:center;">
+          ${isHost ? `<button type="button" class="hud-view-btn" style="border-color:rgba(244,63,94,0.6); color:#fb7185;" data-delete-code="${l.code}">DELETE</button>` : ''}
+          <button type="button" class="hud-view-btn" data-join-code="${l.code}">JOIN</button>
+        </div>
+      </div>
+    `;
+    }).join('');
+
+    listEl.querySelectorAll('button[data-join-code]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const code = btn.getAttribute('data-join-code');
+        playBeep(840);
+        await sendLobbyAction({ action: 'join', code, player_name: getMpPlayerName() });
+      });
+    });
+    listEl.querySelectorAll('button[data-delete-code]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const code = btn.getAttribute('data-delete-code');
+        playBeep(520);
+        await sendLobbyAction({ action: 'delete', code, player_name: getMpPlayerName() });
+      });
+    });
+  }
+
+  async function refreshPublicLobbies() {
+    try {
+      const code = state.mpLobby ? state.mpLobby.code : '';
+      const resp = await fetch(`/api/lobbies${code ? `?code=${encodeURIComponent(code)}` : ''}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        renderPublicLobbiesBrowser(data.lobbies || []);
+        if (code && !data.lobby) {
+          state.mpLobby = null;
+          state.mpEnteredLobbyCode = null;
+          renderActiveMpLobbyRoom(null, data.lobbies || []);
+        } else if (data.lobby) {
+          renderActiveMpLobbyRoom(data.lobby);
+        }
+        return;
+      }
+    } catch (e) {}
+  }
+
+  async function sendLobbyAction(payload) {
+    try {
+      const resp = await fetch('/api/lobbies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.deleted) {
+          state.mpLobby = null;
+          state.mpEnteredLobbyCode = null;
+          renderActiveMpLobbyRoom(null, data.lobbies || []);
+        } else {
+          renderActiveMpLobbyRoom(data.lobby, data.lobbies);
+        }
+        return data;
+      } else {
+        const err = await resp.json().catch(() => ({}));
+        if (err.error) showInPageNotice(err.error, 'LOBBY NOTICE');
+      }
+    } catch (e) {
+      // Offline fallback lobby actions
+      if (payload.action === 'delete') {
+        state.mpLobby = null;
+        state.mpEnteredLobbyCode = null;
+        renderActiveMpLobbyRoom(null, []);
+        return { deleted: true, lobbies: [] };
+      }
+      if (payload.action === 'remove_bots' && state.mpLobby) {
+        state.mpLobby.players = (state.mpLobby.players || []).filter(p => !p.is_bot);
+        renderActiveMpLobbyRoom(state.mpLobby, [state.mpLobby]);
+        return { lobby: state.mpLobby };
+      }
+      if (payload.action === 'vote_concept' && state.mpLobby) {
+        const domId = payload.domain_id || 'earth';
+        state.conceptVotes = { launch: domId, space: domId, ground: 'helio', user: domId };
+        state.conceptVoteWinner = domId;
+        state.conceptVoteTiebroken = false;
+        state.domainId = domId;
+        renderStage1Domains();
+        return { lobby: state.mpLobby };
+      }
+      if (payload.action === 'sync_state' && state.mpLobby) {
+        state.mpLobby.shared_state = { ...(state.mpLobby.shared_state || {}), ...(payload.shared_state || {}) };
+        applyMpSharedState(state.mpLobby.shared_state);
+        return { lobby: state.mpLobby };
+      }
+      const fallbackCode = payload.code || 'LOCAL4';
+      const gm = payload.gamemode === 'sabotage' ? 'sabotage' : 'coop';
+      const fallbackLobby = {
+        code: fallbackCode,
+        name: payload.name || 'Local Crew Lobby',
+        host: payload.player_name || 'CDR. PIONEER',
+        gamemode: gm,
+        visibility: payload.visibility || 'public',
+        status: payload.action === 'start' ? 'in_progress' : 'open',
+        saboteur_role: gm === 'sabotage' ? 'space' : null,
+        players: [
+          { name: payload.player_name || 'CDR. PIONEER', role: payload.role || 'launch', is_bot: false, ready: true },
+          { name: 'AI-SAGAN', role: 'space', is_bot: true, ready: true },
+          { name: 'AI-KRANZ', role: 'ground', is_bot: true, ready: true },
+          { name: 'AI-JOHNSON', role: 'user', is_bot: true, ready: true }
+        ],
+        logs: [{ role: 'ground', text: `Lobby ${fallbackCode} active.` }]
+      };
+      renderActiveMpLobbyRoom(fallbackLobby, [fallbackLobby]);
+      return { lobby: fallbackLobby };
+    }
+    return null;
+  }
+
+  function openMultiplayerLobbyModal(defaultGamemode = null) {
+    const modal = document.getElementById('multiplayer-lobby-modal');
+    if (!modal) return;
+    if (defaultGamemode) {
+      const gmSel = document.getElementById('mp-create-gamemode');
+      const qpSel = document.getElementById('mp-quickplay-mode');
+      if (gmSel) gmSel.value = defaultGamemode;
+      if (qpSel) qpSel.value = defaultGamemode;
+    }
+    modal.classList.add('active');
+    modal.style.display = 'flex';
+    refreshPublicLobbies();
+    renderActiveMpLobbyRoom(state.mpLobby);
+    startMpLobbyPolling();
+  }
+
+  function launchMultiplayerSessionFromLobby() {
+    const lob = state.mpLobby;
+    if (lob) state.mpEnteredLobbyCode = lob.code;
+    const gm = lob ? lob.gamemode : 'coop';
+    state.gameMode = gm === 'sabotage' ? 'sabotage' : 'coop';
+    if (state.gameMode === 'sabotage') {
+      state.saboteurRole = (lob && lob.saboteur_role) || ['launch', 'space', 'ground', 'user'][Math.floor(Math.random() * 4)];
+    } else {
+      state.saboteurRole = null;
+    }
+
+    const myName = getMpPlayerName().toUpperCase();
+    const me = lob && Array.isArray(lob.players) ? lob.players.find(p => p.name.toUpperCase() === myName) : null;
+    if (me && me.role) {
+      state.userRole = me.role;
+    }
+
+    const modal = document.getElementById('multiplayer-lobby-modal');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.display = 'none';
+    }
+    if (DOM.mainMenuOverlay) {
+      DOM.mainMenuOverlay.classList.remove('active');
+      DOM.mainMenuOverlay.style.display = 'none';
+    }
+    if (DOM.appContainer) DOM.appContainer.style.display = 'flex';
+    if (DOM.hudModeBadge) {
+      DOM.hudModeBadge.textContent = state.gameMode === 'sabotage' ? 'SABOTAGE (4P)' : '4P CO-OP';
+    }
+    if (DOM.rolesBar) DOM.rolesBar.style.display = 'flex';
+    if (DOM.saboteurStatusPill) {
+      DOM.saboteurStatusPill.style.display = state.gameMode === 'sabotage' ? 'inline-block' : 'none';
+    }
+
+    if (lob && lob.shared_state) {
+      applyMpSharedState(lob.shared_state);
+    }
+
+    startMpLobbyPolling();
+    updateMultiplayerStationBar();
+    const startStage = (lob && lob.shared_state && lob.shared_state.stage) ? lob.shared_state.stage : 1;
+    goToStage(startStage, true);
+  }
+
+  function bindNewFeatureListeners() {
+    // 1. Main Menu & HUD Leaderboard Buttons
+    const menuBtnLb = document.getElementById('menu-btn-leaderboard');
+    const hudBtnLb = document.getElementById('btn-open-leaderboard');
+    const closeLb = () => {
+      const m = document.getElementById('leaderboard-modal');
+      if (m) { m.classList.remove('active'); m.style.display = 'none'; }
+    };
+    if (menuBtnLb) menuBtnLb.addEventListener('click', () => { playBeep(720); openLeaderboardModal(); });
+    if (hudBtnLb) hudBtnLb.addEventListener('click', () => { playBeep(720); openLeaderboardModal(); });
+    document.getElementById('leaderboard-modal-close')?.addEventListener('click', closeLb);
+    document.getElementById('leaderboard-modal-done')?.addEventListener('click', closeLb);
+    document.getElementById('btn-submit-leaderboard')?.addEventListener('click', submitCurrentScoreToLeaderboard);
+
+    // 2. Designs Save, Share & Compare Modal Buttons
+    const hudBtnDesigns = document.getElementById('btn-open-designs');
+    const stage4BtnDesigns = document.getElementById('btn-stage4-designs');
+    const closeDesigns = () => {
+      const m = document.getElementById('designs-modal');
+      if (m) { m.classList.remove('active'); m.style.display = 'none'; }
+    };
+    if (hudBtnDesigns) hudBtnDesigns.addEventListener('click', () => { playBeep(740); openDesignsModal(); });
+    if (stage4BtnDesigns) stage4BtnDesigns.addEventListener('click', () => { playBeep(740); openDesignsModal(); });
+    document.getElementById('designs-modal-close')?.addEventListener('click', closeDesigns);
+    document.getElementById('designs-modal-done')?.addEventListener('click', closeDesigns);
+
+    document.getElementById('btn-save-current-design')?.addEventListener('click', () => {
+      playBeep(900);
+      const nameIn = document.getElementById('design-save-name');
+      const snap = buildCurrentDesignSnapshot(nameIn ? nameIn.value : '');
+      const list = loadSavedDesigns();
+      list.unshift(snap);
+      saveDesignsToStorage(list);
+      const banner = document.getElementById('design-share-banner');
+      if (banner) {
+        banner.style.display = 'block';
+        banner.textContent = `SAVED MISSION DESIGN [${snap.name}]! Share Code: ${encodeDesignShareCode(snap)}`;
+      }
+      renderDesignsModal(snap.id);
+    });
+
+    document.getElementById('btn-copy-current-share-code')?.addEventListener('click', () => {
+      playBeep(860);
+      const nameIn = document.getElementById('design-save-name');
+      const snap = buildCurrentDesignSnapshot(nameIn ? nameIn.value : '');
+      const code = encodeDesignShareCode(snap);
+      const banner = document.getElementById('design-share-banner');
+      if (banner) {
+        banner.style.display = 'block';
+        banner.textContent = `SHARE CODE COPIED: ${code}`;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).catch(() => {});
+      }
+    });
+
+    document.getElementById('btn-import-design-code')?.addEventListener('click', () => {
+      const codeIn = document.getElementById('design-import-code');
+      const banner = document.getElementById('design-share-banner');
+      try {
+        const imported = decodeDesignShareCode(codeIn ? codeIn.value : '');
+        const list = loadSavedDesigns();
+        list.unshift(imported);
+        saveDesignsToStorage(list);
+        playBeep(1050);
+        if (banner) {
+          banner.style.display = 'block';
+          banner.textContent = `IMPORTED & SAVED DESIGN: [${imported.name}] (${imported.domainName})`;
+        }
+        renderDesignsModal(imported.id);
+      } catch (e) {
+        playAlarm();
+        if (banner) {
+          banner.style.display = 'block';
+          banner.textContent = 'Invalid Share Code format. Paste a valid TM1:... mission design code.';
+        }
+      }
+    });
+
+    const selA = document.getElementById('compare-select-a');
+    const selB = document.getElementById('compare-select-b');
+    const onCompareChange = () => {
+      const designs = loadSavedDesigns();
+      const currentSnap = buildCurrentDesignSnapshot(`${state.missionName || 'CURRENT'} (Active)`);
+      currentSnap.id = '__current__';
+      renderDesignComparisonTable([currentSnap, ...designs], selA ? selA.value : '__current__', selB ? selB.value : '');
+    };
+    selA?.addEventListener('change', onCompareChange);
+    selB?.addEventListener('change', onCompareChange);
+
+    // 3. Post-Flight Mission Report Modal (Before Stage 7 Data Refinery)
+    if (DOM.btnCompleteFlight) {
+      DOM.btnCompleteFlight.addEventListener('click', (e) => {
+        if (typeof tutorialState !== 'undefined' && tutorialState.active) return;
+        e.stopImmediatePropagation();
+        openMissionReportModal();
+      }, true);
+    }
+
+    document.getElementById('btn-report-save-design')?.addEventListener('click', () => {
+      playBeep(920);
+      const nameIn = document.getElementById('report-design-name-input');
+      const snap = buildCurrentDesignSnapshot(nameIn ? nameIn.value : '');
+      const list = loadSavedDesigns();
+      list.unshift(snap);
+      saveDesignsToStorage(list);
+      const fb = document.getElementById('report-share-feedback');
+      if (fb) {
+        fb.style.display = 'block';
+        fb.textContent = `MISSION DESIGN SAVED AS "${snap.name}"!`;
+      }
+    });
+
+    document.getElementById('btn-report-share-design')?.addEventListener('click', () => {
+      playBeep(880);
+      const nameIn = document.getElementById('report-design-name-input');
+      const snap = buildCurrentDesignSnapshot(nameIn ? nameIn.value : '');
+      const code = encodeDesignShareCode(snap);
+      const fb = document.getElementById('report-share-feedback');
+      if (fb) {
+        fb.style.display = 'block';
+        fb.textContent = `SHAREABLE DESIGN CODE: ${code}`;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).catch(() => {});
+      }
+    });
+
+    document.getElementById('btn-report-compare-design')?.addEventListener('click', () => {
+      playBeep(840);
+      const nameIn = document.getElementById('report-design-name-input');
+      const snap = buildCurrentDesignSnapshot(nameIn ? nameIn.value : '');
+      const list = loadSavedDesigns();
+      if (!list.some(x => x.name === snap.name)) {
+        list.unshift(snap);
+        saveDesignsToStorage(list);
+      }
+      openDesignsModal(list[1] ? list[1].id : list[0]?.id);
+    });
+
+    document.getElementById('btn-report-vote-saboteur')?.addEventListener('click', () => {
+      playBeep(800);
+      openSaboteurVoteModal();
+    });
+
+    document.getElementById('btn-report-proceed')?.addEventListener('click', () => {
+      playBeep(950);
+      const m = document.getElementById('mission-report-modal');
+      if (m) {
+        m.classList.remove('active');
+        m.style.display = 'none';
+      }
+      goToStage(7);
+    });
+
+    // 4. Multiplayer Lobby Creation, Quickplay Matchmaking, Station Tasks & Saboteur Voting
+    document.getElementById('mp-btn-lobby-hub')?.addEventListener('click', () => {
+      playBeep(820);
+      openMultiplayerLobbyModal();
+    });
+    if (DOM.mpBtnCoop) {
+      DOM.mpBtnCoop.addEventListener('click', (e) => {
+        e.stopImmediatePropagation();
+        playBeep(840);
+        openMultiplayerLobbyModal('coop');
+      }, true);
+    }
+    if (DOM.mpBtnSabotage) {
+      DOM.mpBtnSabotage.addEventListener('click', (e) => {
+        e.stopImmediatePropagation();
+        playBeep(840);
+        openMultiplayerLobbyModal('sabotage');
+      }, true);
+    }
+
+    const closeMpLobby = () => {
+      const m = document.getElementById('multiplayer-lobby-modal');
+      if (m) { m.classList.remove('active'); m.style.display = 'none'; }
+    };
+    document.getElementById('mp-lobby-modal-close')?.addEventListener('click', closeMpLobby);
+    document.getElementById('btn-open-lobby-room')?.addEventListener('click', () => {
+      playBeep(760);
+      openMultiplayerLobbyModal();
+    });
+
+    document.getElementById('btn-mp-refresh-lobbies')?.addEventListener('click', () => {
+      playBeep(720);
+      refreshPublicLobbies();
+    });
+
+    document.getElementById('btn-mp-create-lobby')?.addEventListener('click', async () => {
+      playBeep(900);
+      const name = document.getElementById('mp-create-name')?.value || `${getMpPlayerName()}'s Mission Room`;
+      const gamemode = document.getElementById('mp-create-gamemode')?.value || 'coop';
+      const visibility = document.getElementById('mp-create-visibility')?.value || 'public';
+      const role = document.getElementById('mp-create-role')?.value || 'launch';
+      state.userRole = role;
+      await sendLobbyAction({
+        action: 'create',
+        player_name: getMpPlayerName(),
+        name,
+        gamemode,
+        visibility,
+        role
+      });
+    });
+
+    document.getElementById('btn-mp-join-code')?.addEventListener('click', async () => {
+      const code = (document.getElementById('mp-join-code-input')?.value || '').trim().toUpperCase();
+      if (!code) return;
+      playBeep(860);
+      await sendLobbyAction({
+        action: 'join',
+        code,
+        player_name: getMpPlayerName()
+      });
+    });
+
+    document.getElementById('btn-mp-quickplay')?.addEventListener('click', async () => {
+      playBeep(980);
+      const gm = document.getElementById('mp-quickplay-mode')?.value || 'any';
+      await sendLobbyAction({
+        action: 'quickplay',
+        player_name: getMpPlayerName(),
+        gamemode: gm
+      });
+    });
+
+    document.getElementById('btn-mp-fill-bots')?.addEventListener('click', async () => {
+      playBeep(820);
+      if (!state.mpLobby) {
+        await sendLobbyAction({
+          action: 'create',
+          player_name: getMpPlayerName(),
+          name: `${getMpPlayerName()}'s Squad`,
+          gamemode: document.getElementById('mp-create-gamemode')?.value || 'coop',
+          visibility: 'public',
+          role: 'launch'
+        });
+      }
+      if (state.mpLobby) {
+        await sendLobbyAction({
+          action: 'fill_bots',
+          code: state.mpLobby.code,
+          player_name: getMpPlayerName()
+        });
+      }
+    });
+
+    document.getElementById('btn-mp-remove-bots')?.addEventListener('click', async () => {
+      playBeep(660);
+      if (!state.mpLobby) {
+        showInPageNotice('Join or create a lobby first before removing AI crew.', 'LOBBY NOTICE');
+        return;
+      }
+      await sendLobbyAction({
+        action: 'remove_bots',
+        code: state.mpLobby.code,
+        player_name: getMpPlayerName()
+      });
+    });
+
+    document.getElementById('btn-mp-delete-lobby')?.addEventListener('click', async () => {
+      playBeep(520);
+      if (!state.mpLobby) return;
+      await sendLobbyAction({
+        action: 'delete',
+        code: state.mpLobby.code,
+        player_name: getMpPlayerName()
+      });
+    });
+
+    document.getElementById('btn-mp-launch-game')?.addEventListener('click', async () => {
+      playBeep(1100);
+      if (!state.mpLobby) {
+        showInPageNotice('Create or join a lobby room with 4 players first.', '4 PLAYERS REQUIRED');
+        return;
+      }
+      const myName = getMpPlayerName().toUpperCase();
+      if (state.mpLobby.host && state.mpLobby.host.toUpperCase() !== myName) {
+        showInPageNotice('Only the lobby creator can start Mission Control for the crew.', 'HOST ONLY');
+        return;
+      }
+      const playerCount = (state.mpLobby.players || []).length;
+      if (playerCount < 4) {
+        playAlarm();
+        showInPageNotice(
+          `There must be 4 players to start a game (currently ${playerCount}/4).\n\nWait for human crew to join or click "+ FILL AI CREW" so all 4 stations (Launch, Space, Ground, User) are staffed.`,
+          '4 PLAYERS REQUIRED'
+        );
+        return;
+      }
+      const res = await sendLobbyAction({
+        action: 'start',
+        code: state.mpLobby.code,
+        player_name: getMpPlayerName()
+      });
+      if (!res || !res.lobby) return;
+      state.mpEnteredLobbyCode = res.lobby.code;
+      launchMultiplayerSessionFromLobby();
+    });
+
+    // Station Role Tabs: roles are locked during the game and cannot be switched
+    if (DOM.roleTabs) {
+      Object.keys(DOM.roleTabs).forEach(rk => {
+        DOM.roleTabs[rk]?.addEventListener('click', () => {
+          if (rk !== state.userRole) {
+            playAlarm();
+            const myTitle = ROLE_DUTY_CONFIG[state.userRole]?.title || state.userRole.toUpperCase();
+            showInPageNotice(
+              `ROLE LOCKED: You cannot switch roles during the game.\n\nYour assigned station is ${myTitle}. Coordinate with the other 3 players on their stations!`,
+              'ROLE SWITCHING DISABLED'
+            );
+            updateMultiplayerStationBar();
+            return;
+          }
+          playBeep(700);
+          updateMultiplayerStationBar();
+        });
+      });
+    }
+
+    document.getElementById('btn-mp-station-task')?.addEventListener('click', executeActiveStationTask);
+    document.getElementById('btn-mp-ground-approve')?.addEventListener('click', async () => {
+      if (state.gameMode !== 'singleplayer' && state.userRole !== 'ground') {
+        playAlarm();
+        showInPageNotice('Only the Ground Player station can grant or hold Ground Approval!', 'STATION DUTY');
+        return;
+      }
+      playBeep(820);
+      state.groundApproved = !state.groundApproved;
+      updateMultiplayerStationBar();
+      if (state.mpLobby && state.gameMode !== 'singleplayer') {
+        await sendLobbyAction({
+          action: 'sync_state',
+          code: state.mpLobby.code,
+          player_name: getMpPlayerName(),
+          shared_state: { groundApproved: state.groundApproved }
+        });
+      }
+    });
+    document.getElementById('btn-mp-sabotage-act')?.addEventListener('click', triggerCovertSabotageAction);
+    document.getElementById('btn-open-saboteur-vote')?.addEventListener('click', () => {
+      playBeep(800);
+      openSaboteurVoteModal();
+    });
+
+    const closeSabVote = () => {
+      const m = document.getElementById('saboteur-vote-modal');
+      if (m) { m.classList.remove('active'); m.style.display = 'none'; }
+    };
+    document.getElementById('saboteur-vote-close')?.addEventListener('click', closeSabVote);
+    document.getElementById('saboteur-vote-done')?.addEventListener('click', closeSabVote);
+    document.querySelectorAll('.suspect-vote-card[data-suspect]').forEach(card => {
+      card.addEventListener('click', () => {
+        const suspect = card.getAttribute('data-suspect');
+        castSaboteurVote(suspect);
+      });
+    });
+  }
+
   function init() {
     loadAdvancementsState();
     randomizeDesignVariants();
@@ -6530,6 +8630,8 @@
     updatePermanentHud();
     renderStage1Domains();
     setupEventListeners();
+    bindNewFeatureListeners();
+    updateMultiplayerStationBar();
     startIntroCutscene();
 
     const startMusicOnGesture = () => ensureBgMusicPlaying();

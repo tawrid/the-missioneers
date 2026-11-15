@@ -183,6 +183,152 @@ class TestApiEndpoints(unittest.TestCase):
                 code, _, _ = _dispatch("POST", path, body=body, headers=hdrs)
                 self.assertEqual(code, expected_code)
 
+    def test_leaderboard_get_and_post(self):
+        code, _, body = _dispatch("GET", "/api/leaderboard")
+        self.assertEqual(code, 200)
+        data = json.loads(body)
+        self.assertIn("entries", data)
+        self.assertGreaterEqual(len(data["entries"]), 5)
+
+        post_body = json.dumps({"name": "TEST_PILOT", "money": 9999, "missions": 10, "reputation": 99, "mode": "SABOTAGE"}).encode()
+        code2, _, body2 = _dispatch("POST", "/api/leaderboard", body=post_body)
+        self.assertEqual(code2, 200)
+        data2 = json.loads(body2)
+        self.assertEqual(data2["entries"][0]["name"], "TEST_PILOT")
+        self.assertEqual(data2["entries"][0]["money"], 9999)
+
+    def test_lobbies_create_quickplay_and_vote(self):
+        create_body = json.dumps({
+            "action": "create",
+            "player_name": "HOST_ALPHA",
+            "name": "Test Sabotage Room",
+            "gamemode": "sabotage",
+            "visibility": "private",
+            "role": "ground",
+        }).encode()
+        code, _, body = _dispatch("POST", "/api/lobbies", body=create_body)
+        self.assertEqual(code, 200)
+        data = json.loads(body)
+        room_code = data["lobby"]["code"]
+        self.assertEqual(data["lobby"]["visibility"], "private")
+        self.assertEqual(data["lobby"]["gamemode"], "sabotage")
+
+        fill_body = json.dumps({"action": "fill_bots", "code": room_code, "player_name": "HOST_ALPHA"}).encode()
+        code2, _, body2 = _dispatch("POST", "/api/lobbies", body=fill_body)
+        self.assertEqual(code2, 200)
+        data2 = json.loads(body2)
+        self.assertEqual(len(data2["lobby"]["players"]), 4)
+
+        sab_role = data2["lobby"]["saboteur_role"]
+        vote_body = json.dumps({
+            "action": "vote_saboteur",
+            "code": room_code,
+            "player_name": "HOST_ALPHA",
+            "suspect_role": sab_role,
+        }).encode()
+        code3, _, body3 = _dispatch("POST", "/api/lobbies", body=vote_body)
+        self.assertEqual(code3, 200)
+        data3 = json.loads(body3)
+        self.assertTrue(data3["caught"])
+
+    def test_lobbies_remove_bots_sync_start_and_delete(self):
+        create_body = json.dumps({
+            "action": "create",
+            "player_name": "CREATOR_1",
+            "name": "Crew Control Test",
+            "gamemode": "coop",
+            "visibility": "public",
+            "role": "launch",
+        }).encode()
+        code, _, body = _dispatch("POST", "/api/lobbies", body=create_body)
+        self.assertEqual(code, 200)
+        room_code = json.loads(body)["lobby"]["code"]
+
+        # Join second human player
+        join_body = json.dumps({"action": "join", "code": room_code, "player_name": "CREW_2"}).encode()
+        code_j, _, body_j = _dispatch("POST", "/api/lobbies", body=join_body)
+        self.assertEqual(code_j, 200)
+        self.assertEqual(len(json.loads(body_j)["lobby"]["players"]), 2)
+
+        # Fill AI crew then remove AI crew
+        _dispatch("POST", "/api/lobbies", body=json.dumps({"action": "fill_bots", "code": room_code, "player_name": "CREATOR_1"}).encode())
+        code_r, _, body_r = _dispatch("POST", "/api/lobbies", body=json.dumps({"action": "remove_bots", "code": room_code, "player_name": "CREATOR_1"}).encode())
+        self.assertEqual(code_r, 200)
+        players_after = json.loads(body_r)["lobby"]["players"]
+        self.assertEqual(len(players_after), 2)
+        self.assertTrue(all(not p["is_bot"] for p in players_after))
+
+        # Sync shared state
+        code_s, _, body_s = _dispatch("POST", "/api/lobbies", body=json.dumps({
+            "action": "sync_state",
+            "code": room_code,
+            "player_name": "CREW_2",
+            "shared_state": {
+                "groundApproved": False,
+                "budgetAllocations": {"launch": 500000, "space": 550000, "ground": 250000},
+                "designApprovals": {"launch": True, "space": False, "ground": True},
+            },
+        }).encode())
+        self.assertEqual(code_s, 200)
+        shared_after = json.loads(body_s)["lobby"]["shared_state"]
+        self.assertFalse(shared_after["groundApproved"])
+        self.assertEqual(shared_after["budgetAllocations"]["space"], 550000)
+        self.assertTrue(shared_after["designApprovals"]["launch"])
+
+        # Starting with only 2 players must fail with 400 (4 players required)
+        code_short, _, _ = _dispatch("POST", "/api/lobbies", body=json.dumps({"action": "start", "code": room_code, "player_name": "CREATOR_1"}).encode())
+        self.assertEqual(code_short, 400)
+
+        # Fill AI crew to reach 4 players
+        code_fb, _, body_fb = _dispatch("POST", "/api/lobbies", body=json.dumps({"action": "fill_bots", "code": room_code, "player_name": "CREATOR_1"}).encode())
+        self.assertEqual(code_fb, 200)
+        self.assertEqual(len(json.loads(body_fb)["lobby"]["players"]), 4)
+
+        # Non-host start -> 403, host start with 4 players -> 200
+        code_ns, _, _ = _dispatch("POST", "/api/lobbies", body=json.dumps({"action": "start", "code": room_code, "player_name": "CREW_2"}).encode())
+        self.assertEqual(code_ns, 403)
+        code_hs, _, body_hs = _dispatch("POST", "/api/lobbies", body=json.dumps({"action": "start", "code": room_code, "player_name": "CREATOR_1"}).encode())
+        self.assertEqual(code_hs, 200)
+        self.assertEqual(json.loads(body_hs)["lobby"]["status"], "in_progress")
+
+        # Switching roles during an active game must be rejected with 403
+        code_sr, _, _ = _dispatch("POST", "/api/lobbies", body=json.dumps({
+            "action": "select_role",
+            "code": room_code,
+            "player_name": "CREATOR_1",
+            "role": "user",
+        }).encode())
+        self.assertEqual(code_sr, 403)
+
+        # Team Concept Vote: 4 players vote, majority or random tiebreak resolves domainId
+        code_vc1, _, _ = _dispatch("POST", "/api/lobbies", body=json.dumps({
+            "action": "vote_concept",
+            "code": room_code,
+            "player_name": "CREATOR_1",
+            "role": "launch",
+            "domain_id": "helio",
+        }).encode())
+        self.assertEqual(code_vc1, 200)
+        code_vc2, _, body_vc2 = _dispatch("POST", "/api/lobbies", body=json.dumps({
+            "action": "vote_concept",
+            "code": room_code,
+            "player_name": "CREW_2",
+            "role": "space",
+            "domain_id": "helio",
+            "force_resolve": True,
+        }).encode())
+        self.assertEqual(code_vc2, 200)
+        vc_shared = json.loads(body_vc2)["lobby"]["shared_state"]
+        self.assertIsNotNone(vc_shared["conceptVoteWinner"])
+        self.assertEqual(vc_shared["domainId"], vc_shared["conceptVoteWinner"])
+
+        # Non-host delete -> 403, host delete -> 200
+        code_nd, _, _ = _dispatch("POST", "/api/lobbies", body=json.dumps({"action": "delete", "code": room_code, "player_name": "CREW_2"}).encode())
+        self.assertEqual(code_nd, 403)
+        code_hd, _, body_hd = _dispatch("POST", "/api/lobbies", body=json.dumps({"action": "delete", "code": room_code, "player_name": "CREATOR_1"}).encode())
+        self.assertEqual(code_hd, 200)
+        self.assertTrue(json.loads(body_hd)["deleted"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -322,15 +322,27 @@
 
         <!-- Multiplayer Sub-Selection (Hidden by default) -->
         <div class="mp-subgroup" id="mp-subgroup" style="display: none;">
+          <button class="menu-sub-btn" id="mp-btn-lobby-hub">
+            <span>LOBBY BROWSER &amp; QUICKPLAY MATCHMAKING</span>
+            <small>Public/Private Lobbies, Room Codes &amp; Quickplay Queue</small>
+          </button>
           <button class="menu-sub-btn" id="mp-btn-coop">
-            <span>CO-OP CREW MODE</span>
-            <small>4 Dedicated Stations: Launch, Space, Ground &amp; User</small>
+            <span>4-PLAYER CO-OP CREW MODE</span>
+            <small>Launch, Space, Ground &amp; User collaborate together</small>
           </button>
           <button class="menu-sub-btn" id="mp-btn-sabotage">
-            <span>SABOTEUR IMPOSTOR MODE</span>
-            <small>One crew member secretly sabotages systems</small>
+            <span>4-PLAYER SABOTAGE MODE (FIND THE SABOTEUR)</span>
+            <small>1 Saboteur causes malfunctions — find &amp; vote them out!</small>
           </button>
         </div>
+
+        <button class="menu-btn secondary" id="menu-btn-leaderboard">
+          <span class="btn-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1 -10 0v-5z"/><path d="M5 6h2v3a3 3 0 0 1 -2 -3z"/><path d="M17 6h2a3 3 0 0 1 -2 3v-3z"/></svg></span>
+          <div class="btn-text">
+            <strong>MONEY LEADERBOARD</strong>
+            <small>Top agency budgets across Singleplayer, Co-op &amp; Sabotage</small>
+          </div>
+        </button>
 
         <button class="menu-btn secondary" id="menu-btn-settings">
           <span class="btn-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.39 1.26 1 1.51.31.13.65.2 1 .2H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
@@ -427,7 +439,7 @@
         </div>
       </div>
 
-      <!-- Global Controls: Data Vault, Bank, Advancements, Help, Settings, Menu -->
+      <!-- Global Controls: Data Vault, Bank, Designs, Leaderboard, Advancements, Help, Settings, Menu -->
       <div class="hud-controls">
         <button class="hud-btn vault-btn" id="btn-open-vault" title="View Stored Scientific Data &amp; Market Value">
           <span><svg class="inline-heading-icon tabler-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" /><path d="M12 12l8 -4.5" /><path d="M12 12l0 9" /><path d="M12 12l-8 -4.5" /></svg> DATA VAULT (<span id="vault-count-badge">0</span>)</span>
@@ -435,6 +447,14 @@
 
         <button class="hud-btn" id="btn-open-bank" title="Open Bank (Grants, Loans &amp; Debt Repayment)">
           <span><svg class="inline-heading-icon tabler-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21l18 0" /><path d="M3 10l18 0" /><path d="M5 6l7 -3l7 3" /><path d="M4 10l0 11" /><path d="M20 10l0 11" /><path d="M8 14l0 3" /><path d="M12 14l0 3" /><path d="M16 14l0 3" /></svg> BANK</span>
+        </button>
+
+        <button class="hud-btn" id="btn-open-designs" title="Save, Share &amp; Compare Mission Designs">
+          <span><svg class="inline-heading-icon tabler-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" /><path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M14 4l0 4l-6 0l0 -4" /></svg> DESIGNS</span>
+        </button>
+
+        <button class="hud-btn" id="btn-open-leaderboard" title="View Money Leaderboard">
+          <span><svg class="inline-heading-icon tabler-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z" /><path d="M9 8m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z" /><path d="M15 4m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z" /></svg> LEADERBOARD</span>
         </button>
 
         <button class="hud-btn" id="btn-open-advancements" title="View Advancements &amp; Tiers">
@@ -457,20 +477,36 @@
 
     <!-- Active Station Bar (Shown ONLY in Multiplayer Modes) -->
     <div class="roles-bar" id="roles-bar" style="display: none;">
-      <span class="roles-bar-label">CREW STATION:</span>
-      <button class="role-tab active" data-role="launch" id="tab-role-launch">
-        <svg class="inline-heading-icon tabler-icon tabler-filled ti-cyan" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13a8 8 0 0 1 7 7a6 6 0 0 0 3 -5a9 9 0 0 0 6 -8a3 3 0 0 0 -3 -3a9 9 0 0 0 -8 6a6 6 0 0 0 -5 3" /><path d="M7 14a6 6 0 0 0 -3 6a6 6 0 0 0 6 -3" fill="none" /><path d="M14 9a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" fill="#0f172a" /></svg> LAUNCH STATION (Rocket &amp; Mechanical)
-      </button>
-      <button class="role-tab" data-role="space" id="tab-role-space">
-        <svg class="inline-heading-icon tabler-icon tabler-filled ti-cyan" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.707 6.293l2.586 -2.586a1 1 0 0 1 1.414 0l5.586 5.586a1 1 0 0 1 0 1.414l-2.586 2.586a1 1 0 0 1 -1.414 0l-5.586 -5.586a1 1 0 0 1 0 -1.414" /><path d="M6 10l-3 3l3 3l3 -3" fill="none" /><path d="M10 6l3 -3l3 3l-3 3" fill="none" /><path d="M12 12l1.5 1.5" fill="none" /><path d="M14.5 17a2.5 2.5 0 0 0 2.5 -2.5" fill="none" /><path d="M15 21a6 6 0 0 0 6 -6" fill="none" /></svg> SPACE STATION (Sensors &amp; Bus)
-      </button>
-      <button class="role-tab" data-role="ground" id="tab-role-ground">
-        <svg class="inline-heading-icon tabler-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M16.616 13.924a5 5 0 1 0 -9.23 0" /><path d="M20.307 15.469a9 9 0 1 0 -16.615 0" /><path d="M9 21l3 -9l3 9" /><path d="M10 19h4" /></svg> GROUND STATION (Comms &amp; Tracking)
-      </button>
-      <button class="role-tab" data-role="user" id="tab-role-user">
-        <svg class="inline-heading-icon tabler-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2l0 -9" /><path d="M8 7v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2" /><path d="M12 12l0 .01" /><path d="M3 13a20 20 0 0 0 18 0" /></svg> USER STATION (Refinery &amp; Market)
-      </button>
-      <span class="saboteur-indicator" id="saboteur-status-pill" style="display: none;"><svg class="inline-heading-icon tabler-icon tabler-filled ti-crimson" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1.67c.955 0 1.845 .467 2.39 1.247l.105 .16l8.114 13.548a2.914 2.914 0 0 1 -2.307 4.363l-.195 .008h-16.225a2.914 2.914 0 0 1 -2.582 -4.2l.099 -.185l8.11 -13.538a2.914 2.914 0 0 1 2.491 -1.403zm.01 13.33l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -7a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z" /></svg> SABOTEUR ACTIVE</span>
+      <div class="roles-tabs-row">
+        <span class="roles-bar-label">CREW STATION:</span>
+        <button class="role-tab active" data-role="launch" id="tab-role-launch">
+          <svg class="inline-heading-icon tabler-icon tabler-filled ti-cyan" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13a8 8 0 0 1 7 7a6 6 0 0 0 3 -5a9 9 0 0 0 6 -8a3 3 0 0 0 -3 -3a9 9 0 0 0 -8 6a6 6 0 0 0 -5 3" /><path d="M7 14a6 6 0 0 0 -3 6a6 6 0 0 0 6 -3" fill="none" /><path d="M14 9a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" fill="#0f172a" /></svg> LAUNCH PLAYER (Rocket &amp; Mechanical)
+        </button>
+        <button class="role-tab" data-role="space" id="tab-role-space">
+          <svg class="inline-heading-icon tabler-icon tabler-filled ti-cyan" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.707 6.293l2.586 -2.586a1 1 0 0 1 1.414 0l5.586 5.586a1 1 0 0 1 0 1.414l-2.586 2.586a1 1 0 0 1 -1.414 0l-5.586 -5.586a1 1 0 0 1 0 -1.414" /><path d="M6 10l-3 3l3 3l3 -3" fill="none" /><path d="M10 6l3 -3l3 3l-3 3" fill="none" /><path d="M12 12l1.5 1.5" fill="none" /><path d="M14.5 17a2.5 2.5 0 0 0 2.5 -2.5" fill="none" /><path d="M15 21a6 6 0 0 0 6 -6" fill="none" /></svg> SPACE PLAYER (Instruments &amp; Bus)
+        </button>
+        <button class="role-tab" data-role="ground" id="tab-role-ground">
+          <svg class="inline-heading-icon tabler-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M16.616 13.924a5 5 0 1 0 -9.23 0" /><path d="M20.307 15.469a9 9 0 1 0 -16.615 0" /><path d="M9 21l3 -9l3 9" /><path d="M10 19h4" /></svg> GROUND PLAYER (Management &amp; Approvals)
+        </button>
+        <button class="role-tab" data-role="user" id="tab-role-user">
+          <svg class="inline-heading-icon tabler-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2l0 -9" /><path d="M8 7v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2" /><path d="M12 12l0 .01" /><path d="M3 13a20 20 0 0 0 18 0" /></svg> USER PLAYER (Deals, Budget &amp; Refinery)
+        </button>
+        <span class="saboteur-indicator" id="saboteur-status-pill" style="display: none;"><svg class="inline-heading-icon tabler-icon tabler-filled ti-crimson" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1.67c.955 0 1.845 .467 2.39 1.247l.105 .16l8.114 13.548a2.914 2.914 0 0 1 -2.307 4.363l-.195 .008h-16.225a2.914 2.914 0 0 1 -2.582 -4.2l.099 -.185l8.11 -13.538a2.914 2.914 0 0 1 2.491 -1.403zm.01 13.33l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -7a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z" /></svg> SABOTEUR IN CREW</span>
+      </div>
+      <div class="mp-station-action-bar" id="mp-station-action-bar">
+        <div class="mp-duty-info">
+          <span class="mp-room-pill" id="mp-hud-room-code">ROOM: LOCAL</span>
+          <span class="mp-duty-text" id="mp-role-duty-text">LAUNCH PLAYER: Design rocket, manage Δv &amp; fix mechanical issues.</span>
+        </div>
+        <div class="mp-duty-actions">
+          <button type="button" class="mp-mini-btn cyan" id="btn-mp-station-task">EXECUTE STATION TASK</button>
+          <button type="button" class="mp-mini-btn emerald" id="btn-mp-ground-approve" title="Ground Player approval for Launch &amp; Data Sales">GROUND APPROVAL: GRANTED &#10003;</button>
+          <button type="button" class="mp-mini-btn crimson" id="btn-mp-sabotage-act" style="display: none;" title="Covertly trigger a role-specific sabotage malfunction">COVERT SABOTAGE</button>
+          <button type="button" class="mp-mini-btn gold" id="btn-open-saboteur-vote" style="display: none;">FIND &amp; VOTE SABOTEUR</button>
+          <button type="button" class="mp-mini-btn neutral" id="btn-open-lobby-room">LOBBY ROOM</button>
+        </div>
+      </div>
+      <div class="mp-collab-workspace" id="mp-collab-workspace"></div>
     </div>
 
     <!-- Market Trends Ticker Bar (Seamless Recurring Headline, Click to Lock) -->
@@ -542,6 +578,8 @@
             <svg class="tabler-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14" /><path d="M8 8.5a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0" fill="currentColor" /><path d="M15 8.5a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0" fill="currentColor" /><path d="M15 15.5a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0" fill="currentColor" /><path d="M8 15.5a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0" fill="currentColor" /><path d="M11.5 12a.5 .5 0 1 0 1 0a.5 .5 0 1 0 -1 0" fill="currentColor" /></svg> RANDOM
           </button>
         </div>
+
+        <div class="mp-concept-vote-banner" id="mp-concept-vote-banner" style="display: none;"></div>
 
         <div class="domain-grid" id="domain-grid">
           <!-- Populated by app.js: Earth Science, Planetary Science, Heliophysics, Astrophysics, Life Sciences -->
@@ -699,6 +737,7 @@
                 <div class="hud-view-switch" role="group" aria-label="Switch between Stats View and Spacecraft Image View">
                   <button type="button" class="hud-view-btn active" id="btn-design-view-image">IMAGE VIEW</button>
                   <button type="button" class="hud-view-btn" id="btn-design-view-stats">STATS VIEW</button>
+                  <button type="button" class="hud-view-btn" id="btn-stage4-designs" title="Save, Share &amp; Compare Mission Designs">SAVE / COMPARE</button>
                 </div>
               </div>
 
@@ -1422,13 +1461,20 @@
 
   <!-- CREDITS MODAL -->
   <div class="modal-overlay" id="credits-modal" style="display: none;">
-    <div class="modal-card" style="max-width: 560px;">
+    <div class="modal-card" style="max-width: 580px;">
       <div class="modal-header">
         <h2>CREDITS &amp; ATTRIBUTION</h2>
         <button class="modal-close" id="credits-modal-close">&times;</button>
       </div>
       <div class="modal-body" style="line-height: 1.65;">
         <div class="credits-block">
+          <h4 style="margin-bottom: 0.4rem; color: var(--color-cyan);">SCIENTIFIC MISSION PROCESS</h4>
+          <p style="margin: 0;">NASA Science Mission Design &amp; Development Lifecycle Reference:</p>
+          <p style="margin: 0.35rem 0 0 0; word-break: break-all;">
+            <a href="https://www.nasa.gov/wp-content/uploads/2025/04/250323-design-and-develop-science-mission.pdf?emrc=a454cf" target="_blank" rel="noopener noreferrer" style="color: var(--color-cyan);">https://www.nasa.gov/wp-content/uploads/2025/04/250323-design-and-develop-science-mission.pdf?emrc=a454cf</a>
+          </p>
+        </div>
+        <div class="credits-block" style="margin-top: 1rem;">
           <h4 style="margin-bottom: 0.4rem; color: var(--color-cyan);">BACKGROUND MUSIC</h4>
           <p style="margin: 0;">&ldquo;Equatorial Complex&rdquo; Kevin MacLeod (incompetech.com)</p>
           <p style="margin: 0.25rem 0 0 0;">Licensed under Creative Commons: By Attribution 4.0 License</p>
@@ -1455,6 +1501,319 @@
       </div>
       <div class="modal-footer">
         <button class="action-btn primary" id="stats-modal-done">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POST-FLIGHT MISSION REPORT MODAL (Shown after Stage 6 Flight before Stage 7 Data Refinery) -->
+  <div class="modal-overlay" id="mission-report-modal" style="display: none;">
+    <div class="modal-card" style="max-width: 780px;">
+      <div class="modal-header">
+        <h2>POST-FLIGHT MISSION REPORT</h2>
+        <span class="report-outcome-badge" id="report-outcome-badge">MISSION SUCCEEDED</span>
+      </div>
+      <div class="modal-body">
+        <p class="report-summary-lead" id="report-summary-lead">Orbital flight telemetry and anomaly log finalized prior to Data Refinery entry.</p>
+
+        <div class="report-metrics-grid" id="report-metrics-grid">
+          <div class="report-metric-card">
+            <span class="rm-label">MISSION STATUS</span>
+            <strong class="rm-val text-emerald" id="rm-status">SUCCEEDED</strong>
+          </div>
+          <div class="report-metric-card">
+            <span class="rm-label">ANOMALIES (TOTAL / FIXED)</span>
+            <strong class="rm-val text-amber" id="rm-anomalies">0 / 0</strong>
+          </div>
+          <div class="report-metric-card">
+            <span class="rm-label">MISSION FLIGHT TIME</span>
+            <strong class="rm-val text-cyan" id="rm-flight-time">00:45</strong>
+          </div>
+          <div class="report-metric-card">
+            <span class="rm-label">L0 RAW PACKETS DOWNLINKED</span>
+            <strong class="rm-val text-emerald" id="rm-packets">0 PKTS</strong>
+          </div>
+          <div class="report-metric-card">
+            <span class="rm-label">MISSION EXPENDITURE</span>
+            <strong class="rm-val" id="rm-cost">$0</strong>
+          </div>
+          <div class="report-metric-card">
+            <span class="rm-label">FINAL SEGMENT INTEGRITY</span>
+            <strong class="rm-val" id="rm-integrity">100% / 100% / 100%</strong>
+          </div>
+        </div>
+
+        <div class="report-design-summary" id="report-design-summary">
+          <!-- Populated with Rocket, Bus, Power, Shield, Dish, Instruments -->
+        </div>
+
+        <div class="report-design-actions-box">
+          <h4>MISSION DESIGN ARCHIVE &amp; COMPARISON</h4>
+          <p class="modal-desc">Save this mission architecture, copy its share code, or compare it side-by-side against other designs before entering the Data Refinery.</p>
+          <div class="report-design-btn-row">
+            <input type="text" id="report-design-name-input" class="custom-input" placeholder="Mission Design Name (e.g., Earth-AIRS-Mark1)" style="max-width: 240px;" />
+            <button type="button" class="action-btn secondary mini-btn" id="btn-report-save-design">SAVE MISSION DESIGN</button>
+            <button type="button" class="action-btn secondary mini-btn" id="btn-report-share-design">SHARE DESIGN CODE</button>
+            <button type="button" class="action-btn secondary mini-btn" id="btn-report-compare-design">COMPARE DESIGNS</button>
+            <button type="button" class="action-btn secondary mini-btn" id="btn-report-vote-saboteur" style="display: none; border-color: var(--color-crimson); color: var(--color-crimson);">VOTE SABOTEUR</button>
+          </div>
+          <div id="report-share-feedback" class="share-feedback-box" style="display: none;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn primary" id="btn-report-proceed">PROCEED TO DATA REFINERY &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVE, SHARE & COMPARE MISSION DESIGNS MODAL -->
+  <div class="modal-overlay" id="designs-modal" style="display: none;">
+    <div class="modal-card" style="max-width: 900px;">
+      <div class="modal-header">
+        <h2>MISSION DESIGN ARCHIVE: SAVE, SHARE &amp; COMPARE</h2>
+        <button class="modal-close" id="designs-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Save Current & Import Share Code Row -->
+        <div class="designs-top-controls">
+          <div class="designs-control-card">
+            <h4>SAVE OR SHARE CURRENT MISSION DESIGN</h4>
+            <div class="designs-inline-row">
+              <input type="text" id="design-save-name" class="custom-input" placeholder="Design Name (e.g. Deep-Space-Probe-V2)" />
+              <button type="button" class="action-btn primary mini-btn" id="btn-save-current-design">SAVE DESIGN</button>
+              <button type="button" class="action-btn secondary mini-btn" id="btn-copy-current-share-code">COPY SHARE CODE</button>
+            </div>
+          </div>
+          <div class="designs-control-card">
+            <h4>IMPORT SHARED MISSION DESIGN CODE</h4>
+            <div class="designs-inline-row">
+              <input type="text" id="design-import-code" class="custom-input" placeholder="Paste TM1:... Share Code here" />
+              <button type="button" class="action-btn secondary mini-btn" id="btn-import-design-code">IMPORT &amp; SAVE</button>
+            </div>
+          </div>
+        </div>
+        <div id="design-share-banner" class="share-feedback-box" style="display: none;"></div>
+
+        <!-- Side-by-Side Comparison Section -->
+        <div class="designs-compare-section">
+          <div class="designs-compare-header">
+            <h4>SIDE-BY-SIDE MISSION DESIGN COMPARISON</h4>
+            <div class="designs-selectors-row">
+              <label>Design A:
+                <select id="compare-select-a" class="custom-select"></select>
+              </label>
+              <label>Design B:
+                <select id="compare-select-b" class="custom-select"></select>
+              </label>
+            </div>
+          </div>
+          <div id="designs-comparison-table-wrap" class="designs-comparison-table-wrap">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Saved Designs List -->
+        <div class="saved-designs-list-section">
+          <h4>SAVED MISSION DESIGNS (<span id="saved-designs-count">0</span>)</h4>
+          <div id="saved-designs-list" class="saved-designs-list"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn primary" id="designs-modal-done">DONE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MONEY LEADERBOARD MODAL -->
+  <div class="modal-overlay" id="leaderboard-modal" style="display: none;">
+    <div class="modal-card" style="max-width: 720px;">
+      <div class="modal-header">
+        <h2>GLOBAL &amp; AGENCY MONEY LEADERBOARD</h2>
+        <button class="modal-close" id="leaderboard-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">Rankings by peak Agency Budget across Singleplayer, 4-Player Co-op, and Sabotage missions.</p>
+        <div class="leaderboard-submit-bar">
+          <input type="text" id="leaderboard-callsign-input" class="custom-input" placeholder="Enter Commander Callsign (e.g. CDR. HYDER)" maxlength="26" />
+          <button type="button" class="action-btn primary mini-btn" id="btn-submit-leaderboard">POST CURRENT MONEY TO LEADERBOARD</button>
+        </div>
+        <div class="leaderboard-table-wrap">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>RANK</th>
+                <th>COMMANDER / CREW</th>
+                <th>PEAK MONEY</th>
+                <th>MISSIONS</th>
+                <th>REPUTATION</th>
+                <th>MODE</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-tbody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn primary" id="leaderboard-modal-done">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MULTIPLAYER LOBBY CREATION & QUICKPLAY MATCHMAKING MODAL -->
+  <div class="modal-overlay" id="multiplayer-lobby-modal" style="display: none;">
+    <div class="modal-card" style="max-width: 920px;">
+      <div class="modal-header">
+        <h2>MULTIPLAYER COMMAND HUB: 4-PLAYER CO-OP &amp; SABOTAGE</h2>
+        <button class="modal-close" id="mp-lobby-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Player Callsign & Quickplay Bar -->
+        <div class="mp-hub-top-bar">
+          <div class="mp-callsign-box">
+            <label for="mp-player-name">YOUR CALLSIGN:</label>
+            <input type="text" id="mp-player-name" class="custom-input" value="CDR. PIONEER" maxlength="22" />
+          </div>
+          <div class="mp-quickplay-box">
+            <select id="mp-quickplay-mode" class="custom-select">
+              <option value="any">Quickplay: Any Gamemode</option>
+              <option value="coop">Quickplay: 4-Player Co-op</option>
+              <option value="sabotage">Quickplay: Sabotage (Find the Saboteur)</option>
+            </select>
+            <button type="button" class="action-btn primary mini-btn" id="btn-mp-quickplay">⚡ QUICKPLAY MATCHMAKING</button>
+          </div>
+        </div>
+
+        <!-- Role Documentation Summary Banner ("NO PLAYER SHOULD BE DOING NOTHING") -->
+        <div class="mp-roles-doc-grid">
+          <div class="mp-role-doc-card">
+            <strong class="text-cyan">1. LAUNCH PLAYER</strong>
+            <p>Designs the rocket &amp; propellant, manages $\Delta v$, and fixes mechanical booster issues.</p>
+          </div>
+          <div class="mp-role-doc-card">
+            <strong class="text-cyan">2. SPACE PLAYER</strong>
+            <p>Plans scientific instruments &amp; spacecraft bus, and repairs orbital instrument malfunctions.</p>
+          </div>
+          <div class="mp-role-doc-card">
+            <strong class="text-emerald">3. GROUND PLAYER</strong>
+            <p>Receives telemetry data, fixes computer/downlink issues, negotiates, and approves launches &amp; data sales.</p>
+          </div>
+          <div class="mp-role-doc-card">
+            <strong class="text-gold">4. USER PLAYER</strong>
+            <p>Finds best market deals, coordinates part purchases with Launch &amp; Space, manages loans, and refines L0&ndash;L4 data.</p>
+          </div>
+        </div>
+
+        <div class="mp-hub-columns">
+          <!-- Left Column: Create Public/Private Lobby + Join by Code + Public Lobby List -->
+          <div class="mp-hub-col">
+            <div class="mp-panel-box">
+              <h4>CREATE NEW LOBBY (PUBLIC OR PRIVATE)</h4>
+              <div class="mp-form-grid">
+                <input type="text" id="mp-create-name" class="custom-input" placeholder="Lobby Name (e.g. Artemis Deep Space)" />
+                <select id="mp-create-gamemode" class="custom-select">
+                  <option value="coop">4-Player Collaboration (Co-op)</option>
+                  <option value="sabotage">4-Player Sabotage (Find the Saboteur)</option>
+                </select>
+                <select id="mp-create-visibility" class="custom-select">
+                  <option value="public">Public Lobby (Listed in Browser &amp; Quickplay)</option>
+                  <option value="private">Private Lobby (Join by Room Code Only)</option>
+                </select>
+                <select id="mp-create-role" class="custom-select">
+                  <option value="launch">Station: Launch Player</option>
+                  <option value="space">Station: Space Player</option>
+                  <option value="ground">Station: Ground Player</option>
+                  <option value="user">Station: User Player</option>
+                </select>
+              </div>
+              <button type="button" class="action-btn primary mini-btn" id="btn-mp-create-lobby" style="width: 100%; margin-top: 0.5rem;">CREATE LOBBY ROOM</button>
+            </div>
+
+            <div class="mp-panel-box" style="margin-top: 0.75rem;">
+              <h4>JOIN PRIVATE OR PUBLIC LOBBY BY CODE</h4>
+              <div class="designs-inline-row">
+                <input type="text" id="mp-join-code-input" class="custom-input" placeholder="Enter 6-Char Room Code (e.g. ORBIT4)" maxlength="8" style="text-transform: uppercase;" />
+                <button type="button" class="action-btn secondary mini-btn" id="btn-mp-join-code">JOIN BY CODE</button>
+              </div>
+            </div>
+
+            <div class="mp-panel-box" style="margin-top: 0.75rem;">
+              <div class="mp-list-header">
+                <h4>AVAILABLE PUBLIC LOBBIES</h4>
+                <button type="button" class="hud-view-btn" id="btn-mp-refresh-lobbies">REFRESH</button>
+              </div>
+              <div id="mp-public-lobbies-list" class="mp-public-lobbies-list"></div>
+            </div>
+          </div>
+
+          <!-- Right Column: Active Lobby Room & 4 Crew Stations -->
+          <div class="mp-hub-col">
+            <div class="mp-panel-box mp-active-room-box" id="mp-active-room-box">
+              <div class="mp-room-header">
+                <div>
+                  <h4 id="mp-room-title">NO ACTIVE LOBBY SELECTED</h4>
+                  <small id="mp-room-meta">Use Quickplay, Create a Lobby, or Join from the Public Browser</small>
+                </div>
+                <span class="mp-room-code-badge" id="mp-room-code-display">------</span>
+              </div>
+
+              <div class="mp-stations-slots" id="mp-stations-slots">
+                <!-- 4 Station Slots (Launch, Space, Ground, User) rendered dynamically -->
+              </div>
+
+              <div class="mp-room-logs" id="mp-room-logs">
+                <div class="mp-log-line">Select or create a lobby to coordinate with your 4-station crew.</div>
+              </div>
+
+              <div class="mp-room-actions">
+                <button type="button" class="action-btn secondary mini-btn" id="btn-mp-fill-bots">FILL AI CREW</button>
+                <button type="button" class="action-btn secondary mini-btn" id="btn-mp-remove-bots">REMOVE AI CREW</button>
+                <button type="button" class="action-btn secondary mini-btn" id="btn-mp-delete-lobby" style="display: none; border-color: var(--color-crimson); color: var(--color-crimson);">DELETE LOBBY</button>
+                <button type="button" class="action-btn primary mini-btn" id="btn-mp-launch-game">ENTER MISSION CONTROL &rarr;</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIND THE SABOTEUR: EMERGENCY TRIBUNAL & VOTING MODAL -->
+  <div class="modal-overlay" id="saboteur-vote-modal" style="display: none;">
+    <div class="modal-card" style="max-width: 680px;">
+      <div class="modal-header">
+        <h2>EMERGENCY CREW TRIBUNAL: FIND THE SABOTEUR</h2>
+        <button class="modal-close" id="saboteur-vote-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          One station operator is covertly sabotaging the mission to bankrupt the agency. Review the forensic station telemetry below and cast your crew vote to expose the Saboteur!
+        </p>
+        <div class="saboteur-clue-box" id="saboteur-clue-box">
+          <!-- Populated with forensic clues & sabotage logs -->
+        </div>
+        <div class="saboteur-suspects-grid" id="saboteur-suspects-grid">
+          <button type="button" class="suspect-vote-card" data-suspect="launch">
+            <strong>ACCUSE LAUNCH PLAYER</strong>
+            <small>Suspected of propellant underfill, booster valve tampering, or trajectory drift</small>
+          </button>
+          <button type="button" class="suspect-vote-card" data-suspect="space">
+            <strong>ACCUSE SPACE PLAYER</strong>
+            <small>Suspected of sensor de-calibration, bus power drain, or thermal shield sabotage</small>
+          </button>
+          <button type="button" class="suspect-vote-card" data-suspect="ground">
+            <strong>ACCUSE GROUND PLAYER</strong>
+            <small>Suspected of packet drop injection, dish misalignment, or falsified approvals</small>
+          </button>
+          <button type="button" class="suspect-vote-card" data-suspect="user">
+            <strong>ACCUSE USER PLAYER</strong>
+            <small>Suspected of predatory debt loans, underpriced data sales, or budget embezzlement</small>
+          </button>
+        </div>
+        <div id="saboteur-vote-result" class="share-feedback-box" style="display: none; margin-top: 0.85rem;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn secondary" id="saboteur-vote-done">RETURN TO MISSION</button>
       </div>
     </div>
   </div>
