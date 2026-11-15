@@ -401,7 +401,7 @@
   function ensureBgMusicPlaying() {
     try {
       if (!bgMusicAudio) {
-        bgMusicAudio = new Audio('/equatorial-complex.mp3');
+        bgMusicAudio = new Audio('./Equatorial%20Complex.mp3');
         bgMusicAudio.loop = true;
         bgMusicAudio.preload = 'auto';
       }
